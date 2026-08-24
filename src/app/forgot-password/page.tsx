@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Mail, ArrowLeft, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { supabase } from "@/lib/supabase";
-import { buildPasswordResetCallbackUrl } from "@/lib/auth-redirect";
+import { NULLPING_PASSWORD_RESET_REDIRECT } from "@/lib/auth-redirect";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -20,12 +20,25 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = (await res.json().catch(() => null)) as { error?: string } | null;
+
+      if (res.ok) {
+        setSent(true);
+        return;
+      }
+
+      // Fallback: Supabase mailer with hardcoded production redirect (no localhost).
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: buildPasswordResetCallbackUrl(),
+        redirectTo: NULLPING_PASSWORD_RESET_REDIRECT,
       });
 
       if (resetError) {
-        setError(resetError.message);
+        setError(data?.error || resetError.message);
       } else {
         setSent(true);
       }
