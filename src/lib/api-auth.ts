@@ -6,14 +6,19 @@ import {
   DEV_BYPASS_PASSWORD,
   isDevAuthBypassEnabled,
 } from "@/lib/dev-bypass";
+import {
+  getSupabaseAnonKey,
+  getSupabaseUrl,
+  normalizeSupabaseKey,
+} from "@/lib/supabase-env";
 
 let cachedDevUserId: string | null = null;
 
 function createServiceRoleClient() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = normalizeSupabaseKey(process.env.SUPABASE_SERVICE_ROLE_KEY ?? "");
   if (!key) return null;
 
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
+  return createClient(getSupabaseUrl(), key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -76,8 +81,8 @@ export async function createApiSupabaseClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getSupabaseUrl(),
+    getSupabaseAnonKey(),
     {
       cookies: {
         get(name: string) {

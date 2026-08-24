@@ -13,11 +13,10 @@ type FormState = "idle" | "submitting" | "success" | "error";
 const fieldClass =
   "w-full min-w-0 rounded-lg border border-border-dim/70 bg-page/80 px-3.5 py-3 text-sm leading-normal text-text-primary placeholder:text-text-muted focus:border-pulse-700 focus:outline-none focus:ring-2 focus:ring-pulse-100 transition-all";
 
-const embeddedFieldClass =
-  "w-full min-w-0 rounded-lg border border-border-dim bg-white px-3.5 py-3 text-sm leading-normal text-text-primary placeholder:text-ink-5 focus:border-pulse-700 focus:outline-none focus:ring-2 focus:ring-pulse-100 transition-all";
+const embeddedFieldClass = "input-base w-full text-sm";
+const embeddedTextareaClass = `${embeddedFieldClass} resize-y min-h-[96px] py-3`;
 
-const embeddedLabelClass =
-  "mb-2 block text-[13px] font-medium uppercase tracking-wide text-text-heading";
+const embeddedLabelClass = "auth-field-label mb-2 block";
 
 function trainingUpsellUrl(): string | null {
   const external = trainingContent.externalTrainingUrl?.trim();
@@ -236,8 +235,8 @@ export function ContactSupportWidget({ embedded = false }: { embedded?: boolean 
           placeholder="Tell us what you need help with..."
           required
           disabled={formState === "submitting"}
-          rows={3}
-          className={`${embedded ? embeddedFieldClass : fieldClass} min-h-[96px] resize-y`}
+          rows={4}
+          className={embedded ? embeddedTextareaClass : `${fieldClass} min-h-[96px] resize-y`}
         />
       </div>
 
@@ -251,18 +250,28 @@ export function ContactSupportWidget({ embedded = false }: { embedded?: boolean 
         <p
           className={
             embedded
-              ? "rounded-lg border border-border-dim bg-canvas px-3 py-2.5 text-xs leading-relaxed text-text-secondary"
+              ? "support-float-note"
               : "rounded-lg border border-border-dim/70 bg-page/60 px-3 py-2.5 text-xs leading-relaxed text-text-muted"
           }
         >
-          <span className="font-medium text-text-secondary">Please note:</span> We reply to the email
-          above. Check spam or junk if you don&apos;t hear back within 48 hours.
+          {embedded ? (
+            <>
+              We usually reply within about <span className="text-ink-2">2 hours</span>. During busy
+              periods, allow <span className="text-ink-2">24–48 hours</span>. Replies go to the email
+              above — check spam or junk if needed.
+            </>
+          ) : (
+            <>
+              <span className="font-medium text-text-secondary">Please note:</span> We reply to the email
+              above. Check spam or junk if you don&apos;t hear back within 48 hours.
+            </>
+          )}
         </p>
 
         <button
           type="submit"
           disabled={formState === "submitting"}
-          className={`btn-primary w-full ${embedded ? "py-2.5" : "min-h-[44px]"}`}
+          className={`btn-primary w-full ${embedded ? "min-h-[44px]" : "min-h-[44px]"}`}
         >
           {formState === "submitting" ? (
             <span className="inline-flex items-center justify-center gap-2">
@@ -278,22 +287,16 @@ export function ContactSupportWidget({ embedded = false }: { embedded?: boolean 
   );
 
   const mailtoFallback = (
-    <div
-      className={
-        embedded
-          ? "flex gap-2.5 rounded-lg border border-border-dim bg-canvas px-3 py-2.5"
-          : "dashboard-nested-card flex gap-2.5 px-3 py-2.5"
-      }
-    >
-      <Mail className="mt-0.5 h-4 w-4 shrink-0 text-text-secondary" />
+    <div className={embedded ? "support-float-mailto" : "dashboard-nested-card flex gap-2.5 px-3 py-2.5"}>
+      <Mail className="mt-0.5 h-4 w-4 shrink-0 text-pulse-700" />
       <div className="min-w-0">
-        <p className="text-xs leading-snug text-text-secondary">
+        <p className="text-xs leading-snug text-ink-4">
           Form not working? Copy our support email:
         </p>
         <button
           type="button"
           onClick={() => void navigator.clipboard.writeText(SUPPORT_EMAIL)}
-          className="mt-1 block break-all text-left text-sm font-medium text-pulse-700 hover:underline"
+          className="mt-1 block break-all text-left text-sm font-medium text-pulse-700 transition-colors hover:text-pulse-500 hover:underline"
         >
           {SUPPORT_EMAIL}
         </button>
@@ -301,28 +304,11 @@ export function ContactSupportWidget({ embedded = false }: { embedded?: boolean 
     </div>
   );
 
-  const introCopy = (
-    <p className="text-sm leading-relaxed text-text-secondary">
-      We usually reply within about 2 hours — allow{" "}
-      <span className="font-medium text-text-primary">24–48 hours</span> during busy periods.
-    </p>
-  );
-
   if (embedded) {
     return (
-      <div className="support-widget-card min-w-0 overflow-hidden rounded-xl p-5">
-        <div className="mb-3 flex min-w-0 items-center gap-3">
-          <div className="shrink-0 rounded-xl border border-[var(--np-line-pulse)] bg-pulse-100 p-2.5">
-            <Headphones className="h-5 w-5 text-pulse-700" />
-          </div>
-          <h3 className="text-sm font-medium uppercase tracking-widest text-text-heading">Contact Support</h3>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          {introCopy}
-          {formFields}
-          {mailtoFallback}
-        </div>
+      <div className="support-float-form flex min-w-0 flex-col gap-4">
+        {formFields}
+        {mailtoFallback}
       </div>
     );
   }
@@ -337,7 +323,10 @@ export function ContactSupportWidget({ embedded = false }: { embedded?: boolean 
       </div>
 
       <div className="mt-3 flex flex-col gap-4">
-        {introCopy}
+        <p className="text-sm leading-relaxed text-text-secondary">
+          We usually reply within about 2 hours — allow{" "}
+          <span className="font-medium text-text-primary">24–48 hours</span> during busy periods.
+        </p>
         {formFields}
         <div className="border-t border-border-dim/50 pt-4">{mailtoFallback}</div>
       </div>

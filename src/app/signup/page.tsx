@@ -4,57 +4,81 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { Mail, Lock, UserPlus, ShieldAlert, User, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, CheckCircle2, Mail, Lock, User, UserPlus, Sparkles } from "lucide-react";
 import { ONBOARDING_META_KEY } from "@/config/onboarding-content";
 import { AuthLayout } from "@/components/layout/AuthLayout";
+import { AuthField } from "@/components/auth/auth-field";
+import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
+import { AuthAlternateLink } from "@/components/auth/auth-alternate-link";
+import { AuthTrustBadge } from "@/components/auth/auth-trust-badge";
+import { PasswordStrengthMeter } from "@/components/auth/password-strength";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { brand } from "@/config/brand.config";
 import { webhooks } from "@/config/webhooks.config";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
+import { friendlyAuthError } from "@/lib/auth-errors";
+
+const SIGNUP_BENEFITS = [
+  "Choose high-converting affiliate offers",
+  "Publish ready-made money pages",
+  "Generate Pinterest traffic on autopilot",
+] as const;
 
 export default function SignupPage() {
-  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    const trimmedEmail = email.trim();
+    const trimmedName = name.trim();
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: trimmedEmail,
         password,
         options: {
           emailRedirectTo: buildAuthCallbackUrl("/onboarding"),
           data: {
-            full_name: name,
+            full_name: trimmedName,
             [ONBOARDING_META_KEY]: false,
           },
         },
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        setError(friendlyAuthError(signUpError.message));
         setLoading(false);
-      } else {
-        if (webhooks.signup) {
-          const firstName = name.trim().split(/\s+/)[0];
-          fetch(webhooks.signup, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ firstName, email }),
-          }).catch(() => {});
-        }
+        return;
+      }
 
-        if (data.session) {
-          window.location.href = "/onboarding";
-        } else {
-          window.location.href = "/login";
-        }
+      if (webhooks.signup) {
+        const firstName = trimmedName.split(/\s+/)[0];
+        fetch(webhooks.signup, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName, email: trimmedEmail }),
+        }).catch(() => {});
+      }
+
+      if (data.session) {
+        window.location.href = "/onboarding";
+      } else {
+        setPendingEmail(trimmedEmail);
+        setLoading(false);
       }
     } catch {
       setError("An unexpected system error occurred.");
@@ -62,94 +86,100 @@ export default function SignupPage() {
     }
   };
 
+  if (pendingEmail) {
+    return (
+      <AuthLayout subtitle="You're almost in" footer={<AuthTrustBadge />}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center gap-5 py-2 text-center"
+        >
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-[var(--np-success)]/25 bg-[var(--np-success)]/10">
+            <CheckCircle2 size={32} className="text-[var(--np-success)]" aria-hidden />
+          </div>
+          <div className="flex flex-col gap-2 max-w-xs">
+            <p className="text-[15px] text-ink-2">
+              We sent a confirmation link to{" "}
+              <strong className="text-ink break-all">{pendingEmail}</strong>.
+            </p>
+            <p className="text-[13px] text-ink-4">Open the email and click the link to activate your account.</p>
+          </div>
+          <Link href="/login?check_email=1" className="btn-primary w-full flex items-center justify-center gap-2">
+            Continue to login
+            <ArrowRight size={16} aria-hidden />
+          </Link>
+        </motion.div>
+      </AuthLayout>
+    );
+  }
+
   return (
-    <AuthLayout subtitle={brand.signupTagline}>
+    <AuthLayout subtitle={brand.signupTagline} footer={<AuthTrustBadge />} className="max-w-lg">
+      <ul className="auth-benefits-list" aria-label="What you get">
+        {SIGNUP_BENEFITS.map((benefit) => (
+          <li key={benefit} className="auth-benefit-item">
+            <Sparkles size={14} className="text-pulse-500 shrink-0 mt-0.5" aria-hidden />
+            <span>{benefit}</span>
+          </li>
+        ))}
+      </ul>
+
       <form onSubmit={handleSignup} className="flex flex-col gap-5">
         {error && (
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-[var(--np-danger)]/10 border border-[var(--np-danger)]/20 p-4 rounded-sm flex items-center gap-3 text-[#A32D2D] text-[15px]"
-          >
-            <ShieldAlert size={18} />
-            <span>{error}</span>
+          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+            <ErrorBanner message={error} />
           </motion.div>
         )}
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="signup-name" className="auth-field-label">Full Name</label>
-          <div className="relative group">
-            <User size={18} className="auth-field-icon absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
-              id="signup-name"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Full Name"
-              className="input-base w-full pl-12"
-            />
-          </div>
-        </div>
+        <AuthField
+          id="signup-name"
+          label="Full name"
+          icon={User}
+          type="text"
+          required
+          autoComplete="name"
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Jane Smith"
+          disabled={loading}
+        />
+
+        <AuthField
+          id="signup-email"
+          label="Email"
+          icon={Mail}
+          type="email"
+          required
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          disabled={loading}
+        />
 
         <div className="flex flex-col gap-2">
-          <label htmlFor="signup-email" className="auth-field-label">Email</label>
-          <div className="relative group">
-            <Mail className="auth-field-icon absolute left-4 top-1/2 -translate-y-1/2" size={18} />
-            <input
-              id="signup-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="input-base w-full pl-12"
-            />
-          </div>
+          <AuthField
+            id="signup-password"
+            label="Password"
+            icon={Lock}
+            type="password"
+            required
+            autoComplete="new-password"
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••••••"
+            showPasswordToggle
+            disabled={loading}
+          />
+          <PasswordStrengthMeter password={password} />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="signup-password" className="auth-field-label">Password</label>
-          <div className="relative group">
-            <Lock className="auth-field-icon absolute left-4 top-1/2 -translate-y-1/2" size={18} />
-            <input
-              id="signup-password"
-              type={showPassword ? "text" : "password"}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              className="input-base w-full pl-12 pr-12"
-            />
-            <button
-              type="button"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              onClick={() => setShowPassword(!showPassword)}
-              className="auth-field-icon absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer hover:text-pulse-700"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-        </div>
-
-        <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
-          <span className="flex items-center justify-center gap-2">
-            {loading ? "Creating account..." : (
-              <>
-                Sign Up
-                <UserPlus size={18} />
-              </>
-            )}
-          </span>
-        </button>
+        <AuthSubmitButton loading={loading} loadingLabel="Creating account…" label="Sign Up" icon={UserPlus} />
       </form>
 
-      <div className="flex flex-col items-center gap-2 auth-divider pt-5">
-        <p className="text-ink-3 text-[13px]">Already have an account?</p>
-        <Link href="/login" className="auth-link brand-font text-[15px]">
-          Log In
-        </Link>
-      </div>
+      <AuthAlternateLink prompt="Already have an account?" href="/login" linkLabel="Log in" />
     </AuthLayout>
   );
 }

@@ -4,14 +4,12 @@ import { assertPublicHttpUrl } from "@/lib/safe-url";
 import { normalizeAffiliateUrl } from "@/features/blog-builder/lib/affiliate-url";
 import type { ArmedLink } from "@/features/blog-builder/types";
 import { getServiceRoleClient } from "@/lib/api-auth";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase-env";
 
 export const dynamic = "force-dynamic";
 
 function getAnonClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  return createClient(getSupabaseUrl(), getSupabaseAnonKey());
 }
 
 function normalizeDest(raw: string): string {

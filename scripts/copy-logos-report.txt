@@ -1,6 +1,6 @@
-C:\Users\Admin\Desktop\BlackBox\public\logo.png 79502 bytes
-C:\Users\Admin\Desktop\BlackBox\public\logo-icon.png 113493 bytes
-C:\Users\Admin\Desktop\BlackBox\brand-assets\logo.png 79502 bytes
-C:\Users\Admin\Desktop\BlackBox\brand-assets\logo-icon.png 113493 bytes
-C:\Users\Admin\Desktop\BlackBox\public\favicon.png 113493 bytes
-C:\Users\Admin\Desktop\BlackBox\public\apple-touch-icon.png 113493 bytes
+C:\Users\Admin\Desktop\nullping\public\logo.png 79502 bytes
+C:\Users\Admin\Desktop\nullping\public\logo-icon.png 113493 bytes
+C:\Users\Admin\Desktop\nullping\brand-assets\logo.png 79502 bytes
+C:\Users\Admin\Desktop\nullping\brand-assets\logo-icon.png 113493 bytes
+C:\Users\Admin\Desktop\nullping\public\favicon.png 113493 bytes
+C:\Users\Admin\Desktop\nullping\public\apple-touch-icon.png 113493 bytes

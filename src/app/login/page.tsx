@@ -1,29 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, LogIn, ShieldAlert, Eye, EyeOff } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { AuthLayout } from "@/components/layout/AuthLayout";
+import { AuthField } from "@/components/auth/auth-field";
+import { AuthSubmitButton } from "@/components/auth/auth-submit-button";
+import { AuthAlternateLink } from "@/components/auth/auth-alternate-link";
+import { AuthTrustBadge } from "@/components/auth/auth-trust-badge";
+import { ErrorBanner } from "@/components/ui/error-banner";
 import { brand } from "@/config/brand.config";
 import { socialProof } from "@/config/social-proof.config";
+import { friendlyAuthError } from "@/lib/auth-errors";
+import { Mail, Lock } from "lucide-react";
 
-export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const checkEmail = searchParams.get("check_email") === "1";
 
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        router.push("/dashboard");
-      }
+      if (data.session) router.replace("/dashboard");
     };
     checkSession();
   }, [router]);
@@ -35,12 +41,12 @@ export default function LoginPage() {
 
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
       if (signInError) {
-        setError(signInError.message);
+        setError(friendlyAuthError(signInError.message));
         setLoading(false);
       } else if (data.user) {
         window.location.href = "/dashboard";
@@ -54,93 +60,82 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout subtitle={brand.authTagline}>
+    <AuthLayout
+      subtitle={brand.authTagline}
+      footer={
+        socialProof.enabled && socialProof.loginPage.activeMembers > 0 ? (
+          <p className="text-center text-[13px] text-ink-5">
+            <span className="text-[var(--np-success)]">{socialProof.loginPage.activeMembers}</span> members active now
+          </p>
+        ) : (
+          <AuthTrustBadge />
+        )
+      }
+    >
+      {checkEmail && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-sm border border-[var(--np-success)]/25 bg-[var(--np-success)]/10 px-4 py-3 text-[14px] text-ink-2 text-center"
+          role="status"
+        >
+          Account created — check your email to confirm, then log in below.
+        </motion.div>
+      )}
+
       <form onSubmit={handleLogin} className="flex flex-col gap-5">
         {error && (
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-[var(--np-danger)]/10 border border-[var(--np-danger)]/20 p-4 rounded-sm flex items-center gap-3 text-[#A32D2D] text-[15px]"
-          >
-            <ShieldAlert size={18} />
-            <span>{error}</span>
+          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+            <ErrorBanner message={error} />
           </motion.div>
         )}
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="login-email" className="auth-field-label">
-            Email
-          </label>
-          <div className="relative group">
-            <Mail className="auth-field-icon absolute left-4 top-1/2 -translate-y-1/2" size={18} />
-            <input
-              id="login-email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="input-base w-full pl-12"
-            />
-          </div>
-        </div>
+        <AuthField
+          id="login-email"
+          label="Email"
+          icon={Mail}
+          type="email"
+          required
+          autoComplete="email"
+          autoFocus
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          disabled={loading}
+        />
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="login-password" className="auth-field-label">
-            Password
-          </label>
-          <div className="relative group">
-            <Lock className="auth-field-icon absolute left-4 top-1/2 -translate-y-1/2" size={18} />
-            <input
-              id="login-password"
-              type={showPassword ? "text" : "password"}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
-              className="input-base w-full pl-12 pr-12"
-            />
-            <button
-              type="button"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              onClick={() => setShowPassword(!showPassword)}
-              className="auth-field-icon absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer hover:text-pulse-700"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-        </div>
+        <AuthField
+          id="login-password"
+          label="Password"
+          icon={Lock}
+          type="password"
+          required
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••••••"
+          showPasswordToggle
+          disabled={loading}
+        />
 
         <div className="flex justify-end -mt-1">
           <Link href="/forgot-password" className="auth-link">
-            Forgot Password?
+            Forgot password?
           </Link>
         </div>
 
-        <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
-          <span className="flex items-center justify-center gap-2">
-            {loading ? "Authorizing..." : (
-              <>
-                Log In
-                <LogIn size={18} />
-              </>
-            )}
-          </span>
-        </button>
+        <AuthSubmitButton loading={loading} loadingLabel="Signing in…" label="Log In" icon={LogIn} />
       </form>
 
-      <div className="flex flex-col items-center gap-2 auth-divider pt-5">
-        <p className="text-ink-3 text-[13px]">New here?</p>
-        <Link href="/signup" className="auth-link brand-font text-[15px]">
-          Sign Up
-        </Link>
-      </div>
-
-      {socialProof.enabled && socialProof.loginPage.activeMembers > 0 && (
-        <p className="text-center text-[13px] text-ink-5">
-          <span className="text-[var(--np-success)]">{socialProof.loginPage.activeMembers}</span> members active now
-        </p>
-      )}
+      <AuthAlternateLink prompt="New here?" href="/signup" linkLabel="Create an account" />
     </AuthLayout>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

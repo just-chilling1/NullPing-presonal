@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { resolveOnboardingGate } from '@/lib/onboarding-gate'
 import { isDevAuthBypassEnabled } from '@/lib/dev-bypass'
 import { ONBOARDING_COMPLETE_COOKIE, setOnboardingCompleteCookie } from '@/lib/onboarding-cookie'
+import { getSupabaseAnonKey, getSupabaseUrl } from '@/lib/supabase-env'
 
 /** Public route prefixes that bypass auth (extend per product — e.g. hosted sites, sales pages). */
 const PUBLIC_ROUTE_PREFIXES = [
@@ -31,7 +32,9 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup') || pathname.startsWith('/forgot-password') || pathname.startsWith('/reset-password') || pathname.startsWith('/auth/callback')
+    const isResetPasswordRoute = pathname.startsWith('/reset-password')
+    const isAuthCallbackRoute = pathname.startsWith('/auth/callback')
+    const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup') || pathname.startsWith('/forgot-password') || isResetPasswordRoute || isAuthCallbackRoute
     const isStaticAsset = /\.(?:png|jpe?g|gif|svg|webp|ico|woff2?|ttf|otf|mp4|txt|xml)$/i.test(pathname)
     const isPublicHostedRoute = PUBLIC_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
     const isPublicEmbedRoute = pathname === '/embed' || pathname.startsWith('/embed/')
@@ -49,15 +52,15 @@ export async function middleware(request: NextRequest) {
     const isOnboardingRoute = pathname === '/onboarding' || pathname.startsWith('/onboarding/')
 
     if (isDevAuthBypassEnabled()) {
-        if (isAuthRoute && !pathname.startsWith('/auth/callback')) {
+        if (isAuthRoute && !isAuthCallbackRoute && !isResetPasswordRoute) {
             return NextResponse.redirect(new URL('/dashboard', request.url))
         }
         return response
     }
 
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        getSupabaseUrl(),
+        getSupabaseAnonKey(),
         {
             cookies: {
                 get(name: string) {
@@ -90,11 +93,15 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    if (userId && isAuthRoute) {
+    if (userId && isAuthRoute && !isResetPasswordRoute && !isAuthCallbackRoute) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
     if (userId && !isPublicRoute) {
+        if (isResetPasswordRoute) {
+            return response
+        }
+
         if (
             !isOnboardingRoute &&
             request.cookies.get(ONBOARDING_COMPLETE_COOKIE)?.value === "1"

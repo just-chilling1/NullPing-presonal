@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { getServerAppUrl } from "@/lib/app-url";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase-env";
 
 function safeNextPath(next: string | null, fallback: string): string {
     if (!next || !next.startsWith("/") || next.startsWith("//")) return fallback;
@@ -37,8 +38,8 @@ export async function GET(request: NextRequest) {
         const response = NextResponse.redirect(redirectTarget);
 
         const supabase = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            getSupabaseUrl(),
+            getSupabaseAnonKey(),
             {
                 cookies: {
                     get(name: string) {
