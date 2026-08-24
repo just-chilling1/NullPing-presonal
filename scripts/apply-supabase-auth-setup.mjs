@@ -41,6 +41,8 @@ function getRequiredRedirects() {
   const redirects = [...LOCAL_REDIRECTS];
   if (APP_URL) {
     redirects.push(`${APP_URL}/**`);
+    redirects.push(`${APP_URL}/auth/callback`);
+    redirects.push(`${APP_URL}/auth/callback?next=/reset-password`);
   }
   return redirects;
 }
@@ -100,12 +102,18 @@ async function main() {
 
   const mergedAllowList = mergeAllowList(before.uri_allow_list);
   const allowListChanged = mergedAllowList !== (before.uri_allow_list ?? "");
+  const siteUrlChanged = Boolean(APP_URL && before.site_url !== APP_URL);
   const recoveryChanged = (before.mailer_templates_recovery_content ?? "").trim() !== RECOVERY_TEMPLATE.trim();
   const confirmNeedsUpdate =
     before.mailer_autoconfirm === false &&
     needsConfirmationTemplateUpdate(before.mailer_templates_confirmation_content);
 
   const patch = {};
+  if (siteUrlChanged) {
+    patch.site_url = APP_URL;
+    console.log(`Updating site_url to ${APP_URL}`);
+  }
+
   if (allowListChanged) {
     patch.uri_allow_list = mergedAllowList;
     console.log("Updating uri_allow_list:");

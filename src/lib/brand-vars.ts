@@ -30,7 +30,11 @@ export function getBrandCssVars(): Record<string, string> {
 
 export function getAppUrl(): string {
   if (typeof window !== "undefined") {
-    return process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    // Prefer the live browser origin so password-reset emails match the site the user is on.
+    return window.location.origin;
   }
-  return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+  return "http://localhost:3000";
 }

@@ -25,6 +25,26 @@ export async function middleware(request: NextRequest) {
 
     const { pathname } = request.nextUrl
 
+    // Supabase may redirect to Site URL root (?code=...) instead of /auth/callback.
+    if (pathname === "/") {
+        const code = request.nextUrl.searchParams.get("code")
+        const tokenHash = request.nextUrl.searchParams.get("token_hash")
+        const type = request.nextUrl.searchParams.get("type")
+        if (code || (tokenHash && type)) {
+            const callbackUrl = new URL("/auth/callback", request.url)
+            request.nextUrl.searchParams.forEach((value, key) => {
+                callbackUrl.searchParams.set(key, value)
+            })
+            if (!callbackUrl.searchParams.has("next")) {
+                callbackUrl.searchParams.set(
+                    "next",
+                    type === "recovery" ? "/reset-password" : "/dashboard",
+                )
+            }
+            return NextResponse.redirect(callbackUrl)
+        }
+    }
+
     if (
       process.env.NODE_ENV !== "development" &&
       (pathname === "/dev" || pathname.startsWith("/dev/"))
