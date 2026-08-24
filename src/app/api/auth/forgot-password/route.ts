@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceRoleClient } from "@/lib/api-auth";
 import { getServerAppUrl } from "@/lib/app-url";
-import { sendPasswordResetEmail } from "@/lib/send-reset-email";
+import {
+  sendPasswordResetEmail,
+  sendSupabaseRecoveryEmail,
+} from "@/lib/send-reset-email";
 
 export const runtime = "nodejs";
 
@@ -42,6 +46,36 @@ function hashedTokenFromLink(actionLink: string | undefined): string | null {
   }
 }
 
+async function sendViaResend(
+  admin: SupabaseClient,
+  email: string,
+  origin: string,
+  redirectTo: string
+): Promise<boolean> {
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+    options: { redirectTo },
+  });
+
+  if (error) {
+    if (/user not found|unable to find/i.test(error.message)) return true;
+    console.error("[auth] generateLink failed:", error.message);
+    return false;
+  }
+
+  const hashedToken =
+    data.properties?.hashed_token || hashedTokenFromLink(data.properties?.action_link);
+
+  if (!hashedToken) {
+    console.error("[auth] Recovery link missing hashed_token.");
+    return false;
+  }
+
+  const resetUrl = `${origin}/auth/callback?token_hash=${encodeURIComponent(hashedToken)}&type=recovery&next=${encodeURIComponent("/reset-password")}`;
+  return sendPasswordResetEmail({ to: email, resetUrl });
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
@@ -51,59 +85,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
     }
 
-    const admin = getServiceRoleClient();
-    if (!admin) {
-      console.error("[auth] Missing SUPABASE_SERVICE_ROLE_KEY — cannot generate reset link.");
-      return NextResponse.json(
-        { error: "Password reset is temporarily unavailable. Please try again shortly." },
-        { status: 503 }
-      );
-    }
-
     const origin = resetEmailOrigin(request);
-    const { data, error } = await admin.auth.admin.generateLink({
-      type: "recovery",
-      email,
-      options: {
-        redirectTo: `${origin}/auth/callback?next=/reset-password`,
-      },
-    });
+    const redirectTo = `${origin}/auth/callback?next=/reset-password`;
+    const admin = getServiceRoleClient();
 
-    if (error) {
-      // Do not reveal whether the account exists.
-      if (/user not found|unable to find/i.test(error.message)) {
-        return NextResponse.json({ success: true });
-      }
-      console.error("[auth] generateLink failed:", error.message);
-      return NextResponse.json(
-        { error: "Could not start password reset. Please try again." },
-        { status: 500 }
-      );
+    const [viaSupabase, viaResend] = await Promise.all([
+      sendSupabaseRecoveryEmail(email, redirectTo),
+      admin ? sendViaResend(admin, email, origin, redirectTo) : Promise.resolve(false),
+    ]);
+
+    if (viaSupabase || viaResend) {
+      return NextResponse.json({ success: true });
     }
 
-    const hashedToken =
-      data.properties?.hashed_token || hashedTokenFromLink(data.properties?.action_link);
-
-    if (!hashedToken) {
-      console.error("[auth] Recovery link missing hashed_token.");
-      return NextResponse.json(
-        { error: "Could not start password reset. Please try again." },
-        { status: 500 }
-      );
-    }
-
-    const resetUrl = `${origin}/auth/callback?token_hash=${encodeURIComponent(hashedToken)}&type=recovery&next=${encodeURIComponent("/reset-password")}`;
-    const sent = await sendPasswordResetEmail({ to: email, resetUrl });
-
-    if (!sent) {
-      console.error("[auth] Reset email was not sent. Check RESEND_API_KEY.");
-      return NextResponse.json(
-        { error: "Could not send the reset email. Please try again shortly." },
-        { status: 503 }
-      );
-    }
-
-    return NextResponse.json({ success: true });
+    console.error("[auth] Reset email was not sent via Supabase or Resend.");
+    return NextResponse.json(
+      { error: "Could not send the reset email. Please try again shortly." },
+      { status: 503 }
+    );
   } catch (error) {
     console.error("[auth] Forgot password error:", error);
     return NextResponse.json(

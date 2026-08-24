@@ -1,5 +1,29 @@
+import { createClient } from "@supabase/supabase-js";
 import { brand } from "@/config/brand.config";
 import { RESEND_SENDER_EMAIL } from "@/lib/support";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase-env";
+
+/** Supabase Auth mailer — primary path; uses dashboard SMTP / built-in delivery. */
+export async function sendSupabaseRecoveryEmail(
+  email: string,
+  redirectTo: string
+): Promise<boolean> {
+  const url = getSupabaseUrl();
+  const anonKey = getSupabaseAnonKey();
+  if (!url || !anonKey) return false;
+
+  const supabase = createClient(url, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) {
+    console.error("[auth] Supabase recovery email failed:", error.message);
+    return false;
+  }
+
+  return true;
+}
 
 function escapeHtml(text: string): string {
   return text
