@@ -98,6 +98,7 @@ export const enabledFeatures: FeatureId[] = [
   "money-page",
   "traffic-pins",
   "results",
+  "money-links-vault",
   "premium-accelerator",
   "premium-recurring",
   "premium-social",

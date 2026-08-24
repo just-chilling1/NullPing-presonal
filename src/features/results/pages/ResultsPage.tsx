@@ -69,7 +69,8 @@ function formatRelativeTime(iso: string): string {
 
 function activityIcon(text: string) {
   if (/clicked/i.test(text)) return MousePointerClick;
-  if (/pinterest/i.test(text)) return Pin;
+  if (/pinterest|pin created|pins generated/i.test(text)) return Pin;
+  if (/published|activated/i.test(text)) return Rocket;
   return Users;
 }
 
@@ -314,7 +315,7 @@ export default function ResultsPage() {
                 <Activity size={22} strokeWidth={1.5} />
               </span>
               <p className="text-sm leading-relaxed text-ink-3">
-                No tracked events yet. Publish a page and share a pin to see activity here.
+                No activity yet. Activate a product, publish a money page, or generate pins to see updates here.
               </p>
               <Link href="/activate" className="btn-secondary mt-2 inline-flex items-center gap-1.5">
                 Get started

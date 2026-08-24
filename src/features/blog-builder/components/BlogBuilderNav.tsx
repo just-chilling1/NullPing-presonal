@@ -38,7 +38,7 @@ export function BlogBuilderNav({
   collapsed = false,
   sections = ["workflow", "generate", "libraries"],
 }: BlogBuilderNavProps) {
-  if (!isFeatureEnabled("blog-builder")) return null;
+  if (!isFeatureEnabled("blog-builder") && !isFeatureEnabled("money-links-vault")) return null;
 
   const steps = getBlogBuilderWorkflowSteps();
   const generateNav = getBlogBuilderGenerateNav();

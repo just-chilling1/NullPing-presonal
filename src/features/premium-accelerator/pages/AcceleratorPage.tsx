@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link as LinkIcon, Filter, Loader2, Rocket } from "lucide-react";
+import { Filter, Loader2, Rocket } from "lucide-react";
 import { clsx } from "clsx";
 import { brand } from "@/config/brand.config";
 import { PageSkeleton } from "@/components/ui/page-skeleton";
@@ -38,6 +38,8 @@ export default function AcceleratorPage() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [affiliateLink, setAffiliateLink] = useState("");
   const [cloningId, setCloningId] = useState<number | null>(null);
+  const [regeneratingId, setRegeneratingId] = useState<number | null>(null);
+  const [regeneratedId, setRegeneratedId] = useState<number | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCatalogId, setPreviewCatalogId] = useState<number | null>(null);
@@ -134,6 +136,26 @@ export default function AcceleratorPage() {
 
   const hasAffiliateLink = affiliateLink.trim().length > 0;
   const hasMore = visibleCount < filtered.length;
+
+  const handleRegeneratePins = useCallback(async (catalogId: number, assetId: string) => {
+    setRegeneratingId(catalogId);
+    setRegeneratedId(null);
+    setError("");
+    try {
+      const res = await fetch("/api/pins/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId: assetId, regenerate: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to regenerate pins");
+      setRegeneratedId(catalogId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to regenerate pins");
+    } finally {
+      setRegeneratingId(null);
+    }
+  }, []);
 
   const handleClone = useCallback(
     async (catalogId: number) => {
@@ -284,17 +306,12 @@ export default function AcceleratorPage() {
           ) : undefined
         }
       >
-        <div className="block">
-          <span className="mb-2 flex items-center gap-2 text-sm font-medium text-text-primary">
-            <LinkIcon size={14} className="text-pulse-700" />
-            Your affiliate link
-          </span>
-          <AffiliateLinkField
-            value={affiliateLink}
-            onChange={setAffiliateLink}
-            inputId="accelerator-affiliate-link"
-          />
-        </div>
+        <AffiliateLinkField
+          value={affiliateLink}
+          onChange={setAffiliateLink}
+          inputId="accelerator-affiliate-link"
+          manualLabel="Your affiliate link"
+        />
 
         <div className="flex flex-wrap items-center gap-2">
           <Filter size={14} className="text-text-muted" />
@@ -340,11 +357,14 @@ export default function AcceleratorPage() {
             }
             cloningId={cloningId}
             viewingId={viewingId}
+            regeneratingId={regeneratingId}
+            regeneratedId={regeneratedId}
             clonedSiteUrl={cloneResult?.catalogId === t.id ? cloneResult.siteUrl : null}
             clonedAssetId={cloneResult?.catalogId === t.id ? cloneResult.assetId : null}
             hasAffiliateLink={hasAffiliateLink}
             onView={handleView}
             onClone={handleClone}
+            onRegenerate={(catalogId, assetId) => void handleRegeneratePins(catalogId, assetId)}
           />
         ))}
       </div>

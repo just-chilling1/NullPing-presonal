@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { featureApiGuard } from "@/lib/feature-api-guard";
 import { getApiUser } from "@/lib/api-auth";
 import { loadAccountActivity } from "@/lib/account-activity";
+import { buildResultsActivityFeed } from "@/lib/results-activity";
 import { sitePublicPath } from "@/lib/app-url";
 import { countLiveSites, loadUserSites } from "@/lib/user-sites";
 
@@ -54,7 +55,7 @@ export async function GET() {
 
   if (siteIds.length === 0) return NextResponse.json(empty);
 
-  const [{ data: pins, error: pinsError }, { data: visits, error: visitsError }, { data: clicks, error: clicksError }] =
+  const [{ data: pins, error: pinsError }, { data: visits, error: visitsError }, { data: clicks, error: clicksError }, { data: pinEvents, error: pinEventsError }] =
     await Promise.all([
       supabase.from("site_pins").select("id, site_id").eq("user_id", user.id).in("site_id", siteIds),
       supabase
@@ -69,10 +70,17 @@ export async function GET() {
         .in("site_id", siteIds)
         .order("created_at", { ascending: false })
         .limit(40),
+      supabase
+        .from("site_pins")
+        .select("site_id, batch_id, headline, title, created_at")
+        .eq("user_id", user.id)
+        .in("site_id", siteIds)
+        .order("created_at", { ascending: false })
+        .limit(120),
     ]);
 
   const metricsWarning =
-    [pinsError, visitsError, clicksError]
+    [pinsError, visitsError, clicksError, pinEventsError]
       .map((err) => err?.message)
       .filter(Boolean)
       .join(" · ") || null;
@@ -107,21 +115,12 @@ export async function GET() {
     };
   });
 
-  const activity = [
-    ...(visits ?? []).map((row) => ({
-      at: row.created_at,
-      text:
-        row.source === "pinterest"
-          ? `Pinterest visitor reached ${siteList.find((s) => s.id === row.site_id)?.product_name || siteList.find((s) => s.id === row.site_id)?.title || "your asset"}.`
-          : `Visitor reached ${siteList.find((s) => s.id === row.site_id)?.product_name || siteList.find((s) => s.id === row.site_id)?.title || "your asset"}.`,
-    })),
-    ...(clicks ?? []).map((row) => ({
-      at: row.created_at,
-      text: `Affiliate link clicked on ${siteList.find((s) => s.id === row.site_id)?.product_name || siteList.find((s) => s.id === row.site_id)?.title || "your asset"}.`,
-    })),
-  ]
-    .sort((a, b) => +new Date(b.at) - +new Date(a.at))
-    .slice(0, 20);
+  const activity = buildResultsActivityFeed({
+    sites: siteList,
+    visits,
+    clicks,
+    pins: pinEvents,
+  });
 
   return NextResponse.json({
     moneyPagesLive: countLiveSites(siteList),

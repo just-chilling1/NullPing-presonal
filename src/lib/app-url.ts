@@ -49,6 +49,9 @@ export function getServerAppUrl(request?: Request): string {
   }
 
   if (configured) return stripTrailingSlash(configured);
+  if (process.env.NODE_ENV === "production") {
+    return "https://nullpingmembersarea.com";
+  }
   return stripTrailingSlash(getAppUrl());
 }
 

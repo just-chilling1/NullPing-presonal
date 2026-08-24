@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  Check,
+  Copy,
   ExternalLink,
   Globe,
   Link2,
@@ -17,7 +19,6 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { LinkEditorOverlay } from "../components/LinkEditorOverlay";
 import { useBlogBuilder } from "../context/BlogBuilderContext";
 import type { ArmedLink, BlogSite } from "../types";
-import type { SiteVaultSummary } from "@/app/api/blog/site/route";
 import { normalizeAffiliateUrl } from "../lib/affiliate-url";
 import { cachedClientFetch } from "@/lib/client-fetch-cache";
 
@@ -33,22 +34,34 @@ interface LinkedOffer {
   status: BlogSite["status"];
 }
 
+type VaultSiteRow = Pick<BlogSite, "id" | "title" | "product_name" | "status" | "armed_links" | "product_url">;
+
 export default function LinkVaultPage() {
   const { sessionLoaded, armedLinks, saveLinksToVault } = useBlogBuilder();
-  const [sites, setSites] = useState<BlogSite[]>([]);
+  const [sites, setSites] = useState<VaultSiteRow[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<ArmedLink | null>(null);
   const [deletingLink, setDeletingLink] = useState<ArmedLink | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    void cachedClientFetch<{ summaries?: SiteVaultSummary[] }>("/api/blog/site?lite=1")
+    void cachedClientFetch<{ links?: ArmedLink[]; sites?: VaultSiteRow[] }>("/api/blog/link-vault")
       .then((data) => {
         if (cancelled) return;
-        const list = Array.isArray(data.summaries) ? data.summaries : [];
-        setSites(list.map((s) => s.site));
+        if (Array.isArray(data.sites) && data.sites.length > 0) {
+          setSites(data.sites);
+          return;
+        }
+        return cachedClientFetch<{ summaries?: { site: VaultSiteRow }[] }>("/api/blog/site?lite=1")
+          .then((fallback) => {
+            if (cancelled) return;
+            const list = Array.isArray(fallback.summaries) ? fallback.summaries : [];
+            setSites(list.map((row) => row.site));
+          })
+          .catch(() => {});
       })
       .catch(() => {});
     return () => {
@@ -56,22 +69,47 @@ export default function LinkVaultPage() {
     };
   }, []);
 
-  /** Map of normalized link URL -> offers whose sales page uses that link. */
+  /** Map of normalized link URL -> offers whose money page uses that link. */
   const linkedOffersByUrl = useMemo(() => {
     const map = new Map<string, LinkedOffer[]>();
+
     for (const site of sites) {
-      for (const armed of site.armed_links ?? []) {
+      const linkRows = [...(site.armed_links ?? [])];
+      if (site.product_url?.trim()) {
+        linkRows.push({
+          label: site.product_name || site.title,
+          url: site.product_url,
+          network: "other",
+        });
+      }
+
+      for (const armed of linkRows) {
         const key = normalizeAffiliateUrl(armed.url);
         if (!key) continue;
         const existing = map.get(key) ?? [];
-        if (!existing.some((o) => o.id === site.id)) {
-          existing.push({ id: site.id, title: site.title, status: site.status });
+        if (!existing.some((offer) => offer.id === site.id)) {
+          existing.push({
+            id: site.id,
+            title: site.product_name || site.title,
+            status: site.status,
+          });
         }
         map.set(key, existing);
       }
     }
+
     return map;
   }, [sites]);
+
+  const copyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(url);
+      window.setTimeout(() => setCopiedUrl((current) => (current === url ? null : current)), 1800);
+    } catch {
+      setError("Could not copy the link. Try again.");
+    }
+  };
 
   const openCreate = () => {
     setEditingLink(null);
@@ -87,13 +125,11 @@ export default function LinkVaultPage() {
 
   const handleSave = async (link: ArmedLink) => {
     if (!editingLink) {
-      // New links go on top; drop any existing entry with the same URL.
       const rest = armedLinks.filter((l) => normalizeAffiliateUrl(l.url) !== link.url);
       await saveLinksToVault([link, ...rest]);
       return;
     }
 
-    // Replace the edited entry in place; drop duplicates of the new URL.
     const editedUrl = normalizeAffiliateUrl(editingLink.url);
     let replaced = false;
     const next: ArmedLink[] = [];
@@ -136,7 +172,7 @@ export default function LinkVaultPage() {
       <PageHeader
         eyebrow="Links library"
         title="Saved promotion links"
-        subtitle="Your affiliate and promo links in one place. Create, edit, and see which offers use each link."
+        subtitle="Store affiliate and promo URLs once, then reuse them when you activate assets or build offers."
         actions={
           <button type="button" onClick={openCreate} className="btn-primary text-sm">
             <Plus size={16} />
@@ -154,8 +190,8 @@ export default function LinkVaultPage() {
           </div>
           <h2 className="ds-h4 text-text-heading">No links saved yet</h2>
           <p className="empty-state-copy">
-            Save your first promotional link here — it becomes available everywhere you promote,
-            including the Sales Offer Generator.
+            Save your first promotional link here — it becomes available when you activate a product
+            or pick a link from the vault anywhere in the app.
           </p>
           <button type="button" onClick={openCreate} className="btn-primary mt-2">
             <Plus size={16} />
@@ -167,6 +203,8 @@ export default function LinkVaultPage() {
           {armedLinks.map((link, index) => {
             const networkLabel = NETWORK_LABELS[link.network];
             const linkedOffers = linkedOffersByUrl.get(normalizeAffiliateUrl(link.url)) ?? [];
+            const copied = copiedUrl === link.url;
+
             return (
               <div key={`${link.url}-${index}`} className="card-base space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -193,6 +231,14 @@ export default function LinkVaultPage() {
                   </div>
 
                   <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => void copyLink(link.url)}
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-pulse-100 hover:text-pulse-700"
+                    >
+                      {copied ? <Check size={14} /> : <Copy size={14} />}
+                      {copied ? "Copied" : "Copy"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => openEdit(link)}
@@ -246,7 +292,7 @@ export default function LinkVaultPage() {
                     </>
                   ) : (
                     <span className="text-xs text-text-muted">
-                      Not used in any offer yet — pick it in the Sales Offer Generator.
+                      Not used in any asset yet — pick it when you activate a product.
                     </span>
                   )}
                 </div>
@@ -266,7 +312,7 @@ export default function LinkVaultPage() {
       <ConfirmDialog
         open={deletingLink !== null}
         title="Delete this link?"
-        description={`"${deletingLink?.label || "This link"}" will be removed from your Links Library. Offers already using it keep working.`}
+        description={`"${deletingLink?.label || "This link"}" will be removed from your Links Library. Assets already using it keep working.`}
         confirmLabel="Delete Link"
         destructive
         loading={deleteLoading}

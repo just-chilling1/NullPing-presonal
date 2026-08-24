@@ -16,6 +16,7 @@ import {
   getVisibleWorkflowSteps,
   getCoreResourceNav,
   getVisibleResourceNav,
+  getVisibleLibrariesNav,
   isNavItemLocked,
 } from "@/lib/features";
 import { PREMIUM_FEATURES } from "@/lib/premium-features";
@@ -27,7 +28,7 @@ import { isFeatureEnabled } from "@/config/features.config";
 import { useWorkflowNav } from "@/context/WorkflowNavContext";
 import { BlogBuilderNav } from "@/features/blog-builder/components/BlogBuilderNav";
 import { storageKeys } from "@/lib/storage-keys";
-import { homeNav, supportNav, homeSectionLabel, generateSectionLabel, trainingSectionLabel, type NavItem } from "@/config/navigation.config";
+import { homeNav, supportNav, homeSectionLabel, generateSectionLabel, trainingSectionLabel, blogBuilderLibrariesSectionLabel, type NavItem } from "@/config/navigation.config";
 import { getExclusiveOffers } from "@/config/offers.config";
 import { supabase } from "@/lib/supabase";
 import { getCachedClientUser } from "@/lib/auth-client-cache";
@@ -130,6 +131,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: SidebarContentPr
   };
 
   const trainingItems = [...coreResourceNav, ...resourceNav];
+  const librariesItems = getVisibleLibrariesNav();
   const showGenerateFromBlog =
     blogEnabled &&
     !workflowSteps.some((step) => step.path === "/activate" || step.path === "/traffic" || step.path === "/results");
@@ -187,7 +189,12 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: SidebarContentPr
               />
             ) : null}
 
-            {blogEnabled ? (
+            {librariesItems.length > 0 ? (
+              <>
+                {renderSectionLabel(blogBuilderLibrariesSectionLabel)}
+                {librariesItems.map((step) => renderNavLink(step))}
+              </>
+            ) : blogEnabled ? (
               <BlogBuilderNav
                 pathname={pathname}
                 onNavClick={handleNavClick}

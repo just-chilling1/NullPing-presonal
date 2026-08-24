@@ -17,6 +17,8 @@ interface AffiliateLinkFieldProps {
   onChange: (url: string) => void;
   inputId?: string;
   placeholder?: string;
+  /** Visible label above the manual URL input */
+  manualLabel?: string;
   /**
    * `save-to-vault` (default): persist the URL to Links Library.
    * `apply`: validate and apply the URL for CTAs without saving to the vault.
@@ -35,6 +37,7 @@ export function AffiliateLinkField({
   onChange,
   inputId = "affiliate-link",
   placeholder = "https://...",
+  manualLabel,
   actionMode = "save-to-vault",
   onApply,
 }: AffiliateLinkFieldProps) {
@@ -187,30 +190,47 @@ export function AffiliateLinkField({
 
   return (
     <div className="space-y-3">
-      {loadingVault ? (
-        <p className="flex items-center gap-2 text-xs text-text-muted">
-          <Loader2 size={12} className="animate-spin" />
-          Loading saved links…
-        </p>
-      ) : vaultLinks.length > 0 ? (
-        <ContentReservePicker
-          links={vaultLinks}
-          selectedUrl={selectedVaultUrl}
-          onSelect={handleSelectFromVault}
-          roundedClassName="!rounded-3xl"
-        />
-      ) : (
-        <p className="text-xs text-text-muted">
-          No saved links yet. Paste a link below or{" "}
-          <Link href="/link-vault" className="auth-link">
-            open Links Library
-          </Link>
-          .
-        </p>
-      )}
+      <div>
+        {loadingVault ? (
+          <p className="flex items-center gap-2 text-xs text-text-muted">
+            <Loader2 size={12} className="animate-spin" />
+            Loading saved links…
+          </p>
+        ) : vaultLinks.length > 0 ? (
+          <ContentReservePicker
+            links={vaultLinks}
+            selectedUrl={selectedVaultUrl}
+            onSelect={handleSelectFromVault}
+            roundedClassName="!rounded-3xl"
+          />
+        ) : (
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <label className="wizard-form-label block">Select from Links Library</label>
+            </div>
+            <p className="rounded-xl border border-dashed border-border-dim px-3 py-4 text-center text-sm text-text-muted">
+              No saved links yet.{" "}
+              <Link href="/link-vault" className="auth-link">
+                Open Links Library
+              </Link>{" "}
+              to create one, or paste a link below.
+            </p>
+            <p className="wizard-divider-label">or enter manually</p>
+          </div>
+        )}
+      </div>
 
       <label className="block" htmlFor={inputId}>
-        <span className="sr-only">Affiliate link URL</span>
+        <span className={manualLabel ? "mb-2 flex items-center gap-2 text-sm font-medium text-text-primary" : "sr-only"}>
+          {manualLabel ? (
+            <>
+              <Link2 size={14} className="text-pulse-700" />
+              {manualLabel}
+            </>
+          ) : (
+            "Affiliate link URL"
+          )}
+        </span>
         <input
           id={inputId}
           type="url"

@@ -19,13 +19,18 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
 
   let tree = content;
 
-  if (isFeatureEnabled("blog-builder")) {
+  const linkVaultEnabled = isFeatureEnabled("money-links-vault");
+  const blogEnabled = isFeatureEnabled("blog-builder");
+
+  if (blogEnabled || linkVaultEnabled) {
     tree = needsBlogBuilderContext(pathname) ? (
       <BlogBuilderWorkflowProvider>{content}</BlogBuilderWorkflowProvider>
     ) : (
       content
     );
-    tree = <BlogWorkflowNavProvider>{tree}</BlogWorkflowNavProvider>;
+    if (blogEnabled) {
+      tree = <BlogWorkflowNavProvider>{tree}</BlogWorkflowNavProvider>;
+    }
   } else if (isFeatureEnabled("core-workflow")) {
     tree = <CoreWorkflowProvider>{content}</CoreWorkflowProvider>;
   }

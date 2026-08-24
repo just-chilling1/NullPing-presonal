@@ -71,8 +71,12 @@ export const blogBuilderGenerateNav: NavItem[] = [
   { path: "/results", label: "Results", icon: "Activity", feature: "results" },
 ];
 
-/** Saved assets */
-export const blogBuilderLibrariesNav: NavItem[] = [];
+export const blogBuilderLibrariesNav: NavItem[] = [
+  { path: "/link-vault", label: "Links Library", icon: "Link2", feature: "money-links-vault" },
+];
+
+/** Standalone libraries section (NullPing + blog-builder). */
+export const librariesNav: NavItem[] = blogBuilderLibrariesNav;
 
 /** @deprecated Use blogBuilderGenerateNav and blogBuilderLibrariesNav */
 export const blogBuilderCoreNav: NavItem[] = [

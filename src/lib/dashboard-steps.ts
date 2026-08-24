@@ -178,7 +178,7 @@ export function getDashboardStepStatuses(progress: number): DashboardStepStatus[
 
 export function getDashboardQuickActions(): QuickAction[] {
   if (isFeatureEnabled("asset-activator")) {
-    return [
+    const actions: QuickAction[] = [
       {
         href: "/activate",
         title: "Activate Asset",
@@ -187,6 +187,20 @@ export function getDashboardQuickActions(): QuickAction[] {
         buttonText: "Activate now",
         accent: "gold",
       },
+    ];
+
+    if (isFeatureEnabled("money-links-vault")) {
+      actions.push({
+        href: "/link-vault",
+        title: "Links Library",
+        description: "Save affiliate URLs once and reuse them across assets",
+        icon: Link2,
+        buttonText: "Open library",
+        accent: "pulse",
+      });
+    }
+
+    actions.push(
       {
         href: "/results",
         title: "Your Results",
@@ -202,8 +216,10 @@ export function getDashboardQuickActions(): QuickAction[] {
         icon: Brain,
         buttonText: "Watch training",
         accent: "pulse",
-      },
-    ];
+      }
+    );
+
+    return actions;
   }
 
   if (isFeatureEnabled("core-workflow")) {

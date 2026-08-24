@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { featureApiGuard } from "@/lib/feature-api-guard";
+import { linkVaultApiGuard } from "@/lib/feature-api-guard";
 import { getApiUser } from "@/lib/api-auth";
 import { NO_STORE_HEADERS, PRIVATE_READ_CACHE_HEADERS } from "@/lib/api-cache-headers";
 import type { ArmedLink } from "@/features/blog-builder/types";
@@ -7,7 +7,7 @@ import type { ArmedLink } from "@/features/blog-builder/types";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const guard = featureApiGuard("blog-builder");
+  const guard = linkVaultApiGuard();
   if (guard) return guard;
 
   const { supabase, user } = await getApiUser();
@@ -15,18 +15,25 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE_HEADERS });
   }
 
-  const { data } = await supabase
-    .from("link_vault")
-    .select("links")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const [{ data: vaultRow }, { data: sites }] = await Promise.all([
+    supabase.from("link_vault").select("links").eq("user_id", user.id).maybeSingle(),
+    supabase
+      .from("sites")
+      .select("id, title, product_name, status, armed_links, product_url")
+      .eq("user_id", user.id)
+      .eq("is_template", false)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  const links = (data?.links ?? []) as ArmedLink[];
-  return NextResponse.json({ links }, { headers: PRIVATE_READ_CACHE_HEADERS });
+  const links = (vaultRow?.links ?? []) as ArmedLink[];
+  return NextResponse.json(
+    { links, sites: sites ?? [] },
+    { headers: PRIVATE_READ_CACHE_HEADERS }
+  );
 }
 
 export async function PUT(request: Request) {
-  const guard = featureApiGuard("blog-builder");
+  const guard = linkVaultApiGuard();
   if (guard) return guard;
 
   const { supabase, user } = await getApiUser();

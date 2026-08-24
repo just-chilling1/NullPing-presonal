@@ -1442,6 +1442,20 @@ html[data-sidebar="collapsed"] {
     animation: premium-border-pulse 14s ease-in-out infinite;
   }
 
+  .premium-nav-section--collapsed {
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    animation: none;
+  }
+
+  .premium-nav-section--collapsed::before,
+  .premium-nav-section--collapsed::after {
+    content: none;
+  }
+
   @keyframes premium-shimmer-sweep {
     0% {
       background-position: 200% 0;

@@ -6,6 +6,7 @@ import {
   blogBuilderWorkflowSteps,
   blogBuilderGenerateNav,
   blogBuilderLibrariesNav,
+  librariesNav,
   coreResourceNav,
   resourceNav,
   premiumNav,
@@ -43,6 +44,10 @@ export function getBlogBuilderLibrariesNav(): NavItem[] {
   return filterNav(blogBuilderLibrariesNav);
 }
 
+export function getVisibleLibrariesNav(): NavItem[] {
+  return filterNav(librariesNav);
+}
+
 export function getCoreResourceNav(): NavItem[] {
   return filterNav(coreResourceNav);
 }
@@ -69,6 +74,7 @@ export function getBottomNavMoreLinks(): NavItem[] {
     ...workflowSteps,
     ...blogBuilderGenerateNav,
     ...blogBuilderLibrariesNav,
+    ...librariesNav,
     ...coreResourceNav,
     ...resourceNav,
     ...bottomNavMoreLinks,

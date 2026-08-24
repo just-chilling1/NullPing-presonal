@@ -24,8 +24,9 @@ function sectionClassName(
 ) {
   return clsx(
     "premium-nav-section",
-    highlighted && "premium-nav-section--highlighted",
-    mobile ? "p-2.5" : collapsed ? "mt-4 p-2" : "mt-6 p-3",
+    highlighted && !collapsed && "premium-nav-section--highlighted",
+    collapsed && !mobile && "premium-nav-section--collapsed",
+    mobile ? "p-2.5" : collapsed ? "mt-4 p-0" : "mt-6 p-3",
     className
   );
 }
@@ -51,11 +52,11 @@ export function PremiumFeatureNavList({
   if (!mounted) {
     return (
       <div className={outerClass} aria-hidden>
-        <div className="premium-nav-section-shimmer" />
+        {!collapsed && <div className="premium-nav-section-shimmer" />}
         {!collapsed ? (
           <div className="relative z-[1] mx-2 mb-2 mt-1 h-5 animate-pulse rounded bg-pulse-100/80" />
         ) : null}
-        <div className="relative z-[1] space-y-1 px-1">
+        <div className={clsx("relative z-[1] space-y-1", collapsed ? "px-0" : "px-1")}>
           {Array.from({ length: Math.min(PREMIUM_FEATURES.length, 4) }).map((_, i) => (
             <div key={i} className="h-11 animate-pulse rounded-md bg-pulse-100/60" />
           ))}
@@ -76,7 +77,7 @@ export function PremiumFeatureNavList({
 
   return (
     <div className={outerClass}>
-      <div className="premium-nav-section-shimmer" aria-hidden />
+      {!collapsed && <div className="premium-nav-section-shimmer" aria-hidden />}
 
       {!collapsed && (
         <p

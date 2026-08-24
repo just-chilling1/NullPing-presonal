@@ -7,3 +7,11 @@ export function featureApiGuard(feature: Parameters<typeof isFeatureEnabled>[0])
   }
   return null;
 }
+
+/** Link vault is shared by blog-builder and the standalone Links Library module. */
+export function linkVaultApiGuard() {
+  if (isFeatureEnabled("blog-builder") || isFeatureEnabled("money-links-vault")) {
+    return null;
+  }
+  return NextResponse.json({ error: "Feature not enabled" }, { status: 404 });
+}
