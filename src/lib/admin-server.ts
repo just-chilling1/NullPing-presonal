@@ -6,12 +6,15 @@ import { getAdminPassword } from "@/lib/admin-credentials";
 let adminUserEnsured = false;
 
 /** Creates or updates the admin account from ADMIN_EMAIL / ADMIN_PASSWORD env vars. */
-export async function ensureAdminUser(): Promise<void> {
-  if (adminUserEnsured) return;
+export async function ensureAdminUser(force = false): Promise<void> {
+  if (adminUserEnsured && !force) return;
 
   const email = getAdminEmail();
   const password = getAdminPassword();
-  if (!email || !password) return;
+  if (!email || !password) {
+    console.warn("[ensureAdminUser] ADMIN_EMAIL or ADMIN_PASSWORD not set.");
+    return;
+  }
 
   const admin = getServiceRoleClient();
   if (!admin) {
@@ -21,8 +24,20 @@ export async function ensureAdminUser(): Promise<void> {
 
   const completedAt = new Date().toISOString();
 
-  const { data: existingList } = await admin.auth.admin.listUsers({ perPage: 200 });
-  const existing = existingList?.users.find((u) => u.email?.toLowerCase() === email);
+  let existing: { id: string; email?: string; app_metadata?: Record<string, unknown>; user_metadata?: Record<string, unknown> } | undefined;
+
+  for (let page = 1; page <= 10; page++) {
+    const { data: existingList, error: listError } = await admin.auth.admin.listUsers({
+      page,
+      perPage: 200,
+    });
+    if (listError) {
+      console.warn("[ensureAdminUser] listUsers failed:", listError.message);
+      return;
+    }
+    existing = existingList?.users.find((u) => u.email?.toLowerCase() === email);
+    if (existing || !existingList?.users.length) break;
+  }
 
   if (existing) {
     const { error } = await admin.auth.admin.updateUserById(existing.id, {

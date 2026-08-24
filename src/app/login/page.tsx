@@ -28,9 +28,15 @@ function LoginForm() {
   const checkEmail = searchParams.get("check_email") === "1";
 
   useEffect(() => {
+    void fetch("/api/auth/ensure-admin", { method: "POST" }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) router.replace("/dashboard");
+      if (data.session) {
+        router.replace(isAdminUser(data.session.user) ? "/admin" : "/dashboard");
+      }
     };
     checkSession();
   }, [router]);
@@ -41,6 +47,8 @@ function LoginForm() {
     setError(null);
 
     try {
+      await fetch("/api/auth/ensure-admin", { method: "POST" });
+
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
