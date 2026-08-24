@@ -4,6 +4,8 @@ import { resolveOnboardingGate } from '@/lib/onboarding-gate'
 import { isDevAuthBypassEnabled } from '@/lib/dev-bypass'
 import { ONBOARDING_COMPLETE_COOKIE, setOnboardingCompleteCookie } from '@/lib/onboarding-cookie'
 import { getSupabaseAnonKey, getSupabaseUrl } from '@/lib/supabase-env'
+import { ensureAdminUser } from '@/lib/admin-server'
+import { isAdminClaims } from '@/lib/admin'
 
 /** Public route prefixes that bypass auth (extend per product — e.g. hosted sites, sales pages). */
 const PUBLIC_ROUTE_PREFIXES = [
@@ -70,6 +72,11 @@ export async function middleware(request: NextRequest) {
         isStaticAsset ||
         isPublicHostedRoute
     const isOnboardingRoute = pathname === '/onboarding' || pathname.startsWith('/onboarding/')
+    const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/')
+
+    if (pathname === '/login') {
+        await ensureAdminUser()
+    }
 
     if (isDevAuthBypassEnabled()) {
         if (isAuthRoute && !isAuthCallbackRoute && !isResetPasswordRoute) {
@@ -104,6 +111,8 @@ export async function middleware(request: NextRequest) {
     const claims = (claimsData?.claims ?? null) as Record<string, unknown> | null
     const userId = typeof claims?.sub === 'string' ? claims.sub : null
     const userMeta = (claims?.user_metadata ?? null) as Record<string, unknown> | null
+    const isAdmin = isAdminClaims(claims)
+    const postLoginPath = isAdmin ? '/admin' : '/dashboard'
 
     if (pathname.startsWith('/api')) {
         return response
@@ -114,11 +123,20 @@ export async function middleware(request: NextRequest) {
     }
 
     if (userId && isAuthRoute && !isResetPasswordRoute && !isAuthCallbackRoute) {
+        return NextResponse.redirect(new URL(postLoginPath, request.url))
+    }
+
+    if (userId && isAdminRoute && !isAdmin) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
     if (userId && !isPublicRoute) {
         if (isResetPasswordRoute) {
+            return response
+        }
+
+        if (isAdmin) {
+            setOnboardingCompleteCookie(response)
             return response
         }
 
@@ -132,7 +150,7 @@ export async function middleware(request: NextRequest) {
         const gate = await resolveOnboardingGate(supabase, userId, userMeta)
 
         if (gate.isComplete && isOnboardingRoute) {
-            return NextResponse.redirect(new URL('/dashboard', request.url))
+            return NextResponse.redirect(new URL(postLoginPath, request.url))
         }
 
         if (!gate.isComplete && !isOnboardingRoute) {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { clsx } from "clsx";
-import { trainingContent } from "@/config/training.config";
+import { usePromoLinks } from "@/context/PromoLinksContext";
 
 interface EarningsBannerProps {
   onDismiss?: () => void;
@@ -18,7 +18,8 @@ export function EarningsBanner({
   prominent = false,
 }: EarningsBannerProps) {
   const [visible, setVisible] = useState(true);
-  const ctaUrl = trainingContent.externalTrainingUrl;
+  const { settings } = usePromoLinks();
+  const ctaUrl = settings.externalTrainingUrl;
 
   if (!visible || !ctaUrl) return null;
 

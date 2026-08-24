@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
+  Link2,
   LogOut,
   Lock,
   PanelLeftClose,
@@ -29,7 +30,9 @@ import { useWorkflowNav } from "@/context/WorkflowNavContext";
 import { BlogBuilderNav } from "@/features/blog-builder/components/BlogBuilderNav";
 import { storageKeys } from "@/lib/storage-keys";
 import { homeNav, supportNav, homeSectionLabel, generateSectionLabel, trainingSectionLabel, blogBuilderLibrariesSectionLabel, type NavItem } from "@/config/navigation.config";
-import { getExclusiveOffers } from "@/config/offers.config";
+import { usePromoLinks } from "@/context/PromoLinksContext";
+import { getVisibleExclusiveOffers } from "@/lib/promo-links";
+import { isAdminUser } from "@/lib/admin";
 import { supabase } from "@/lib/supabase";
 import { getCachedClientUser } from "@/lib/auth-client-cache";
 import { WarmNavLink } from "@/components/layout/WarmNavLink";
@@ -55,10 +58,12 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: SidebarContentPr
   const workflowProgress = workflow?.progress ?? 0;
   const blogEnabled = isFeatureEnabled("blog-builder");
   const showHomeNav = !workflowSteps.some((step) => step.path === homeNav.path);
-  const exclusiveOffers = getExclusiveOffers();
+  const { settings: promoSettings } = usePromoLinks();
+  const exclusiveOffers = getVisibleExclusiveOffers(promoSettings);
 
   const [displayName, setDisplayName] = useState("Member");
   const [userInitials, setUserInitials] = useState("NP");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     void getCachedClientUser().then((user) => {
@@ -69,6 +74,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: SidebarContentPr
         handle.charAt(0).toUpperCase() + handle.slice(1);
       setDisplayName(name);
       setUserInitials(name.substring(0, 2).toUpperCase());
+      setIsAdmin(isAdminUser(user));
     });
   }, []);
 
@@ -224,6 +230,26 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: SidebarContentPr
       </div>
 
       <div className={clsx("sidebar-footer shrink-0 space-y-2 p-3", collapsed && "px-2")}>
+        {isAdmin ? (
+          <WarmNavLink
+            href="/admin"
+            onClick={handleNavClick}
+            className={sidebarNavItemClass(isNavPathActive(pathname, "/admin"), collapsed)}
+            title="Promo Links"
+          >
+            <Link2
+              className={sidebarNavIconClass(isNavPathActive(pathname, "/admin"))}
+              strokeWidth={1.75}
+              aria-hidden
+            />
+            {!collapsed && (
+              <span className={sidebarNavLabelClass(isNavPathActive(pathname, "/admin"))}>
+                Promo Links
+              </span>
+            )}
+          </WarmNavLink>
+        ) : null}
+
         {renderNavLink(supportNav)}
 
         <div className={clsx("sidebar-user-card", collapsed && "flex-col justify-center gap-2 px-1.5 py-2")}>

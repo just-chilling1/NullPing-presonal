@@ -11,7 +11,8 @@ import { getBottomNavTabs, getBottomNavMoreLinks } from "@/lib/features";
 import { PREMIUM_FEATURES } from "@/lib/premium-features";
 import { PremiumFeatureNavList } from "@/components/dashboard/PremiumFeatureNavList";
 import { ExclusiveOffersNavSection } from "@/components/layout/ExclusiveOffersNavSection";
-import { getExclusiveOffers } from "@/config/offers.config";
+import { usePromoLinks } from "@/context/PromoLinksContext";
+import { getVisibleExclusiveOffers } from "@/lib/promo-links";
 import { getNavIcon } from "@/lib/nav-icons";
 import { isNavPathActive } from "@/lib/nav-active";
 import { support } from "@/config/support.config";
@@ -21,7 +22,8 @@ export function BottomNav() {
   const workflow = useWorkflowNav();
   const tabs = getBottomNavTabs();
   const moreLinks = getBottomNavMoreLinks();
-  const exclusiveOffers = getExclusiveOffers();
+  const { settings: promoSettings } = usePromoLinks();
+  const exclusiveOffers = getVisibleExclusiveOffers(promoSettings);
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {

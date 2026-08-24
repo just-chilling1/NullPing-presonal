@@ -3,10 +3,11 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { brand } from "@/config/brand.config";
-
-const CTA_URL = "https://www.breakoutai.net/5k-passive-9";
+import { usePromoLinks } from "@/context/PromoLinksContext";
 
 export default function ScaleTrainingPage() {
+    const { settings } = usePromoLinks();
+    const ctaUrl = settings.scaleTrainingUrl;
     return (
         <div className="page-container pb-10">
             {/* Main Content */}
@@ -40,7 +41,7 @@ export default function ScaleTrainingPage() {
                 className="flex justify-center"
             >
                 <a
-                    href={CTA_URL}
+                    href={ctaUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group relative inline-flex items-center gap-3 bg-grad-pulse hover:brightness-105 text-black font-medium text-lg px-10 py-5 rounded-xl transition-all shadow-pulse hover:shadow-pulse"

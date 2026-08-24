@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, Flame, Sparkles } from "lucide-react";
 import { dashboardContent } from "@/config/dashboard.config";
+import { usePromoLinks } from "@/context/PromoLinksContext";
 
 const MONEY_PATTERN = /(\$[\d,]+(?:-\$[\d,]+)?|\$[\d,]+,\s*\$[\d,]+,\s*or even \$[\d,]+)/g;
 
@@ -36,6 +37,8 @@ function formatParagraph(text: string) {
 
 export function DashboardBonusAdCard() {
   const ad = dashboardContent.bonusAd;
+  const { settings } = usePromoLinks();
+  const ctaUrl = settings.externalTrainingUrl;
 
   return (
     <section className="dashboard-bonus-ad" aria-label="Member training offer">
@@ -63,7 +66,7 @@ export function DashboardBonusAdCard() {
 
         <div className="dashboard-bonus-ad-cta-wrap">
           <Link
-            href={ad.ctaUrl}
+            href={ctaUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="dashboard-bonus-ad-cta"

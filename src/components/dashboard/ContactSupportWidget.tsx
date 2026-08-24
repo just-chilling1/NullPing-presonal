@@ -3,8 +3,8 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { CheckCircle2, Headphones, Loader2, Mail } from "lucide-react";
 import { getCachedClientUser } from "@/lib/auth-client-cache";
-import { FREE_TRAINING_URL, SUPPORT_EMAIL } from "@/lib/support";
-import { trainingContent } from "@/config/training.config";
+import { SUPPORT_EMAIL } from "@/lib/support";
+import { usePromoLinks } from "@/context/PromoLinksContext";
 import { supabase } from "@/lib/supabase";
 import { DashboardSection } from "./DashboardSection";
 
@@ -17,14 +17,6 @@ const embeddedFieldClass = "input-base w-full text-sm";
 const embeddedTextareaClass = `${embeddedFieldClass} resize-y min-h-[6.5rem] py-3`;
 
 const embeddedLabelClass = "auth-field-label mb-2 block";
-
-function trainingUpsellUrl(): string | null {
-  const external = trainingContent.externalTrainingUrl?.trim();
-  if (external) return external;
-  const free = FREE_TRAINING_URL?.trim();
-  if (free) return free;
-  return null;
-}
 
 async function parseJsonResponse(res: Response): Promise<{
   error?: string;
@@ -44,12 +36,13 @@ function SupportSuccessPanel({
   embedded,
   submittedEmail,
   onReset,
+  upsellUrl,
 }: {
   embedded: boolean;
   submittedEmail: string;
   onReset: () => void;
+  upsellUrl: string | null;
 }) {
-  const upsellUrl = trainingUpsellUrl();
 
   return (
     <div className={`support-success-panel space-y-5 ${embedded ? "p-4" : "p-6"}`}>
@@ -99,6 +92,8 @@ function SupportSuccessPanel({
 }
 
 export function ContactSupportWidget({ embedded = false }: { embedded?: boolean }) {
+  const { settings } = usePromoLinks();
+  const upsellUrl = settings.externalTrainingUrl?.trim() || null;
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [formState, setFormState] = useState<FormState>("idle");
@@ -186,6 +181,7 @@ export function ContactSupportWidget({ embedded = false }: { embedded?: boolean 
         embedded={embedded}
         submittedEmail={submittedEmail}
         onReset={resetForm}
+        upsellUrl={upsellUrl}
       />
     );
   }

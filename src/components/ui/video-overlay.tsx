@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowRight, Check, X } from "lucide-react";
 import { brand } from "@/config/brand.config";
-import { offers } from "@/config/offers.config";
+import { usePromoLinks } from "@/context/PromoLinksContext";
 import { toEmbedUrl } from "@/lib/video-thumbnails";
 
 interface VideoOverlayProps {
@@ -16,6 +16,7 @@ interface VideoOverlayProps {
 
 export function VideoOverlay({ open, onClose, videoUrl, title }: VideoOverlayProps) {
   const [mounted, setMounted] = useState(false);
+  const { settings } = usePromoLinks();
   const embedUrl = toEmbedUrl(videoUrl);
 
   useEffect(() => {
@@ -145,7 +146,7 @@ export function VideoOverlay({ open, onClose, videoUrl, title }: VideoOverlayPro
               </div>
             </div>
             <a
-              href={offers.videoWithdrawUrl}
+              href={settings.videoWithdrawUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="ad-cta-glow flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#00a36c] px-7 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-[#03b879] active:translate-y-0 sm:w-auto"

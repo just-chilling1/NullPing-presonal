@@ -7,6 +7,7 @@ import { BlogBuilderWorkflowProvider } from "@/features/blog-builder/context/Blo
 import { BlogWorkflowNavProvider } from "@/features/blog-builder/context/BlogWorkflowNavProvider";
 import { needsBlogBuilderContext } from "@/lib/blog-builder-routes";
 import { AuthHashRecoveryRedirect } from "@/components/auth/AuthHashRecoveryRedirect";
+import { PromoLinksProvider } from "@/context/PromoLinksContext";
 import { BrandStyleProvider } from "./BrandStyleProvider";
 import { Shell } from "./Shell";
 
@@ -14,7 +15,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const content = (
     <BrandStyleProvider>
-      <Shell>{children}</Shell>
+      <PromoLinksProvider>
+        <Shell>{children}</Shell>
+      </PromoLinksProvider>
     </BrandStyleProvider>
   );
 

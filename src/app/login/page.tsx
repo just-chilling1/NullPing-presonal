@@ -15,6 +15,7 @@ import { ErrorBanner } from "@/components/ui/error-banner";
 import { brand } from "@/config/brand.config";
 import { socialProof } from "@/config/social-proof.config";
 import { friendlyAuthError } from "@/lib/auth-errors";
+import { isAdminUser } from "@/lib/admin";
 import { Mail, Lock } from "lucide-react";
 
 function LoginForm() {
@@ -49,7 +50,7 @@ function LoginForm() {
         setError(friendlyAuthError(signInError.message));
         setLoading(false);
       } else if (data.user) {
-        window.location.href = "/dashboard";
+        window.location.href = isAdminUser(data.user) ? "/admin" : "/dashboard";
       } else {
         setLoading(false);
       }
