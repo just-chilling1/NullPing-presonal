@@ -44,5 +44,12 @@ export async function upsertPromoLinksToDb(settings: PromoLinksSettings): Promis
   };
 
   const { error } = await admin.from("site_promo_settings").upsert(row, { onConflict: "id" });
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (/site_promo_settings/i.test(error.message) && /schema cache|does not exist/i.test(error.message)) {
+      throw new Error(
+        "Promo links table is missing on this Supabase project. Run: PROJECT_REF=your-project-ref node scripts/apply-promo-settings-migration.mjs"
+      );
+    }
+    throw new Error(error.message);
+  }
 }
