@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Mail, ArrowLeft, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { AuthLayout } from "@/components/layout/AuthLayout";
+import { supabase } from "@/lib/supabase";
+import { buildPasswordResetCallbackUrl } from "@/lib/auth-redirect";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -18,15 +20,12 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: buildPasswordResetCallbackUrl(),
       });
-      const data = (await res.json().catch(() => null)) as { error?: string } | null;
 
-      if (!res.ok) {
-        setError(data?.error || "Could not send the reset email. Please try again.");
+      if (resetError) {
+        setError(resetError.message);
       } else {
         setSent(true);
       }

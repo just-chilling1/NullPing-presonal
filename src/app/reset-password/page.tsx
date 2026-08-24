@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { completePendingAuthFromUrl } from "@/lib/auth-pending-url";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, Eye, EyeOff, CheckCircle2, ShieldCheck, AlertTriangle, Mail } from "lucide-react";
@@ -22,19 +21,86 @@ export default function ResetPasswordPage() {
 
     useEffect(() => {
         const init = async () => {
-            const pending = await completePendingAuthFromUrl();
-            if (pending.status === "error") {
-                setError(pending.message);
-                setChecking(false);
-                return;
-            }
-            if (pending.status === "ready") {
-                setReady(true);
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlError = urlParams.get("error");
+            if (urlError) {
+                setError(urlError);
                 setChecking(false);
                 return;
             }
 
-            setError("No active reset session. Please request a new password reset link.");
+            const tokenHash = urlParams.get("token_hash");
+            const type = urlParams.get("type");
+            if (tokenHash && type === "recovery") {
+                try {
+                    const { error: verifyError } = await supabase.auth.verifyOtp({
+                        token_hash: tokenHash,
+                        type: "recovery",
+                    });
+                    if (verifyError) {
+                        setError(verifyError.message);
+                    } else {
+                        setReady(true);
+                    }
+                } catch {
+                    setError("Failed to verify reset link. Please request a new one.");
+                }
+                setChecking(false);
+                return;
+            }
+
+            const code = urlParams.get("code");
+            if (code) {
+                try {
+                    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+                    if (exchangeError) {
+                        setError(exchangeError.message);
+                    } else {
+                        setReady(true);
+                    }
+                } catch {
+                    setError("Failed to verify reset code. Please request a new link.");
+                }
+                setChecking(false);
+                return;
+            }
+
+            const hash = window.location.hash.substring(1);
+            const hashParams = new URLSearchParams(hash);
+
+            const hashError = hashParams.get("error_description");
+            if (hashError) {
+                setError(hashError.replace(/\+/g, " "));
+                setChecking(false);
+                return;
+            }
+
+            const accessToken = hashParams.get("access_token");
+            const refreshToken = hashParams.get("refresh_token");
+            if (accessToken && refreshToken) {
+                try {
+                    const { error: sessionError } = await supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken,
+                    });
+                    if (sessionError) {
+                        setError(sessionError.message);
+                    } else {
+                        setReady(true);
+                    }
+                } catch {
+                    setError("Failed to verify reset link. Please request a new one.");
+                }
+                setChecking(false);
+                return;
+            }
+
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                setReady(true);
+            } else {
+                setError("No active reset session. Please request a new password reset link.");
+            }
             setChecking(false);
         };
 
@@ -46,7 +112,7 @@ export default function ResetPasswordPage() {
             }
         });
 
-        void init();
+        init();
         return () => { listener.subscription.unsubscribe(); };
     }, []);
 

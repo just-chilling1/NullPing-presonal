@@ -6,6 +6,7 @@ import { CoreWorkflowProvider } from "@/features/core-workflow/CoreWorkflowProvi
 import { BlogBuilderWorkflowProvider } from "@/features/blog-builder/context/BlogBuilderWorkflowProvider";
 import { BlogWorkflowNavProvider } from "@/features/blog-builder/context/BlogWorkflowNavProvider";
 import { needsBlogBuilderContext } from "@/lib/blog-builder-routes";
+import { AuthHashRecoveryRedirect } from "@/components/auth/AuthHashRecoveryRedirect";
 import { BrandStyleProvider } from "./BrandStyleProvider";
 import { Shell } from "./Shell";
 
@@ -35,5 +36,10 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     tree = <CoreWorkflowProvider>{content}</CoreWorkflowProvider>;
   }
 
-  return tree;
+  return (
+    <>
+      <AuthHashRecoveryRedirect />
+      {tree}
+    </>
+  );
 }

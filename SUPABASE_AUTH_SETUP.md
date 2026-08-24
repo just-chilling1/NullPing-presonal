@@ -48,7 +48,7 @@ Use `{{ .ConfirmationURL }}` in the reset link so `redirectTo` from the app cont
 <p><a href="{{ .ConfirmationURL }}">Reset Password</a></p>
 ```
 
-The app calls `resetPasswordForEmail` with `{NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`.
+NullPing calls `resetPasswordForEmail` from the client with `https://nullpingmembersarea.com/auth/callback?next=/reset-password` (via `buildPasswordResetCallbackUrl()`).
 
 ## Confirm signup (if enabled)
 
