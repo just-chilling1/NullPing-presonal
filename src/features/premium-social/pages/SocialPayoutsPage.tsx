@@ -165,7 +165,10 @@ function GenerationCard({
         <button
           type="button"
           onClick={() => void copyAll()}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border-dim bg-white px-3 py-2 text-[13px] font-medium text-text-secondary transition-colors hover:border-[var(--np-line-pulse)] hover:text-pulse-700"
+          className={clsx(
+            "btn-subtle inline-flex shrink-0 items-center gap-1.5 text-[13px] font-medium",
+            copiedAll && "border-[var(--np-line-pulse)] bg-pulse-100 text-pulse-700"
+          )}
         >
           {copiedAll ? <Check size={13} /> : <ClipboardCopy size={13} />}
           {copiedAll ? "Copied!" : "Copy all"}

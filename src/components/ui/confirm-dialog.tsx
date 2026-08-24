@@ -63,11 +63,11 @@ export function ConfirmDialog({
       <button
         type="button"
         aria-label="Close dialog"
-        className="absolute inset-0 bg-ink/50 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/65 backdrop-blur-sm"
         onClick={loading ? undefined : onCancel}
       />
 
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-border-dim bg-white p-6 shadow-2xl">
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-border-dim/80 bg-surface p-6 shadow-2xl">
         <h2 id="confirm-dialog-title" className="brand-font text-xl text-text-heading">
           {title}
         </h2>

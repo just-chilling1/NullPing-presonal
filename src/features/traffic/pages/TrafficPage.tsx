@@ -61,9 +61,13 @@ export default function TrafficPage() {
       ]);
       const pinData = await pinRes.json().catch(() => ({}));
       const siteData = await siteRes.json().catch(() => ({}));
-      setPins(pinData.pins ?? []);
+      const loadedPins = pinData.pins ?? [];
+      setPins(loadedPins);
       if (siteData.site?.slug) setSlug(siteData.site.slug);
-      if (!pinRes.ok && typeof pinData.error === "string") {
+
+      if (loadedPins.length > 0) {
+        setError("");
+      } else if (!pinRes.ok && typeof pinData.error === "string") {
         setError(pinData.error);
       } else if (!siteRes.ok && typeof siteData.error === "string") {
         setError(siteData.error);
@@ -82,20 +86,35 @@ export default function TrafficPage() {
   async function generate() {
     setBusy(true);
     setError("");
+    const previousPins = pins;
+    const pinCount = previousPins.length > 0 ? previousPins.length : 10;
     try {
       const res = await fetch("/api/pins/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ siteId: assetId, regenerate: pins.length > 0 }),
+        body: JSON.stringify({
+          siteId: assetId,
+          regenerate: previousPins.length > 0,
+          count: pinCount,
+        }),
       });
-      const data = await res.json().catch(() => ({}));
+      const raw = await res.text();
+      let data: { pins?: PinRow[]; error?: string } = {};
+      try {
+        data = raw ? (JSON.parse(raw) as { pins?: PinRow[]; error?: string }) : {};
+      } catch {
+        data = {};
+      }
       if (!res.ok) {
-        setError(data.error || "Could not generate pins");
+        setError(data.error || raw.slice(0, 180) || "Could not generate pins");
+        if (previousPins.length > 0) setPins(previousPins);
         return;
       }
       setPins(data.pins ?? []);
+      setError("");
     } catch {
       setError("Could not generate pins");
+      if (previousPins.length > 0) setPins(previousPins);
     } finally {
       setBusy(false);
     }
@@ -124,7 +143,7 @@ export default function TrafficPage() {
         subtitle="NullPing prepares Pinterest pins that send visitors straight to your money page."
       />
 
-      {error ? <div className="alert-banner">{error}</div> : null}
+      {error && pins.length === 0 ? <div className="alert-banner">{error}</div> : null}
 
       {loading ? (
         <GlassPanel className="traffic-loading-panel">
@@ -234,6 +253,11 @@ export default function TrafficPage() {
               </p>
             </div>
             <div className="traffic-toolbar-actions">
+              {error && pins.length > 0 ? (
+                <p className="traffic-inline-alert" role="alert">
+                  {error} Your current pins are still available below.
+                </p>
+              ) : null}
               <button type="button" className="btn-primary" disabled={busy} onClick={() => void generate()}>
                 Regenerate traffic assets
               </button>

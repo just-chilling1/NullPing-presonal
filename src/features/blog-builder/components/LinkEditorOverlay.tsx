@@ -95,12 +95,12 @@ export function LinkEditorOverlay({ open, initial, onSave, onClose }: LinkEditor
       <button
         type="button"
         aria-label="Close dialog"
-        className="absolute inset-0 bg-ink/50 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/65 backdrop-blur-sm"
         onClick={saving ? undefined : onClose}
       />
 
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border-dim bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border-dim/70 px-6 py-4">
+      <div className="relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border-dim/80 bg-surface shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border-dim bg-surface-sub px-6 py-4">
           <h2 id="link-editor-title" className="brand-font text-xl text-text-heading">
             {initial ? "Edit Link" : "Create New Link"}
           </h2>
@@ -109,13 +109,13 @@ export function LinkEditorOverlay({ open, initial, onSave, onClose }: LinkEditor
             onClick={onClose}
             disabled={saving}
             aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-canvas hover:text-text-primary"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-pulse-100/10 hover:text-text-heading disabled:opacity-50"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
+        <div className="flex-1 space-y-4 overflow-y-auto bg-surface-field px-6 py-5">
           <div>
             <label className="mb-2 block text-sm font-medium text-text-primary" htmlFor="link-editor-label">
               Link Name
@@ -172,10 +172,10 @@ export function LinkEditorOverlay({ open, initial, onSave, onClose }: LinkEditor
             />
           </div>
 
-          {error && <p className="text-sm font-medium text-error">{error}</p>}
+          {error && <p className="text-sm font-medium text-[var(--np-danger)]">{error}</p>}
         </div>
 
-        <div className="flex flex-col-reverse gap-2 border-t border-border-dim/70 px-6 py-4 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 border-t border-border-dim bg-surface-sub px-6 py-4 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onClose}

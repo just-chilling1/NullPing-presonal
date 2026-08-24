@@ -86,7 +86,11 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: SidebarContentPr
   const handleNavClick = () => onMobileClose?.();
 
   const renderSectionLabel = (label: string) =>
-    collapsed ? null : <p className={sidebarSectionLabelClass}>{label}</p>;
+    collapsed ? null : (
+      <p className={sidebarSectionLabelClass} suppressHydrationWarning>
+        {label}
+      </p>
+    );
 
   const renderNavLink = (item: NavItem) => {
     const isActive = isNavPathActive(pathname, item.path);
@@ -194,7 +198,7 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: SidebarContentPr
                 {renderSectionLabel(blogBuilderLibrariesSectionLabel)}
                 {librariesItems.map((step) => renderNavLink(step))}
               </>
-            ) : blogEnabled ? (
+            ) : blogEnabled && librariesItems.length === 0 ? (
               <BlogBuilderNav
                 pathname={pathname}
                 onNavClick={handleNavClick}

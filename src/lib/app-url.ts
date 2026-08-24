@@ -1,7 +1,6 @@
 import { getAppUrl } from "@/lib/brand-vars";
 
-function stripTrailingSlash(url: string): string {
-  return url.replace(/\/$/, "");
+function stripTrailingSlash(url: string): string {  return url.replace(/\/$/, "");
 }
 
 function isLocalhostUrl(url: string): boolean {
@@ -67,7 +66,6 @@ export function resolvePublicUrl(pathOrUrl: string, origin?: string): string {
 
   return `${stripTrailingSlash(base)}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
 }
-
 /** Path a site is served at — member-handle URLs for new sites, /sites/{slug} for legacy ones. */
 export function sitePublicPath(site: { slug: string; owner_handle?: string | null }): string {
   return `/m/${site.slug}`;

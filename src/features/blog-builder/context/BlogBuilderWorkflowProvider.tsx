@@ -15,13 +15,20 @@ function WorkflowNavBridgeInner({ children }: { children: React.ReactNode }) {
 }
 
 export function BlogBuilderWorkflowProvider({ children }: { children: React.ReactNode }) {
-  if (!isFeatureEnabled("blog-builder")) {
+  const blogEnabled = isFeatureEnabled("blog-builder");
+  const linkVaultEnabled = isFeatureEnabled("money-links-vault");
+
+  if (!blogEnabled && !linkVaultEnabled) {
     return <>{children}</>;
   }
 
-  return (
-    <BlogBuilderProvider>
-      <WorkflowNavBridgeInner>{children}</WorkflowNavBridgeInner>
-    </BlogBuilderProvider>
-  );
+  if (blogEnabled) {
+    return (
+      <BlogBuilderProvider>
+        <WorkflowNavBridgeInner>{children}</WorkflowNavBridgeInner>
+      </BlogBuilderProvider>
+    );
+  }
+
+  return <BlogBuilderProvider>{children}</BlogBuilderProvider>;
 }

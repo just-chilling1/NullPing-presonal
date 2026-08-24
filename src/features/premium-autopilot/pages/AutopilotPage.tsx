@@ -343,7 +343,9 @@ export default function AutomatedProfitsPage() {
         copied={selectedSource != null && copiedDescId === selectedSource.id}
         onClose={() => setExpandedId(null)}
         onToggleComplete={() => {
-          if (selectedSource) void toggleCompleted(selectedSource.id);
+          if (selectedSource && !completed.has(selectedSource.id)) {
+            void toggleCompleted(selectedSource.id);
+          }
         }}
         onCopyDescription={() => {
           if (selectedSource) void copyDescription(selectedSource.id);

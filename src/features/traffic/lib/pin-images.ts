@@ -74,7 +74,7 @@ function productStockQueries(productName: string, hobby?: string | null): string
  * stays related to the product (unlike random Picsum).
  * Rotates tag order/variants by seed so pins do not share the same lock+tags.
  */
-export function productPhotoFallbackUrl(productName: string, seed = 0): string | null {
+export function productPhotoFallbackUrl(productName: string, seed = 0, pinIdx = 0): string | null {
   const cleaned = cleanProductLabel(productName);
   const baseTags = productSearchTokens(cleaned).slice(0, 3);
   if (baseTags.length === 0) return null;
@@ -84,9 +84,12 @@ export function productPhotoFallbackUrl(productName: string, seed = 0): string |
     [...baseTags, "product"].slice(0, 3),
     [...baseTags, "lifestyle"].slice(0, 3),
     [baseTags[0], "photo", "product"].filter(Boolean),
+    [...baseTags, "review"].slice(0, 3),
+    [...baseTags, "wellness"].slice(0, 3),
   ];
-  const tags = variants[Math.abs(seed) % variants.length] ?? baseTags;
-  const lock = Math.abs(seed * 7919 + tags.join("").length * 31) % 100_000;
+  const tags = variants[Math.abs(seed + pinIdx * 13) % variants.length] ?? baseTags;
+  const lock =
+    Math.abs(seed * 7919 + pinIdx * 104729 + tags.join("").length * 31 + pinIdx * 9973) % 1_000_000;
   return `https://loremflickr.com/1200/675/${encodeURIComponent(tags.join(","))}/all?lock=${lock}`;
 }
 
@@ -114,7 +117,8 @@ export function uniquePinFallbackUrl(params: {
   for (let attempt = 0; attempt < 20; attempt++) {
     const candidate = productPhotoFallbackUrl(
       productName,
-      params.pinIdx * 97 + headlineLen * 13 + attempt * 7919 + 42
+      params.pinIdx * 97 + headlineLen * 13 + attempt * 7919 + 42,
+      params.pinIdx + attempt
     );
     if (candidate && !used.has(normalizeImageUrl(candidate))) return candidate;
   }
@@ -143,11 +147,19 @@ export function pinRenderBackgroundCandidates(params: {
   hobby?: string | null;
   width?: number;
   height?: number;
+  /** Backgrounds already used by sibling pins — never reuse at render time. */
+  excludeUrls?: (string | null | undefined)[];
 }): string[] {
   const cleaned = cleanProductLabel(params.productName) || params.productName;
+  const excluded = new Set(
+    (params.excludeUrls ?? [])
+      .filter((url): url is string => Boolean(url?.trim()))
+      .map((url) => normalizeImageUrl(url))
+  );
   const uniqueFallback = productPhotoFallbackUrl(
     cleaned,
-    params.pinIdx * 17 + params.headline.length + 3
+    params.pinIdx * 17 + params.headline.length + 3,
+    params.pinIdx
   );
   const anyFallback = picsumPinFallbackUrl(
     cleaned || "product",
@@ -166,7 +178,9 @@ export function pinRenderBackgroundCandidates(params: {
     candidates.push(params.heroImage);
   }
 
-  return candidates.filter((u): u is string => Boolean(u?.trim()));
+  return candidates
+    .filter((u): u is string => Boolean(u?.trim()))
+    .filter((url) => !excluded.has(normalizeImageUrl(url)));
 }
 
 /**
@@ -382,7 +396,49 @@ export async function resolvePinBackgroundImages(params: {
     }
   }
 
-  return results;
+  return ensureUniquePinBackgrounds(results, {
+    productName,
+    hobby: params.hobby,
+    pins: params.pins,
+  });
+}
+
+/** Replace duplicate backgrounds within a batch — each pin gets a unique image URL. */
+export function ensureUniquePinBackgrounds(
+  backgrounds: (string | null)[],
+  params: {
+    productName: string;
+    hobby?: string | null;
+    pins: PinCopy[];
+  }
+): (string | null)[] {
+  const used = new Set<string>();
+  return backgrounds.map((url, idx) => {
+    if (url) {
+      const key = normalizeImageUrl(url);
+      if (!used.has(key)) {
+        used.add(key);
+        return url;
+      }
+    }
+
+    for (let attempt = 0; attempt < 24; attempt++) {
+      const replacement = uniquePinFallbackUrl({
+        productName: params.productName,
+        pinIdx: idx + attempt,
+        usedKeys: used,
+        hobby: params.hobby,
+        headlineLen: (params.pins[idx]?.headline?.length ?? 0) + attempt * 7,
+      });
+      if (!replacement) continue;
+      const replacementKey = normalizeImageUrl(replacement);
+      if (used.has(replacementKey)) continue;
+      used.add(replacementKey);
+      return replacement;
+    }
+
+    return url;
+  });
 }
 
 function cleanedTitleForStock(pin: PinCopy, productName: string): string {

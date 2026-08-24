@@ -24,7 +24,7 @@ const ContactSupportWidget = dynamic(
     import("@/components/dashboard/ContactSupportWidget").then((m) => ({
       default: m.ContactSupportWidget,
     })),
-  { loading: () => <div className="dashboard-container min-h-[12rem] animate-pulse" aria-hidden /> }
+  { loading: () => <div className="dashboard-container min-h-[12rem] animate-pulse" aria-hidden />, ssr: false }
 );
 
 const PremiumUpgradesWidget = dynamic(

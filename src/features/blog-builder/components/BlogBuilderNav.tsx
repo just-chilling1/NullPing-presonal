@@ -117,14 +117,22 @@ export function BlogBuilderNav({
     <>
       {((showWorkflow && steps.length > 0) || (showGenerate && generateNav.length > 0)) && (
         <>
-          {!collapsed && <p className={sectionLabelClass}>{blogBuilderGenerateSectionLabel}</p>}
+          {!collapsed && (
+            <p className={sectionLabelClass} suppressHydrationWarning>
+              {blogBuilderGenerateSectionLabel}
+            </p>
+          )}
           {showWorkflow ? steps.map(renderStep) : null}
           {showGenerate ? generateNav.map(renderCoreLink) : null}
         </>
       )}
       {showLibraries && librariesNav.length > 0 && (
         <>
-          {!collapsed && <p className={sectionLabelClass}>{blogBuilderLibrariesSectionLabel}</p>}
+          {!collapsed && (
+            <p className={sectionLabelClass} suppressHydrationWarning>
+              {blogBuilderLibrariesSectionLabel}
+            </p>
+          )}
           {librariesNav.map(renderCoreLink)}
         </>
       )}

@@ -273,14 +273,14 @@ export default function LinkVaultPage() {
                   <ExternalLink size={12} className="shrink-0" />
                 </a>
 
-                <div className="flex flex-wrap items-center gap-2 border-t border-border-dim/60 pt-3">
+                <div className="flex flex-wrap items-center gap-2 border-t border-border-dim pt-3">
                   {linkedOffers.length > 0 ? (
                     <>
                       <span className="text-xs font-medium text-text-secondary">Used in:</span>
                       {linkedOffers.map((offer) => (
                         <span
                           key={offer.id}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-border-dim bg-white px-2.5 py-1 text-xs text-text-primary"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-border-dim bg-surface-sub px-2.5 py-1 text-xs text-text-primary"
                         >
                           <Globe size={11} className="text-pulse-700" />
                           {offer.title}

@@ -112,6 +112,16 @@ export async function GET(
     .eq("id", pin.site_id)
     .maybeSingle();
 
+  const { data: siblingPins } = await supabase
+    .from("site_pins")
+    .select("id, source_image_url, idx")
+    .eq("site_id", pin.site_id)
+    .neq("id", pinId);
+
+  const siblingSources = (siblingPins ?? [])
+    .map((row) => (row as { source_image_url?: string | null }).source_image_url)
+    .filter((url): url is string => Boolean(url?.trim()));
+
   const copy = (site?.sales_page_json ?? {}) as {
     heroImage?: string;
     pinImages?: Record<string, string>;
@@ -132,6 +142,10 @@ export async function GET(
     hobby: site?.hobby ?? null,
     width: PIN_WIDTH,
     height: PIN_HEIGHT,
+    excludeUrls: [
+      ...siblingSources,
+      ...Object.values(copy.pinImages ?? {}).filter((url) => url !== copy.pinImages?.[pin.id]),
+    ],
   });
 
   let backgroundDataUrl: string | null = null;

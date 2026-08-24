@@ -19,7 +19,7 @@ import { FacebookPostCard } from "@/features/blog-builder/components/FacebookPos
 import { wrapArticleWithTitle } from "@/features/blog-builder/lib/authority-article-content";
 import type { SavedFacebookPost } from "@/features/blog-builder/lib/facebook-posts-vault";
 import { copyPinImageToClipboard, PinCard } from "@/features/traffic/components/PinCard";
-import { resolvePublicUrl } from "@/lib/app-url";
+import { resolvePublicUrl } from "@/lib/public-url";
 
 export interface DfySalesResult {
   siteId: string;

@@ -4,13 +4,10 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { BrandLogo } from "./BrandLogo";
+import { Sidebar } from "./Sidebar";
 import { PageMotion } from "@/components/motion/PageMotion";
 import { SupportCtaBanner } from "@/components/support/SupportCtaBanner";
 import { hasEnabledPromoOrchestrator } from "@/config/promos.config";
-
-const Sidebar = dynamic(() => import("./Sidebar").then((m) => ({ default: m.Sidebar })), {
-  loading: () => <div className="hidden w-[var(--sidebar-w)] shrink-0 lg:block" aria-hidden />,
-});
 
 const BottomNav = dynamic(() => import("./BottomNav").then((m) => ({ default: m.BottomNav })), {
   ssr: false,

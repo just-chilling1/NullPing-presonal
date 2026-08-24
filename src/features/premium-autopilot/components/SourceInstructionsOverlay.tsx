@@ -86,7 +86,7 @@ export function SourceInstructionsOverlay({
           <button
             type="button"
             aria-label="Close instructions"
-            className="absolute inset-0 bg-ink/45 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-black/65 backdrop-blur-sm"
             onClick={onClose}
           />
 
@@ -97,10 +97,10 @@ export function SourceInstructionsOverlay({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.22, ease: [0.2, 0, 0, 1] }}
-            className="relative z-10 flex max-h-[100dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-border-dim bg-white shadow-2xl outline-none sm:max-h-[min(88dvh,40rem)] sm:rounded-2xl"
+            className="relative z-10 flex max-h-[100dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-border-dim/80 bg-surface shadow-2xl outline-none sm:max-h-[min(88dvh,40rem)] sm:rounded-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="shrink-0 border-b border-border-dim bg-[var(--np-surface-sub)] px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
+            <div className="shrink-0 border-b border-border-dim bg-surface-sub px-5 py-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
@@ -134,7 +134,7 @@ export function SourceInstructionsOverlay({
                   type="button"
                   onClick={onClose}
                   aria-label="Close"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-pulse-100 hover:text-text-heading"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-pulse-100/10 hover:text-text-heading"
                 >
                   <X size={18} />
                 </button>
@@ -152,12 +152,14 @@ export function SourceInstructionsOverlay({
                 </a>
                 <button
                   type="button"
-                  onClick={onToggleComplete}
+                  onClick={isDone ? undefined : onToggleComplete}
+                  disabled={isDone}
+                  aria-disabled={isDone}
                   className={clsx(
-                    "inline-flex h-12 items-center justify-center gap-2 rounded-[var(--np-r-pill)] border px-5 text-sm font-medium transition-all sm:min-w-44",
+                    "inline-flex h-12 items-center justify-center gap-2 rounded-[var(--np-r-pill)] px-5 text-sm font-medium transition-all sm:min-w-44",
                     isDone
-                      ? "border-[var(--np-line-pulse)] bg-grad-pulse text-pulse-900 shadow-[var(--np-shadow-pulse)]"
-                      : "border-success/35 bg-white text-success hover:bg-[var(--np-offer-green-100)]"
+                      ? "cursor-default border border-[var(--np-line-pulse)] bg-grad-pulse text-pulse-900 shadow-[var(--np-shadow-pulse)]"
+                      : "btn-secondary h-12 border-success/35 py-0 text-success hover:bg-success/10 hover:text-success"
                   )}
                 >
                   <CheckCircle2 size={16} />
@@ -166,8 +168,8 @@ export function SourceInstructionsOverlay({
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto bg-canvas/60 px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6 [scrollbar-color:var(--np-pulse-300)_var(--np-pulse-100)] [scrollbar-width:thin]">
-              <section className="rounded-xl border border-border-dim bg-white p-4 shadow-[var(--np-shadow-card)] sm:p-5">
+            <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto bg-surface-field px-5 py-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6 [scrollbar-color:var(--np-pulse-300)_var(--np-pulse-100)] [scrollbar-width:thin]">
+              <section className="glass-card p-4 sm:p-5">
                 <div className="mb-4 flex items-center gap-2 text-sm font-medium text-text-heading">
                   <ListChecks size={16} className="text-pulse-700" />
                   Step-By-Step Instructions
@@ -187,7 +189,7 @@ export function SourceInstructionsOverlay({
                         </div>
                         <p
                           className={clsx(
-                            "min-w-0 flex-1 text-sm leading-relaxed text-text-secondary",
+                            "min-w-0 flex-1 text-sm leading-relaxed text-text-primary",
                             isLast ? "pb-0" : "pb-4"
                           )}
                         >
@@ -204,18 +206,16 @@ export function SourceInstructionsOverlay({
                   <Clipboard size={14} />
                   Use This Description When Submitting
                 </div>
-                <div className="flex flex-col gap-3 rounded-xl border border-border-dim bg-white p-3.5 shadow-[var(--np-shadow-card)] sm:flex-row sm:items-start">
-                  <p className="min-w-0 flex-1 text-sm leading-relaxed break-words text-text-secondary">
+                <div className="glass-card flex flex-col gap-3 p-3.5 sm:flex-row sm:items-start">
+                  <p className="min-w-0 flex-1 text-sm leading-relaxed break-words text-text-primary">
                     {renderCopy(source.description)}
                   </p>
                   <button
                     type="button"
                     onClick={onCopyDescription}
                     className={clsx(
-                      "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-all",
-                      copied
-                        ? "bg-grad-pulse text-pulse-900"
-                        : "border border-border-dim bg-canvas text-text-secondary hover:border-[var(--np-line-pulse)] hover:text-pulse-700"
+                      "btn-subtle inline-flex h-10 shrink-0 items-center justify-center gap-1.5 text-[13px] font-medium",
+                      copied && "border-[var(--np-line-pulse)] bg-grad-pulse text-pulse-900"
                     )}
                   >
                     {copied ? <CheckCircle2 size={13} /> : <Copy size={13} />}

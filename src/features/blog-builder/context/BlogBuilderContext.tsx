@@ -17,6 +17,7 @@ import type { WizardStepNumber } from "../lib/wizard-step-props";
 import { cachedClientFetch, invalidateClientFetchCache } from "@/lib/client-fetch-cache";
 import { needsBlogSession, shouldStartFreshWizard } from "@/lib/blog-builder-routes";
 import { warmBlogSession } from "@/lib/warm-route-data";
+import { isFeatureEnabled } from "@/config/features.config";
 
 export type BlogBuilderStep = 0 | 1 | 2 | 3;
 
@@ -196,10 +197,16 @@ export function BlogBuilderProvider({ children }: { children: React.ReactNode })
     if (!sessionLoadPromise.current) {
       sessionLoadPromise.current = (async () => {
         try {
-          if (shouldStartFreshWizard(pathname)) {
+          const vaultOnly = !isFeatureEnabled("blog-builder");
+
+          if (vaultOnly || shouldStartFreshWizard(pathname)) {
             const vaultJson = await cachedClientFetch<{ links: ArmedLink[] }>("/api/blog/link-vault");
             const vaultLinks = Array.isArray(vaultJson.links) ? vaultJson.links : [];
-            setState({ ...defaultState, armedLinks: vaultLinks });
+            setState((s) => ({
+              ...s,
+              ...(vaultOnly ? {} : defaultState),
+              armedLinks: vaultLinks,
+            }));
             return;
           }
 
@@ -251,7 +258,7 @@ export function BlogBuilderProvider({ children }: { children: React.ReactNode })
   }, []);
 
   useEffect(() => {
-    if (!persistReady.current || !needsBlogSession(pathname)) return;
+    if (!persistReady.current || !needsBlogSession(pathname) || !isFeatureEnabled("blog-builder")) return;
 
     const timer = setTimeout(() => {
       persistToServer(persistPayload(state));

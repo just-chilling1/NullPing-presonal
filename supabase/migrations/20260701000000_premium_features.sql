@@ -83,6 +83,18 @@ do $$ begin
   if not exists (
     select 1 from pg_policies
     where tablename = 'user_autopilot_completions'
+      and policyname = 'Users can update own autopilot completions'
+  ) then
+    create policy "Users can update own autopilot completions"
+      on public.user_autopilot_completions for update
+      using (auth.uid() = user_id);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'user_autopilot_completions'
       and policyname = 'Users can delete own autopilot completions'
   ) then
     create policy "Users can delete own autopilot completions"

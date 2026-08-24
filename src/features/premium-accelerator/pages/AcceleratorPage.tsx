@@ -14,6 +14,7 @@ import { PremiumFooter } from "@/components/premium/PremiumFooter";
 import { PremiumVideoTutorial } from "@/components/premium/PremiumVideoTutorial";
 import { PremiumStepsSection } from "@/components/premium/PremiumStepsSection";
 import { PREMIUM_NICHE_FILTER_LABELS } from "@/lib/premium-niches";
+import { normalizeAffiliateUrl, isValidAffiliateUrl } from "@/features/blog-builder/lib/affiliate-url";
 import {
   TemplatePreviewOverlay,
   type VaultTemplatePreview,
@@ -72,6 +73,11 @@ export default function AcceleratorPage() {
     }
   }, [affiliateLink]);
 
+  const scopedAffiliateLink = useMemo(() => {
+    const normalized = normalizeAffiliateUrl(affiliateLink);
+    return isValidAffiliateUrl(normalized) ? normalized : "";
+  }, [affiliateLink]);
+
   const loadTemplates = useCallback(async (options?: { silent?: boolean }) => {
     const silent = options?.silent ?? false;
     if (silent) setRefreshing(true);
@@ -79,7 +85,14 @@ export default function AcceleratorPage() {
 
     setError("");
     try {
-      const res = await fetch("/api/premium/accelerator/templates", { cache: "no-store" });
+      const params = new URLSearchParams();
+      if (scopedAffiliateLink) params.set("affiliateUrl", scopedAffiliateLink);
+
+      const query = params.toString();
+      const res = await fetch(
+        `/api/premium/accelerator/templates${query ? `?${query}` : ""}`,
+        { cache: "no-store" }
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to load templates");
       setTemplates(data.templates ?? []);
@@ -99,10 +112,11 @@ export default function AcceleratorPage() {
       if (silent) setRefreshing(false);
       else setLoading(false);
     }
-  }, []);
+  }, [scopedAffiliateLink]);
 
   useEffect(() => {
-    void loadTemplates();
+    setCloneResult(null);
+    void loadTemplates({ silent: templates.length > 0 });
   }, [loadTemplates]);
 
   useEffect(() => {

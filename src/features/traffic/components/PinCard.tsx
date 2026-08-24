@@ -76,15 +76,21 @@ export function PinCard({
   const textBundle = buildPinTextBundle(pin, destinationUrl);
   const textCopyId = `pin-text-${pin.id}`;
   const imageCopyId = `pin-image-${pin.id}`;
+  const imageCopied = copiedId === imageCopyId;
+  const textCopied = copiedId === textCopyId;
 
   return (
     <article className="pin-card">
+      {imageCopied ? (
+        <p className="pin-copy-toast" role="status" aria-live="polite">
+          Image copied
+        </p>
+      ) : null}
+
       <div className="pin-card-media">
         <div className="pin-card-media-chrome">
           <span className="pin-card-badge">Pin #{index + 1}</span>
-          {copiedId === textCopyId || copiedId === imageCopyId ? (
-            <span className="pin-card-copied">Copied</span>
-          ) : null}
+          {textCopied ? <span className="pin-card-copied">Text copied</span> : null}
         </div>
         {imageSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -143,20 +149,20 @@ export function PinCard({
       <div className="pin-card-actions">
         <button
           type="button"
-          className="pin-action-btn pin-action-btn--primary"
+          className={`pin-action-btn pin-action-btn--primary${imageCopied ? " is-copied" : ""}`}
           disabled={!imageSrc}
           onClick={() => imageSrc && onCopyImage(imageCopyId, imageSrc)}
         >
           <ImageIcon size={15} strokeWidth={1.75} aria-hidden />
-          {copiedId === imageCopyId ? "Image copied" : "Copy image"}
+          {imageCopied ? "Image copied" : "Copy image"}
         </button>
         <button
           type="button"
-          className="pin-action-btn"
+          className={`pin-action-btn${textCopied ? " is-copied" : ""}`}
           onClick={() => onCopyText(textCopyId, textBundle)}
         >
           <Copy size={14} strokeWidth={1.75} aria-hidden />
-          {copiedId === textCopyId ? "Text copied" : "Copy text"}
+          {textCopied ? "Text copied" : "Copy text"}
         </button>
       </div>
     </article>

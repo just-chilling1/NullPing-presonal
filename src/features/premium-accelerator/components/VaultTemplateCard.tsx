@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { clsx } from "clsx";
-import { resolvePublicUrl } from "@/lib/app-url";
+import { resolvePublicUrl } from "@/lib/public-url";
 
 export interface VaultTemplateRow {
   id: number;

@@ -3,6 +3,8 @@ import { featureApiGuard } from "@/lib/feature-api-guard";
 import { getApiUser } from "@/lib/api-auth";
 import { NO_STORE_HEADERS } from "@/lib/api-cache-headers";
 import { sitePublicPath } from "@/lib/app-url";
+import { normalizeAffiliateUrl } from "@/features/blog-builder/lib/affiliate-url";
+import type { ArmedLink } from "@/features/blog-builder/types";
 import {
   buildAcceleratorCatalog,
   getAcceleratorCardMeta,
@@ -20,6 +22,17 @@ function catalogIdFromTemplateKey(key: string | null | undefined): number | null
   return Number.isFinite(id) ? id : null;
 }
 
+function siteAffiliateUrl(row: {
+  product_url?: string | null;
+  armed_links?: unknown;
+}): string {
+  const fromProduct = normalizeAffiliateUrl(row.product_url ?? "");
+  if (fromProduct) return fromProduct;
+
+  const links = Array.isArray(row.armed_links) ? (row.armed_links as ArmedLink[]) : [];
+  return normalizeAffiliateUrl(links[0]?.url ?? "");
+}
+
 /** List vault catalog entries (deterministic, no DB seeding). */
 export async function GET(request: Request) {
   const guard = featureApiGuard("premium-accelerator");
@@ -31,11 +44,14 @@ export async function GET(request: Request) {
   }
 
   const niche = new URL(request.url).searchParams.get("niche")?.trim() || "All";
+  const filterByAffiliate = normalizeAffiliateUrl(
+    new URL(request.url).searchParams.get("affiliateUrl")?.trim() ?? ""
+  );
   const catalog = buildAcceleratorCatalog().filter(
     (e) => niche === "All" || e.niche === niche
   );
 
-  /** Most recently used install per catalog id. */
+  /** Most recent install per catalog id (scoped to the selected affiliate link). */
   const usedByCatalogId = new Map<
     number,
     { assetId: string; siteUrl: string; usedAt: string }
@@ -43,12 +59,14 @@ export async function GET(request: Request) {
 
   const { data: installedRows } = await supabase
     .from("sites")
-    .select("id, slug, owner_handle, template_key, created_at")
+    .select("id, slug, owner_handle, template_key, created_at, product_url, armed_links")
     .eq("user_id", user.id)
     .like("template_key", "accelerator-%")
     .order("created_at", { ascending: false });
 
   for (const row of installedRows ?? []) {
+    if (filterByAffiliate && siteAffiliateUrl(row) !== filterByAffiliate) continue;
+
     const catalogId = catalogIdFromTemplateKey(
       (row as { template_key?: string | null }).template_key
     );

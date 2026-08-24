@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { WarmNavLink } from "@/components/layout/WarmNavLink";
 import { usePathname } from "next/navigation";
 import { Sparkles } from "lucide-react";
@@ -39,31 +38,10 @@ export function PremiumFeatureNavList({
   highlighted = true,
 }: PremiumFeatureNavListProps) {
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (PREMIUM_FEATURES.length === 0) return null;
 
   const outerClass = sectionClassName(collapsed, mobile, highlighted, className);
-
-  if (!mounted) {
-    return (
-      <div className={outerClass} aria-hidden>
-        {!collapsed && <div className="premium-nav-section-shimmer" />}
-        {!collapsed ? (
-          <div className="relative z-[1] mx-2 mb-2 mt-1 h-5 animate-pulse rounded bg-pulse-100/80" />
-        ) : null}
-        <div className={clsx("relative z-[1] space-y-1", collapsed ? "px-0" : "px-1")}>
-          {Array.from({ length: Math.min(PREMIUM_FEATURES.length, 4) }).map((_, i) => (
-            <div key={i} className="h-11 animate-pulse rounded-md bg-pulse-100/60" />
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   const itemClass = (isActive: boolean) =>
     clsx(

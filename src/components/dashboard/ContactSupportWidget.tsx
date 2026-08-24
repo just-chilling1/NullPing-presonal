@@ -14,7 +14,7 @@ const fieldClass =
   "w-full min-w-0 rounded-lg border border-border-dim/70 bg-page/80 px-3.5 py-3 text-sm leading-normal text-text-primary placeholder:text-text-muted focus:border-pulse-700 focus:outline-none focus:ring-2 focus:ring-pulse-100 transition-all";
 
 const embeddedFieldClass = "input-base w-full text-sm";
-const embeddedTextareaClass = `${embeddedFieldClass} resize-y min-h-[96px] py-3`;
+const embeddedTextareaClass = `${embeddedFieldClass} resize-y min-h-[6.5rem] py-3`;
 
 const embeddedLabelClass = "auth-field-label mb-2 block";
 
@@ -235,8 +235,8 @@ export function ContactSupportWidget({ embedded = false }: { embedded?: boolean 
           placeholder="Tell us what you need help with..."
           required
           disabled={formState === "submitting"}
-          rows={4}
-          className={embedded ? embeddedTextareaClass : `${fieldClass} min-h-[96px] resize-y`}
+          suppressHydrationWarning
+          className={embedded ? embeddedTextareaClass : `${fieldClass} min-h-[6.5rem] resize-y`}
         />
       </div>
 

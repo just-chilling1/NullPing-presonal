@@ -10,6 +10,7 @@ import { normalizeImageUrl } from "@/features/blog-builder/lib/images";
 import {
   getThreadGenerationQuota,
   recordThreadGeneration,
+  THREAD_GENERATION_DAILY_LIMIT,
 } from "@/features/publish-kit/lib/thread-generation-quota";
 import { isFeatureEnabled } from "@/config/features.config";
 import type { ArmedLink } from "@/features/blog-builder/types";
@@ -81,6 +82,18 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  try {
+    return await generatePins(request);
+  } catch (error) {
+    console.error("[pins/generate]", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Pin generation failed" },
+      { status: 500 }
+    );
+  }
+}
+
+async function generatePins(request: Request) {
   const guard = featureApiGuard("traffic-pins");
   if (guard) return guard;
   const { supabase, user } = await getApiUser();
@@ -143,23 +156,28 @@ export async function POST(request: Request) {
         { status: schemaMsg ? 503 : 500 }
       );
     }
-    if ((count ?? 0) > 0) {
-      if (!regenerate && !extraBatch) {
-        const { data: existing } = await supabase
-          .from("site_pins")
-          .select("*")
-          .eq("site_id", siteId)
-          .eq("user_id", user.id)
-          .order("idx", { ascending: true });
-        return NextResponse.json({ pins: withPinImageUrls(existing ?? []), alreadyGenerated: true });
-      }
-      if (regenerate) {
-        await supabase.from("site_pins").delete().eq("site_id", siteId).eq("user_id", user.id);
-      }
+    if ((count ?? 0) > 0 && !regenerate && !extraBatch) {
+      const { data: existing } = await supabase
+        .from("site_pins")
+        .select("*")
+        .eq("site_id", siteId)
+        .eq("user_id", user.id)
+        .order("idx", { ascending: true });
+      return NextResponse.json({ pins: withPinImageUrls(existing ?? []), alreadyGenerated: true });
     }
   }
 
-  const quota = await getThreadGenerationQuota(supabase, user.id);
+  let quota;
+  try {
+    quota = await getThreadGenerationQuota(supabase, user.id);
+  } catch (quotaReadError) {
+    console.warn("[pins/generate] quota read failed:", quotaReadError);
+    quota = {
+      limit: THREAD_GENERATION_DAILY_LIMIT,
+      usedToday: 0,
+      remaining: THREAD_GENERATION_DAILY_LIMIT,
+    };
+  }
   if (quota.remaining <= 0) {
     return NextResponse.json(
       { error: `Daily pin generation limit reached (${quota.limit}). Try again tomorrow.` },
@@ -272,6 +290,15 @@ export async function POST(request: Request) {
     );
   }
 
+  if (regenerate) {
+    await supabase
+      .from("site_pins")
+      .delete()
+      .eq("site_id", siteId)
+      .eq("user_id", user.id)
+      .neq("batch_id", batchId);
+  }
+
   // Map backgrounds by pin idx — never zip by array order (Supabase may reorder rows).
   const backgroundByIdx = new Map(copies.map((_, idx) => [idx, backgrounds[idx] ?? null]));
   const sourceByIdx = new Map(
@@ -328,7 +355,12 @@ export async function POST(request: Request) {
       .eq("user_id", user.id);
   }
 
-  await recordThreadGeneration(supabase, user.id, siteId);
-  const quotaAfter = await getThreadGenerationQuota(supabase, user.id);
+  try {
+    await recordThreadGeneration(supabase, user.id, siteId);
+  } catch (quotaError) {
+    console.warn("[pins/generate] quota log insert failed:", quotaError);
+  }
+
+  const quotaAfter = await getThreadGenerationQuota(supabase, user.id).catch(() => quota);
   return NextResponse.json({ pins: withImages, batchId, quota: quotaAfter });
 }
