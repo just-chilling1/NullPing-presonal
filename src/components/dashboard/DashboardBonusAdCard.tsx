@@ -39,6 +39,7 @@ export function DashboardBonusAdCard() {
   const ad = dashboardContent.bonusAd;
   const { settings } = usePromoLinks();
   const ctaUrl = settings.externalTrainingUrl;
+  const ctaLabel = settings.externalTrainingCtaLabel.trim() || ad.ctaLabel;
 
   return (
     <section className="dashboard-bonus-ad" aria-label="Member training offer">
@@ -73,7 +74,7 @@ export function DashboardBonusAdCard() {
           >
             <span className="dashboard-bonus-ad-cta-shine" aria-hidden />
             <span className="dashboard-bonus-ad-cta-label">
-              {ad.ctaLabel}
+              {ctaLabel}
               <ArrowRight className="dashboard-bonus-ad-cta-arrow h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
             </span>
           </Link>

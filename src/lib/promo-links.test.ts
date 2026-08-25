@@ -22,4 +22,14 @@ describe("promo-links", () => {
     const settings = { ...getDefaultPromoLinks(), externalTrainingUrl: "ftp://bad" };
     assert.match(validatePromoLinksSettings(settings) ?? "", /training URL/i);
   });
+
+  it("rejects empty training headline", () => {
+    const settings = { ...getDefaultPromoLinks(), externalTrainingTitle: "   " };
+    assert.match(validatePromoLinksSettings(settings) ?? "", /headline/i);
+  });
+
+  it("rejects empty scale training button text", () => {
+    const settings = { ...getDefaultPromoLinks(), scaleTrainingCtaLabel: "" };
+    assert.match(validatePromoLinksSettings(settings) ?? "", /button text/i);
+  });
 });

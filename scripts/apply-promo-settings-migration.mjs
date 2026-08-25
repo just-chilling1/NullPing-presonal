@@ -63,16 +63,18 @@ async function main() {
     process.exit(1);
   }
 
-  const migrationPath = join(
-    process.cwd(),
-    "supabase",
-    "migrations",
-    "20260824120000_site_promo_settings.sql"
-  );
-  const sql = readFileSync(migrationPath, "utf8");
+  const migrationFiles = [
+    "20260824120000_site_promo_settings.sql",
+    "20260825130000_site_promo_settings_copy.sql",
+  ];
 
-  console.log(`Applying site_promo_settings migration to ${PROJECT_REF}...`);
-  await runQuery(token, sql);
+  for (const file of migrationFiles) {
+    const migrationPath = join(process.cwd(), "supabase", "migrations", file);
+    const sql = readFileSync(migrationPath, "utf8");
+    console.log(`Applying ${file} to ${PROJECT_REF}...`);
+    await runQuery(token, sql);
+  }
+
   await runQuery(token, "NOTIFY pgrst, 'reload schema';");
   console.log("Done. site_promo_settings table is ready.");
 }

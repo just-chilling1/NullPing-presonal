@@ -29,7 +29,7 @@ import { isFeatureEnabled } from "@/config/features.config";
 import { useWorkflowNav } from "@/context/WorkflowNavContext";
 import { BlogBuilderNav } from "@/features/blog-builder/components/BlogBuilderNav";
 import { storageKeys } from "@/lib/storage-keys";
-import { homeNav, homeSectionLabel, generateSectionLabel, trainingSectionLabel, blogBuilderLibrariesSectionLabel, type NavItem } from "@/config/navigation.config";
+import { homeNav, supportNav, homeSectionLabel, generateSectionLabel, trainingSectionLabel, blogBuilderLibrariesSectionLabel, type NavItem } from "@/config/navigation.config";
 import { usePromoLinks } from "@/context/PromoLinksContext";
 import { getVisibleExclusiveOffers } from "@/lib/promo-links";
 import { isAdminUser } from "@/lib/admin";
@@ -249,6 +249,8 @@ function SidebarContent({ collapsed, onToggle, onMobileClose }: SidebarContentPr
             )}
           </WarmNavLink>
         ) : null}
+
+        {renderNavLink(supportNav)}
 
         <div className={clsx("sidebar-user-card", collapsed && "flex-col justify-center gap-2 px-1.5 py-2")}>
           <Link

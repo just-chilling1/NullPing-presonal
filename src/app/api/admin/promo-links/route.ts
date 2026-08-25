@@ -29,15 +29,27 @@ function parseBody(body: unknown): PromoLinksSettings | null {
 
   const externalTrainingUrl =
     typeof raw.externalTrainingUrl === "string" ? raw.externalTrainingUrl : "";
+  const externalTrainingTitle =
+    typeof raw.externalTrainingTitle === "string" ? raw.externalTrainingTitle : "";
+  const externalTrainingCtaLabel =
+    typeof raw.externalTrainingCtaLabel === "string" ? raw.externalTrainingCtaLabel : "";
   const videoWithdrawUrl = typeof raw.videoWithdrawUrl === "string" ? raw.videoWithdrawUrl : "";
   const scaleTrainingUrl = typeof raw.scaleTrainingUrl === "string" ? raw.scaleTrainingUrl : "";
+  const scaleTrainingTitle =
+    typeof raw.scaleTrainingTitle === "string" ? raw.scaleTrainingTitle : "";
+  const scaleTrainingCtaLabel =
+    typeof raw.scaleTrainingCtaLabel === "string" ? raw.scaleTrainingCtaLabel : "";
 
   return {
     exclusiveOffersEnabled,
     exclusiveOffers,
     externalTrainingUrl,
+    externalTrainingTitle,
+    externalTrainingCtaLabel,
     videoWithdrawUrl,
     scaleTrainingUrl,
+    scaleTrainingTitle,
+    scaleTrainingCtaLabel,
   };
 }
 

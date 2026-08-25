@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapWithConcurrency } from "./concurrency";
 import { resolvePremiumNicheValue } from "@/lib/premium-niches";
 import { SiteImagePool } from "./site-image-pool";
-import { scrapeImageFromUrl, scrapeRelevantImagesFromUrl, SCRAPE_USER_AGENT } from "./scrape";
+import { scrapeImageFromUrl, scrapeRelevantImagesFromUrl, scrapeRelevantImageCandidates, SCRAPE_USER_AGENT, MIN_PRODUCT_IMAGE_SCORE, type ScrapedImageCandidate } from "./scrape";
 
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY ?? "";
 const RAPIDAPI_IMAGE_HOST =
@@ -106,6 +106,9 @@ interface PixabayHit {
   webformatURL?: string;
   imageWidth?: number;
   imageHeight?: number;
+  tags?: string;
+  pageURL?: string;
+  user?: string;
 }
 
 interface ImagePickOptions {
@@ -127,14 +130,84 @@ interface ImagePickOptions {
 export interface StockImageResult {
   url: string;
   stockId: string;
+  tags?: string;
+  relevanceScore?: number;
+  matchReason?: string;
+}
+
+/** Minimum Pixabay relevance for commerce product pins. */
+export const MIN_STOCK_PRODUCT_RELEVANCE = 70;
+
+export interface ImageRelevance {
+  score: number;
+  matchedTokens: string[];
+  reason: string;
+}
+
+export function scoreStockProductRelevance(params: {
+  query: string;
+  tags?: string;
+  pageURL?: string;
+  productTokens: string[];
+  strongTokens: string[];
+}): ImageRelevance {
+  // Score against image metadata only — the query always contains product tokens.
+  const haystack = `${params.tags ?? ""} ${params.pageURL ?? ""}`.toLowerCase();
+  const matched: string[] = [];
+  let score = 20;
+
+  for (const token of params.strongTokens) {
+    if (token.length > 2 && haystack.includes(token.toLowerCase())) {
+      matched.push(token);
+      score += 22;
+    }
+  }
+  for (const token of params.productTokens) {
+    if (token.length > 2 && !matched.includes(token) && haystack.includes(token.toLowerCase())) {
+      matched.push(token);
+      score += 12;
+    }
+  }
+
+  // Generic lifestyle tags without product tokens → reject
+  if (
+    matched.length === 0 &&
+    /\b(bedroom|lifestyle|office|workspace|laptop|desk|wellness|fitness|gym|beautiful|woman|couple|sleeping)\b/i.test(
+      haystack
+    )
+  ) {
+    score -= 40;
+  }
+
+  // Supplement/product packaging cues help when tokens match partially
+  if (matched.length > 0 && /\b(bottle|supplement|gummies|packaging|product|serum)\b/i.test(haystack)) {
+    score += 10;
+  }
+
+  if (matched.length >= 2) score += 12;
+  if (matched.length === 0) score -= 25;
+
+  const reason =
+    matched.length > 0
+      ? `stock tokens: ${matched.slice(0, 5).join(", ")}`
+      : "weak stock token match";
+
+  return { score: Math.max(0, Math.min(100, score)), matchedTokens: matched, reason };
 }
 
 export function normalizeImageUrl(url: string): string {
   try {
     const parsed = new URL(url);
-    return `${parsed.hostname}${parsed.pathname}`;
+    const path = parsed.pathname
+      .replace(
+        /_(\d+x\d+|\d+x|x\d+|pico|icon|thumb|small|compact|medium|large|grande|master|1200x)(?=\.[a-z0-9]+$)/i,
+        ""
+      )
+      .replace(/-(\d{2,4})x(\d{2,4})(?=\.[a-z0-9]+$)/i, "")
+      .replace(/\._[A-Z0-9,_]+_\./, ".");
+    return `${parsed.hostname}${path}`.toLowerCase();
   } catch {
-    return url.split("?")[0] ?? url;
+    return (url.split("?")[0] ?? url).toLowerCase();
   }
 }
 
@@ -153,7 +226,11 @@ function stockIdForHit(hit: PixabayHit, imageUrl: string): string {
 export async function fetchPixabayImage(
   title: string,
   subject: string,
-  options?: ImagePickOptions
+  options?: ImagePickOptions & {
+    productTokens?: string[];
+    strongTokens?: string[];
+    minRelevance?: number;
+  }
 ): Promise<StockImageResult | null> {
   if (!PIXABAY_API_KEY) {
     console.warn("[images] PIXABAY_API_KEY not set — skipping stock photos");
@@ -204,6 +281,9 @@ export async function fetchPixabayImage(
     const offset = options?.pickOffset ?? 0;
     const exclude = options?.excludeUrls ?? [];
     const excludeIds = new Set(options?.excludeStockIds ?? []);
+    const productTokens = options?.productTokens ?? [];
+    const strongTokens = options?.strongTokens ?? productTokens;
+    const minRelevance = options?.minRelevance;
 
     for (let i = 0; i < hits.length; i++) {
       const hit = hits[(seed + offset + i) % hits.length];
@@ -212,8 +292,27 @@ export async function fetchPixabayImage(
       const stockId = stockIdForHit(hit, imageUrl);
       if (excludeIds.has(stockId)) continue;
       if (isExcludedUrl(imageUrl, exclude)) continue;
+
+      let relevance: ImageRelevance | null = null;
+      if (typeof minRelevance === "number" && (productTokens.length > 0 || strongTokens.length > 0)) {
+        relevance = scoreStockProductRelevance({
+          query,
+          tags: hit.tags,
+          pageURL: hit.pageURL,
+          productTokens,
+          strongTokens,
+        });
+        if (relevance.score < minRelevance) continue;
+      }
+
       console.info("[images] pixabay hit", query.slice(0, 48));
-      return { url: imageUrl, stockId };
+      return {
+        url: imageUrl,
+        stockId,
+        tags: hit.tags,
+        relevanceScore: relevance?.score,
+        matchReason: relevance?.reason,
+      };
     }
     return null;
   } catch {
@@ -521,6 +620,38 @@ export async function collectScrapedImageCandidates(params: {
   scrapeKeywords?: string[];
   limit?: number;
 }): Promise<string[]> {
+  const structured = await collectStructuredScrapedImageCandidates(params);
+  return structured.map((c) => c.url);
+}
+
+const structuredScrapeCache = new Map<string, { at: number; candidates: ScrapedImageCandidate[] }>();
+const STRUCTURED_SCRAPE_CACHE_TTL_MS = 10 * 60 * 1000;
+
+function normalizeProductPageCacheKey(url: string): string {
+  try {
+    const u = new URL(url);
+    u.hash = "";
+    // Drop common tracking params but keep path identity.
+    ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "gclid", "aff", "affid"].forEach(
+      (k) => u.searchParams.delete(k)
+    );
+    return `${u.hostname}${u.pathname}${u.search}`.toLowerCase();
+  } catch {
+    return url.trim().toLowerCase();
+  }
+}
+
+/**
+ * Structured product-page candidates (once per URL per request window).
+ * Uses a hard product-relevance threshold when keywords are provided.
+ */
+export async function collectStructuredScrapedImageCandidates(params: {
+  scrapeUrl?: string | null;
+  scrapeUrls?: string[];
+  scrapeKeywords?: string[];
+  limit?: number;
+  hardThreshold?: number;
+}): Promise<ScrapedImageCandidate[]> {
   const targets = [params.scrapeUrl, ...(params.scrapeUrls ?? [])].filter((url): url is string =>
     Boolean(url?.trim())
   );
@@ -528,28 +659,45 @@ export async function collectScrapedImageCandidates(params: {
 
   const keywords = params.scrapeKeywords ?? [];
   const limit = params.limit ?? 24;
+  const hardThreshold =
+    typeof params.hardThreshold === "number"
+      ? params.hardThreshold
+      : keywords.length > 0
+        ? MIN_PRODUCT_IMAGE_SCORE
+        : undefined;
   const seen = new Set<string>();
-  const out: string[] = [];
+  const out: ScrapedImageCandidate[] = [];
 
-  const push = (url: string | null | undefined) => {
-    if (!url?.trim()) return;
-    const key = normalizeImageUrl(url);
+  const push = (candidate: ScrapedImageCandidate | null | undefined) => {
+    if (!candidate?.url?.trim()) return;
+    if (typeof hardThreshold === "number" && candidate.score < hardThreshold) return;
+    const key = normalizeImageUrl(candidate.url);
     if (seen.has(key)) return;
     seen.add(key);
-    out.push(url);
+    out.push(candidate);
   };
 
   for (const target of targets) {
-    const ranked = await scrapeRelevantImagesFromUrl(target, {
-      keywords,
-      limit: 12,
-    });
-    for (const url of ranked) push(url);
-    push(await scrapeImageFromUrl(target));
+    const cacheKey = normalizeProductPageCacheKey(target);
+    const cached = structuredScrapeCache.get(cacheKey);
+    let candidates: ScrapedImageCandidate[];
+    if (cached && Date.now() - cached.at < STRUCTURED_SCRAPE_CACHE_TTL_MS) {
+      candidates = cached.candidates;
+    } else {
+      candidates = await scrapeRelevantImageCandidates(target, {
+        keywords,
+        limit: 16,
+        hardThreshold,
+      });
+      structuredScrapeCache.set(cacheKey, { at: Date.now(), candidates });
+    }
+    for (const c of candidates) push(c);
     if (out.length >= limit) break;
   }
 
-  return out.slice(0, limit);
+  return out
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 }
 
 /** Return the first scraped candidate not present in excludeUrls (normalized compare). */
@@ -972,10 +1120,34 @@ export async function persistExternalImage(params: {
   userId: string;
   supabase: SupabaseClient;
 }): Promise<string | null> {
+  const result = await persistExternalImageWithMeta(params);
+  return result?.url ?? null;
+}
+
+/** Persist external image and return content hash for uniqueness registry. */
+export async function persistExternalImageWithMeta(params: {
+  url: string;
+  userId: string;
+  supabase: SupabaseClient;
+}): Promise<{ url: string; contentHash: string; buffer: Buffer } | null> {
   if (!params.url || params.url.includes("/blog-images/")) return null;
   const buffer = await fetchImageBuffer(params.url, 20_000);
-  if (!buffer) return null;
-  return uploadToBlogImages(params.supabase, params.userId, buffer);
+  if (!buffer || buffer.length < 800) return null;
+  const { hashImageBuffer } = await import("@/features/traffic/lib/image-identity");
+  const contentHash = hashImageBuffer(buffer);
+  const uploaded = await uploadToBlogImages(params.supabase, params.userId, buffer);
+  if (!uploaded) {
+    return { url: params.url, contentHash, buffer };
+  }
+  return { url: uploaded, contentHash, buffer };
+}
+
+/** Download image bytes for hashing without requiring persist. */
+export async function downloadImageForHash(url: string): Promise<{ buffer: Buffer; contentHash: string } | null> {
+  const buffer = await fetchImageBuffer(url, 20_000);
+  if (!buffer || buffer.length < 800) return null;
+  const { hashImageBuffer } = await import("@/features/traffic/lib/image-identity");
+  return { buffer, contentHash: hashImageBuffer(buffer) };
 }
 
 /**

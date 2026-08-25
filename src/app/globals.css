@@ -3988,6 +3988,104 @@ html[data-sidebar="collapsed"] {
     }
   }
 
+  .money-hero-current {
+    width: 100%;
+    max-width: 20rem;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid var(--np-line);
+    background: var(--np-surface-field);
+  }
+
+  .money-hero-current-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .money-hero-current-empty {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8125rem;
+    color: var(--np-ink-3);
+  }
+
+  .money-hero-upload input[type="file"] {
+    display: block;
+    width: 100%;
+    margin-top: 0.35rem;
+    font-size: 0.875rem;
+    color: var(--np-ink-2);
+  }
+
+  .money-hero-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .money-hero-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  .money-hero-thumb {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 0.65rem;
+    border: 1px solid var(--np-line);
+    padding: 0;
+    background: var(--np-surface-field);
+    cursor: pointer;
+  }
+
+  .money-hero-thumb:hover:not(:disabled):not(.is-selected) {
+    border-color: color-mix(in srgb, var(--np-pulse-500) 40%, var(--np-line));
+  }
+
+  .money-hero-thumb.is-selected {
+    border-color: color-mix(in srgb, var(--np-pulse-500) 58%, var(--np-line));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--np-pulse-500) 28%, transparent);
+  }
+
+  .money-hero-thumb:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .money-hero-thumb:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--np-pulse-500) 55%, white);
+    outline-offset: 2px;
+  }
+
+  .money-hero-thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .money-hero-thumb-check {
+    position: absolute;
+    top: 0.35rem;
+    right: 0.35rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: var(--np-pulse-500);
+    color: #fff;
+  }
+
   .money-design-card {
     --theme-accent: var(--np-pulse-500);
   }

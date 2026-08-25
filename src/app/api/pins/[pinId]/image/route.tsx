@@ -2,7 +2,6 @@ import { ImageResponse } from "next/og";
 import { getServiceRoleClient } from "@/lib/api-auth";
 import { readFile } from "fs/promises";
 import path from "path";
-import { pinRenderBackgroundCandidates } from "@/features/traffic/lib/pin-images";
 import { pinOverlayHeadline } from "@/features/traffic/lib/pin-rules";
 
 export const runtime = "nodejs";
@@ -61,6 +60,8 @@ function sniffMime(bytes: Uint8Array): string {
 async function toDataImageUrl(url: string): Promise<string | null> {
   if (!url || !/^https?:\/\//i.test(url)) return null;
   if (url.startsWith("data:image/")) return url;
+  // Never load unrelated stock fallbacks in the renderer.
+  if (/picsum\.photos|loremflickr\.com/i.test(url)) return null;
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(12_000),
@@ -77,6 +78,10 @@ async function toDataImageUrl(url: string): Promise<string | null> {
   }
 }
 
+/**
+ * Renderer uses ONLY the assigned source_image_url (pinImages backup if column empty).
+ * Never selects alternate product/niche/stock photos.
+ */
 export async function GET(
   request: Request,
   context: { params: Promise<{ pinId: string }> }
@@ -112,46 +117,20 @@ export async function GET(
     .eq("id", pin.site_id)
     .maybeSingle();
 
-  const { data: siblingPins } = await supabase
-    .from("site_pins")
-    .select("id, source_image_url, idx")
-    .eq("site_id", pin.site_id)
-    .neq("id", pinId);
-
-  const siblingSources = (siblingPins ?? [])
-    .map((row) => (row as { source_image_url?: string | null }).source_image_url)
-    .filter((url): url is string => Boolean(url?.trim()));
-
   const copy = (site?.sales_page_json ?? {}) as {
-    heroImage?: string;
     pinImages?: Record<string, string>;
   };
   const headline = pinOverlayHeadline(pin.headline || pin.title || "Read the review");
-  const product = site?.product_name || site?.title || "";
   const download = new URL(request.url).searchParams.get("download") === "1";
-  const pinIdx = typeof (pin as { idx?: number }).idx === "number" ? (pin as { idx: number }).idx : -1;
-  const safeIdx = pinIdx >= 0 ? pinIdx : Math.abs(pinId.split("").reduce((n, c) => n + c.charCodeAt(0), 0)) % 10;
 
-  const candidateUrls = pinRenderBackgroundCandidates({
-    sourceImageUrl: (pin as { source_image_url?: string | null }).source_image_url,
-    pinImageUrl: copy.pinImages?.[pin.id],
-    heroImage: copy.heroImage,
-    productName: product,
-    pinIdx: safeIdx,
-    headline,
-    hobby: site?.hobby ?? null,
-    width: PIN_WIDTH,
-    height: PIN_HEIGHT,
-    excludeUrls: [
-      ...siblingSources,
-      ...Object.values(copy.pinImages ?? {}).filter((url) => url !== copy.pinImages?.[pin.id]),
-    ],
-  });
+  const sourceUrl =
+    (pin as { source_image_url?: string | null }).source_image_url?.trim() ||
+    copy.pinImages?.[pin.id]?.trim() ||
+    null;
 
   let backgroundDataUrl: string | null = null;
-  for (const candidate of candidateUrls) {
-    backgroundDataUrl = await toDataImageUrl(candidate);
-    if (backgroundDataUrl) break;
+  if (sourceUrl) {
+    backgroundDataUrl = await toDataImageUrl(sourceUrl);
   }
 
   const fontData = await loadFont();

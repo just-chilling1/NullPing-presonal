@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { faqSections } from "@/config/faq.config";
-import { ContactSupportWidget } from "@/components/dashboard/ContactSupportWidget";
 import { SupportPageLayout } from "../components/SupportPageLayout";
 import { SupportChannelCards } from "../components/SupportChannelCards";
 import { SupportStatCards } from "../components/SupportStatCards";
@@ -35,16 +34,10 @@ export default function SupportPage() {
           <SupportChannelCards />
         </motion.div>
 
-        <motion.div variants={itemVariants} className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-          <div id="faq" className="card-base overflow-hidden p-0 lg:col-span-3">
-            <SupportFaqCardHeader />
-            <div className="px-4 pb-3 sm:px-5">
-              <SupportFaqAccordion items={allFaqs} />
-            </div>
-          </div>
-
-          <div id="contact" className="lg:col-span-2">
-            <ContactSupportWidget />
+        <motion.div variants={itemVariants} id="faq" className="card-base overflow-hidden p-0">
+          <SupportFaqCardHeader />
+          <div className="px-4 pb-3 sm:px-5">
+            <SupportFaqAccordion items={allFaqs} />
           </div>
         </motion.div>
 

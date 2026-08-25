@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import { featureApiGuard } from "@/lib/feature-api-guard";
 import { getApiUser } from "@/lib/api-auth";
 import { clampPinCount, generatePinCopy } from "@/features/traffic/lib/pin-rules";
+import { resolvePinBackgroundImages } from "@/features/traffic/lib/pin-images";
 import {
-  resolvePinBackgroundImages,
-  uniquePinFallbackUrl,
-} from "@/features/traffic/lib/pin-images";
-import { normalizeImageUrl } from "@/features/blog-builder/lib/images";
+  mergeUsedImageRecords,
+  parseUsedPinImageIdentities,
+  recordsFromUrls,
+  strongNormalizeImageUrl,
+  type UsedImageRecord,
+} from "@/features/traffic/lib/image-identity";
 import {
   getThreadGenerationQuota,
   recordThreadGeneration,
@@ -22,8 +25,8 @@ function withPinImageUrls<T extends { id: string; image_url?: string | null }>(p
   return pins.map((pin) => ({
     ...pin,
     image_url: pin.image_url?.startsWith("http")
-      ? `/api/pins/${pin.id}/image?v=10`
-      : pin.image_url || `/api/pins/${pin.id}/image?v=10`,
+      ? `/api/pins/${pin.id}/image?v=11`
+      : pin.image_url || `/api/pins/${pin.id}/image?v=11`,
   }));
 }
 
@@ -138,7 +141,13 @@ async function generatePins(request: Request) {
     product_name?: string | null;
     product_url?: string | null;
     hobby?: string | null;
-    sales_page_json?: { headline?: string; subheadline?: string; heroImage?: string } | null;
+    sales_page_json?: {
+      headline?: string;
+      subheadline?: string;
+      heroImage?: string;
+      pinImages?: Record<string, string>;
+      usedPinImageIdentities?: UsedImageRecord[];
+    } | null;
     armed_links?: ArmedLink[] | null;
   } | null;
   if (!site) return NextResponse.json({ error: "Asset not found" }, { status: 404 });
@@ -193,72 +202,96 @@ async function generatePins(request: Request) {
   const { scrapeUrl, scrapeUrls } = scrapeTargetsFromSite(site);
 
   const heroImage = copyJson?.heroImage || null;
-  const priorPinImages = Object.values(
-    (copyJson as { pinImages?: Record<string, string> } | null)?.pinImages ?? {}
-  );
+  const priorPinImages = Object.values(copyJson?.pinImages ?? {});
+  const priorIdentities = parseUsedPinImageIdentities(copyJson);
 
-  // Existing pin backgrounds on this asset — never reuse across batches.
-  const { data: existingPinRows } = await supabase
-    .from("site_pins")
-    .select("source_image_url")
-    .eq("site_id", siteId)
-    .eq("user_id", user.id);
+  // Existing pin backgrounds on this asset — never reuse across batches / regenerate.
+  let existingPinRows: Array<{
+    source_image_url?: string | null;
+    source_image_normalized_url?: string | null;
+    source_image_hash?: string | null;
+  }> | null = null;
+  {
+    const withIdentity = await supabase
+      .from("site_pins")
+      .select("source_image_url, source_image_normalized_url, source_image_hash")
+      .eq("site_id", siteId)
+      .eq("user_id", user.id);
+    if (withIdentity.error && schemaMissingMessage(withIdentity.error)) {
+      const legacy = await supabase
+        .from("site_pins")
+        .select("source_image_url")
+        .eq("site_id", siteId)
+        .eq("user_id", user.id);
+      existingPinRows = legacy.data;
+    } else {
+      existingPinRows = withIdentity.data;
+    }
+  }
+
   const existingSourceImages = (existingPinRows ?? [])
     .map((row) => (row as { source_image_url?: string | null }).source_image_url)
     .filter((url): url is string => Boolean(url?.trim()));
 
-  const backgrounds = await resolvePinBackgroundImages({
+  const existingIdentityRows: UsedImageRecord[] = (existingPinRows ?? []).flatMap((row) => {
+    const r = row as {
+      source_image_url?: string | null;
+      source_image_normalized_url?: string | null;
+      source_image_hash?: string | null;
+    };
+    if (!r.source_image_url?.trim() && !r.source_image_normalized_url?.trim()) return [];
+    return [
+      {
+        normalizedUrl:
+          r.source_image_normalized_url?.trim() ||
+          strongNormalizeImageUrl(r.source_image_url || ""),
+        contentHash: r.source_image_hash?.trim() || undefined,
+        sourceUrl: r.source_image_url?.trim() || undefined,
+      },
+    ];
+  });
+
+  const usedIdentities = mergeUsedImageRecords(priorIdentities, [
+    ...existingIdentityRows,
+    ...recordsFromUrls([...priorPinImages, ...existingSourceImages]),
+  ]);
+
+  const { backgrounds, usedIdentities: updatedRegistry } = await resolvePinBackgroundImages({
     pins: copies,
     productName,
+    siteTitle: site.title,
     hobby: site.hobby,
     scrapeUrl,
     scrapeUrls,
-    // Hero only on the first-ever batch (not extra / regenerate refill slots).
     preferredImages: extraBatch || regenerate ? [] : [heroImage],
     excludeImages: [
-      // Always keep the money-page hero unique unless it's assigned as preferred above.
       ...(extraBatch || regenerate ? [heroImage] : []),
       ...priorPinImages,
       ...existingSourceImages,
     ],
+    usedIdentities,
     userId: user.id,
     supabase,
   });
 
-  // Enforce uniqueness at insert time — never coalesce multiple pins onto the same image.
+  // Enforce uniqueness at insert — never coalesce; never fill with generic fallbacks.
   const usedAtInsert = new Set<string>();
+  const usedHashes = new Set<string>();
   const rows = copies.map((pin, idx) => {
-    let source = backgrounds[idx] || null;
+    const bg = backgrounds[idx];
+    let source = bg?.url || null;
+    const norm = bg?.normalizedUrl || (source ? strongNormalizeImageUrl(source) : "");
+    const hash = bg?.contentHash || "";
+
     if (source) {
-      const key = normalizeImageUrl(source);
-      if (usedAtInsert.has(key)) {
+      if ((norm && usedAtInsert.has(norm)) || (hash && usedHashes.has(hash))) {
         source = null;
       } else {
-        usedAtInsert.add(key);
+        if (norm) usedAtInsert.add(norm);
+        if (hash) usedHashes.add(hash);
       }
     }
-    // Pin 0 may use the money-page hero once if nothing else resolved.
-    if (!source && idx === 0 && heroImage) {
-      const heroKey = normalizeImageUrl(heroImage);
-      if (!usedAtInsert.has(heroKey)) {
-        source = heroImage;
-        usedAtInsert.add(heroKey);
-      }
-    }
-    // Never leave a pin without a unique background — fill with a diversified fallback.
-    if (!source) {
-      const fallback = uniquePinFallbackUrl({
-        productName,
-        pinIdx: idx,
-        usedKeys: usedAtInsert,
-        hobby: site.hobby,
-        headlineLen: pin.headline?.length ?? 0,
-      });
-      if (fallback) {
-        source = fallback;
-        usedAtInsert.add(normalizeImageUrl(fallback));
-      }
-    }
+
     return {
       user_id: user.id,
       site_id: siteId,
@@ -269,17 +302,48 @@ async function generatePins(request: Request) {
       description: pin.description,
       keywords: pin.keywords,
       source_image_url: source,
+      source_image_normalized_url: source ? norm || strongNormalizeImageUrl(source) : null,
+      source_image_hash: source && hash ? hash : null,
+      image_source: source ? bg?.imageSource ?? null : null,
+      image_relevance_score: source ? bg?.relevanceScore ?? null : null,
+      image_match_reason: source ? bg?.matchReason ?? null : null,
     };
   });
 
   let { data: inserted, error } = await supabase.from("site_pins").insert(rows).select("*");
 
-  // Older DBs without source_image_url — insert without it, then patch hero onto sales page usage.
+  // Older DBs without new identity columns — strip them and retry.
   if (error && schemaMissingMessage(error)) {
-    const legacyRows = rows.map(({ source_image_url: _s, ...rest }) => rest);
+    const legacyRows = rows.map((row) => {
+      const {
+        source_image_normalized_url: _n,
+        source_image_hash: _h,
+        image_source: _is,
+        image_relevance_score: _irs,
+        image_match_reason: _imr,
+        ...rest
+      } = row;
+      void _n;
+      void _h;
+      void _is;
+      void _irs;
+      void _imr;
+      return rest;
+    });
     const second = await supabase.from("site_pins").insert(legacyRows).select("*");
     inserted = second.data;
     error = second.error;
+
+    if (error && schemaMissingMessage(error)) {
+      const bareRows = legacyRows.map((row) => {
+        const { source_image_url: _s, ...rest } = row;
+        void _s;
+        return rest;
+      });
+      const third = await supabase.from("site_pins").insert(bareRows).select("*");
+      inserted = third.data;
+      error = third.error;
+    }
   }
 
   if (error) {
@@ -299,61 +363,108 @@ async function generatePins(request: Request) {
       .neq("batch_id", batchId);
   }
 
-  // Map backgrounds by pin idx — never zip by array order (Supabase may reorder rows).
-  const backgroundByIdx = new Map(copies.map((_, idx) => [idx, backgrounds[idx] ?? null]));
   const sourceByIdx = new Map(
     rows.map((row) => [row.idx, row.source_image_url as string | null])
   );
+  const metaByIdx = new Map(rows.map((row) => [row.idx, row]));
 
   const withImages = withPinImageUrls(
     (inserted ?? []).map((row) => {
       const idx = typeof (row as { idx?: number }).idx === "number" ? (row as { idx: number }).idx : 0;
       const existing = (row as { source_image_url?: string | null }).source_image_url;
-      const source = existing || sourceByIdx.get(idx) || backgroundByIdx.get(idx) || null;
+      const source = existing || sourceByIdx.get(idx) || null;
+      const meta = metaByIdx.get(idx);
       return {
         ...row,
         source_image_url: source,
+        source_image_normalized_url:
+          (row as { source_image_normalized_url?: string | null }).source_image_normalized_url ??
+          meta?.source_image_normalized_url ??
+          null,
+        source_image_hash:
+          (row as { source_image_hash?: string | null }).source_image_hash ??
+          meta?.source_image_hash ??
+          null,
+        image_source:
+          (row as { image_source?: string | null }).image_source ?? meta?.image_source ?? null,
+        image_relevance_score:
+          (row as { image_relevance_score?: number | null }).image_relevance_score ??
+          meta?.image_relevance_score ??
+          null,
+        image_match_reason:
+          (row as { image_match_reason?: string | null }).image_match_reason ??
+          meta?.image_match_reason ??
+          null,
       };
     })
   );
 
   await Promise.all(
-    withImages.map((row) =>
-      supabase
-        .from("site_pins")
-        .update({
-          image_url: `/api/pins/${row.id}/image`,
-          ...((row as { source_image_url?: string | null }).source_image_url
-            ? { source_image_url: (row as { source_image_url?: string | null }).source_image_url }
-            : {}),
-        })
-        .eq("id", row.id)
-    )
+    withImages.map((row) => {
+      const update: Record<string, unknown> = {
+        image_url: `/api/pins/${row.id}/image`,
+      };
+      if ((row as { source_image_url?: string | null }).source_image_url) {
+        update.source_image_url = (row as { source_image_url?: string | null }).source_image_url;
+      }
+      if ((row as { source_image_normalized_url?: string | null }).source_image_normalized_url) {
+        update.source_image_normalized_url = (
+          row as { source_image_normalized_url?: string | null }
+        ).source_image_normalized_url;
+      }
+      if ((row as { source_image_hash?: string | null }).source_image_hash) {
+        update.source_image_hash = (row as { source_image_hash?: string | null }).source_image_hash;
+      }
+      if ((row as { image_source?: string | null }).image_source) {
+        update.image_source = (row as { image_source?: string | null }).image_source;
+      }
+      if ((row as { image_relevance_score?: number | null }).image_relevance_score != null) {
+        update.image_relevance_score = (
+          row as { image_relevance_score?: number | null }
+        ).image_relevance_score;
+      }
+      if ((row as { image_match_reason?: string | null }).image_match_reason) {
+        update.image_match_reason = (row as { image_match_reason?: string | null }).image_match_reason;
+      }
+      return supabase.from("site_pins").update(update).eq("id", row.id);
+    })
   );
 
-  // Persist backgrounds on the money page JSON so pin images work even before
-  // source_image_url is migrated onto site_pins.
+  // Persist pinImages + durable used-image registry on the site.
   const pinImages: Record<string, string> = regenerate
     ? {}
-    : {
-        ...((copyJson as { pinImages?: Record<string, string> } | null)?.pinImages ?? {}),
-      };
+    : { ...(copyJson?.pinImages ?? {}) };
   for (const row of withImages) {
     const src = (row as { source_image_url?: string | null }).source_image_url;
     if (src) pinImages[row.id] = src;
   }
-  if (Object.keys(pinImages).length > 0) {
-    await supabase
-      .from("sites")
-      .update({
-        sales_page_json: {
-          ...(copyJson && typeof copyJson === "object" ? copyJson : {}),
-          pinImages,
-        },
-      })
-      .eq("id", siteId)
-      .eq("user_id", user.id);
+
+  const registryWithPins: UsedImageRecord[] = updatedRegistry.map((rec) => ({ ...rec }));
+  for (const row of withImages) {
+    const src = (row as { source_image_url?: string | null }).source_image_url;
+    if (!src) continue;
+    registryWithPins.push({
+      normalizedUrl:
+        (row as { source_image_normalized_url?: string | null }).source_image_normalized_url ||
+        strongNormalizeImageUrl(src),
+      contentHash: (row as { source_image_hash?: string | null }).source_image_hash || undefined,
+      sourceUrl: src,
+      pinId: row.id,
+      batchId,
+    });
   }
+
+  await supabase
+    .from("sites")
+    .update({
+      sales_page_json: {
+        ...(copyJson && typeof copyJson === "object" ? copyJson : {}),
+        pinImages,
+        usedPinImageIdentities: mergeUsedImageRecords(registryWithPins, []),
+      },
+    })
+    .eq("id", siteId)
+    .eq("user_id", user.id);
 
   try {
     await recordThreadGeneration(supabase, user.id, siteId);

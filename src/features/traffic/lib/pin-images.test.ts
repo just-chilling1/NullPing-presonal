@@ -1,120 +1,203 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  hashImageBuffer,
+  isImageAlreadyUsed,
+  mergeUsedImageRecords,
+  recordsFromUrls,
+  strongNormalizeImageUrl,
+  type UsedImageRecord,
+} from "./image-identity";
+import {
+  buildProductIdentity,
+  preserveProductTokens,
+  productOnlyStockQueries,
+} from "./product-identity";
+import {
+  ensureUniquePinBackgrounds,
   pinRenderBackgroundCandidates,
-  productPhotoFallbackUrl,
 } from "./pin-images";
-import { cleanProductLabel } from "./product-label";
-import { pickFirstUnusedImageCandidate } from "@/features/blog-builder/lib/images";
+import { scoreStockProductRelevance } from "@/features/blog-builder/lib/images";
+import { MIN_PRODUCT_IMAGE_SCORE, rankPageImages } from "@/features/blog-builder/lib/scrape";
 
-describe("cleanProductLabel", () => {
-  it("strips review-headline fluff down to the product name", () => {
+describe("strongNormalizeImageUrl", () => {
+  it("treats query-string variants as the same image", () => {
+    const a = strongNormalizeImageUrl("https://cdn.site.com/product/image.jpg");
+    const b = strongNormalizeImageUrl("https://cdn.site.com/product/image.jpg?width=1200");
+    assert.equal(a, b);
+  });
+
+  it("strips common CDN size suffixes", () => {
+    const a = strongNormalizeImageUrl("https://cdn.site.com/product/image_1200x.jpg");
+    const b = strongNormalizeImageUrl("https://cdn.site.com/product/image.jpg");
+    assert.equal(a, b);
+  });
+});
+
+describe("content hash uniqueness", () => {
+  it("detects identical bytes as duplicates", () => {
+    const buf = Buffer.from("fake-image-bytes");
+    const hash = hashImageBuffer(buf);
+    const registry: UsedImageRecord[] = [
+      { normalizedUrl: "cdn.a/x.jpg", contentHash: hash, sourceUrl: "https://cdn.a/x.jpg" },
+    ];
     assert.equal(
-      cleanProductLabel("Should You Buy Melatonin? What to Check First"),
-      "melatonin"
+      isImageAlreadyUsed({ url: "https://cdn.b/y.jpg", contentHash: hash }, registry),
+      true
     );
-    assert.equal(cleanProductLabel("Is Melatonin Worth It? An Honest Look"), "melatonin");
-    assert.equal(cleanProductLabel("Melatonin"), "melatonin");
+    assert.equal(
+      isImageAlreadyUsed(
+        { url: "https://cdn.b/other.jpg", contentHash: hashImageBuffer(Buffer.from("other")) },
+        registry
+      ),
+      false
+    );
+  });
+});
+
+describe("used registry across batches", () => {
+  it("merges prior batch identities so they cannot be reused", () => {
+    const prior = recordsFromUrls(["https://cdn.example.com/a.jpg?w=800"]);
+    const next = recordsFromUrls(["https://cdn.example.com/b.jpg"]);
+    const merged = mergeUsedImageRecords(prior, next);
+    assert.equal(
+      isImageAlreadyUsed({ url: "https://cdn.example.com/a.jpg?w=1200" }, merged),
+      true
+    );
+    assert.equal(
+      isImageAlreadyUsed({ url: "https://cdn.example.com/c.jpg" }, merged),
+      false
+    );
+  });
+});
+
+describe("product identity", () => {
+  it("preserves brand/product terms from review-style titles", () => {
+    const tokens = preserveProductTokens(
+      "Should You Buy X Brand Magnesium Glycinate?"
+    );
+    assert.ok(tokens.includes("magnesium"));
+    assert.ok(tokens.includes("glycinate"));
+    assert.ok(tokens.includes("brand") || tokens.includes("x"));
+    assert.ok(!tokens.includes("should"));
+  });
+
+  it("builds progressive product-only stock queries without bare niche lifestyle", () => {
+    const identity = buildProductIdentity({
+      productName: "SleepWell Melatonin Gummies",
+    });
+    const queries = productOnlyStockQueries(identity);
+    assert.ok(queries.length > 0);
+    assert.ok(queries.some((q) => /melatonin/i.test(q)));
+    for (const q of queries) {
+      assert.doesNotMatch(q, /^(wellness|sleep bedroom|healthy lifestyle)$/i);
+    }
   });
 });
 
 describe("pinRenderBackgroundCandidates", () => {
-  it("does not put the shared hero ahead of unique per-pin fallbacks", () => {
-    const hero = "https://cdn.example.com/boxing-hero.jpg";
-    const a = pinRenderBackgroundCandidates({
-      heroImage: hero,
-      productName: "Is boxing gloves Worth It? An Honest Look",
-      pinIdx: 0,
-      headline: "7 things nobody tells you",
-    });
-    const b = pinRenderBackgroundCandidates({
-      heroImage: hero,
-      productName: "Is boxing gloves Worth It? An Honest Look",
-      pinIdx: 1,
-      headline: "Is it worth it in 2026?",
-    });
-
-    assert.notEqual(a[0], hero);
-    assert.notEqual(b[0], hero);
-    assert.notEqual(a[0], b[0]);
-    // Pins after the first must never fall back to the shared hero.
-    assert.ok(!b.includes(hero));
-  });
-
-  it("still prefers an explicit source image when present", () => {
+  it("only returns the assigned source (and same backup), never Picsum/LoremFlickr/hero", () => {
     const source = "https://cdn.example.com/pin-0.jpg";
     const hero = "https://cdn.example.com/boxing-hero.jpg";
     const candidates = pinRenderBackgroundCandidates({
       sourceImageUrl: source,
+      pinImageUrl: "https://cdn.example.com/pin-0.jpg?w=800",
       heroImage: hero,
       productName: "boxing gloves",
       pinIdx: 2,
       headline: "Honest review",
     });
     assert.equal(candidates[0], source);
+    assert.ok(!candidates.includes(hero));
+    assert.ok(candidates.every((u) => !/picsum|loremflickr/i.test(u)));
+  });
+
+  it("returns empty when no source is assigned", () => {
+    const candidates = pinRenderBackgroundCandidates({
+      heroImage: "https://cdn.example.com/hero.jpg",
+      productName: "SleepWell Melatonin Gummies",
+      pinIdx: 0,
+      headline: "Try this",
+    });
+    assert.deepEqual(candidates, []);
   });
 });
 
-describe("productPhotoFallbackUrl", () => {
-  it("varies by seed for the same boxing product", () => {
-    const a = productPhotoFallbackUrl("boxing gloves", 0);
-    const b = productPhotoFallbackUrl("boxing gloves", 17);
-    assert.ok(a);
-    assert.ok(b);
-    assert.notEqual(a, b);
-  });
-
-  it("uses cleaned product tags instead of review-title fluff", () => {
-    const url = productPhotoFallbackUrl("Should You Buy Melatonin? What to Check First", 3);
-    assert.ok(url);
-    assert.match(url!, /melatonin/i);
-    assert.doesNotMatch(url!, /should/i);
-  });
-
-  it("produces distinct locks across a typical pin batch", () => {
-    const urls = Array.from({ length: 8 }, (_, i) =>
-      productPhotoFallbackUrl("boxing gloves", i * 97 + i * 7919 + 42)
+describe("ensureUniquePinBackgrounds", () => {
+  it("nulls duplicates and generic fallbacks instead of inventing replacements", () => {
+    const out = ensureUniquePinBackgrounds(
+      [
+        "https://cdn.example.com/a.jpg",
+        "https://cdn.example.com/a.jpg?w=800",
+        "https://picsum.photos/seed/x/1200/675",
+        "https://cdn.example.com/b.jpg",
+      ],
+      { productName: "Melatonin", pins: [] }
     );
-    const unique = new Set(urls);
-    assert.equal(unique.size, urls.length);
+    assert.equal(out[0], "https://cdn.example.com/a.jpg");
+    assert.equal(out[1], null);
+    assert.equal(out[2], null);
+    assert.equal(out[3], "https://cdn.example.com/b.jpg");
   });
 });
 
-describe("uniquePinFallbackUrl", () => {
-  it("returns distinct URLs for each pin index in a batch", async () => {
-    const { uniquePinFallbackUrl } = await import("./pin-images");
-    const { normalizeImageUrl } = await import("@/features/blog-builder/lib/images");
-    const used = new Set<string>();
-    const urls: string[] = [];
-    for (let i = 0; i < 10; i++) {
-      const url = uniquePinFallbackUrl({
-        productName: "apple",
-        pinIdx: i,
-        usedKeys: used,
-        headlineLen: 12 + i,
-      });
-      assert.ok(url);
-      urls.push(url!);
-      used.add(normalizeImageUrl(url!));
-    }
-    assert.equal(new Set(urls.map((u) => normalizeImageUrl(u))).size, 10);
+describe("stock relevance", () => {
+  it("rejects generic lifestyle stock without product tokens", () => {
+    const rel = scoreStockProductRelevance({
+      query: "melatonin gummies",
+      tags: "bedroom, sleep, lifestyle, woman",
+      productTokens: ["melatonin", "gummies", "sleepwell"],
+      strongTokens: ["melatonin", "gummies", "sleepwell"],
+    });
+    assert.ok(rel.score < 70);
+  });
+
+  it("accepts stock that matches product tokens", () => {
+    const rel = scoreStockProductRelevance({
+      query: "melatonin gummies",
+      tags: "melatonin, gummies, supplement, bottle",
+      productTokens: ["melatonin", "gummies", "sleepwell"],
+      strongTokens: ["melatonin", "gummies"],
+    });
+    assert.ok(rel.score >= 70);
   });
 });
 
-describe("pickFirstUnusedImageCandidate", () => {
-  it("never returns the same scraped url twice for sequential picks", () => {
-    const candidates = [
-      "https://cdn.example.com/scraped-a.jpg",
-      "https://cdn.example.com/scraped-b.jpg",
-      "https://cdn.example.com/scraped-a.jpg?size=large",
-    ];
-    const first = pickFirstUnusedImageCandidate(candidates, []);
-    assert.equal(first, candidates[0]);
+describe("product page ranking threshold", () => {
+  it("ranks JSON-LD Product images above weak content images", () => {
+    const html = `
+      <html><head>
+        <script type="application/ld+json">
+          {"@type":"Product","name":"SleepWell Melatonin Gummies","image":"https://cdn.example.com/products/sleepwell-bottle.jpg"}
+        </script>
+      </head><body>
+        <img src="https://cdn.example.com/blog/woman-sleeping.jpg" alt="peaceful sleep" width="900" height="600" />
+      </body></html>
+    `;
+    const ranked = rankPageImages(html, "https://example.com/product", [
+      "sleepwell",
+      "melatonin",
+      "gummies",
+    ]);
+    assert.ok(ranked.length >= 1);
+    assert.ok(ranked[0].url.includes("sleepwell-bottle"));
+    assert.ok(ranked[0].score >= MIN_PRODUCT_IMAGE_SCORE);
+  });
 
-    const second = pickFirstUnusedImageCandidate(candidates, [first!]);
-    assert.equal(second, candidates[1]);
-
-    const third = pickFirstUnusedImageCandidate(candidates, [first!, second!]);
-    assert.equal(third, null);
+  it("scores gallery images highly", () => {
+    const html = `
+      <html><body>
+        <div class="product-gallery">
+          <img src="https://cdn.example.com/products/melatonin-front.jpg" alt="SleepWell Melatonin Gummies" width="1000" height="1000" />
+        </div>
+        <img src="https://cdn.example.com/assets/logo.png" alt="logo" width="64" height="64" />
+      </body></html>
+    `;
+    const ranked = rankPageImages(html, "https://example.com/p", ["sleepwell", "melatonin", "gummies"]);
+    const gallery = ranked.find((r) => r.url.includes("melatonin-front"));
+    assert.ok(gallery);
+    assert.ok((gallery?.score ?? 0) >= MIN_PRODUCT_IMAGE_SCORE);
+    const logo = ranked.find((r) => r.url.includes("logo"));
+    if (logo) assert.ok(logo.score < MIN_PRODUCT_IMAGE_SCORE);
   });
 });

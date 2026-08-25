@@ -23,7 +23,6 @@ import { getDefaultPromoLinks, isValidPromoUrl } from "@/lib/promo-links";
 import { supabase } from "@/lib/supabase";
 import { ErrorBanner } from "@/components/ui/error-banner";
 import { PageHeader } from "@/components/ui/page-header";
-import { brand } from "@/config/brand.config";
 import { useRouter } from "next/navigation";
 
 const fieldClass = "input-base w-full text-sm";
@@ -73,9 +72,19 @@ function OfferPreview({ offer }: { offer: ExclusiveOffer }) {
   );
 }
 
-function TrainingBannerPreview({ url }: { url: string }) {
+function TrainingBannerPreview({
+  url,
+  title,
+  ctaLabel,
+}: {
+  url: string;
+  title: string;
+  ctaLabel: string;
+}) {
   const valid = isValidPromoUrl(url);
   const host = hostLabel(url);
+  const headline = title.trim() || "Headline text";
+  const button = ctaLabel.trim() || "Button text";
 
   return (
     <div
@@ -86,15 +95,14 @@ function TrainingBannerPreview({ url }: { url: string }) {
         Free Training
       </span>
       <p className="mb-2 text-[12px] font-medium uppercase leading-snug text-text-heading">
-        Multiply Your Earnings To{" "}
-        <span className="text-pulse-700">$1,000 – $5,000</span> A Day
+        {headline}
       </p>
       <div
         className={`inline-flex min-h-[36px] w-full items-center justify-center rounded-full bg-grad-pulse px-3 py-1.5 text-[12px] font-medium text-pulse-900 shadow-pulse ${
           valid ? "" : "opacity-50"
         }`}
       >
-        Click Here To Learn How
+        {button}
       </div>
       <p className="mt-2 truncate text-[10px] text-text-muted" title={url.trim() || undefined}>
         → {host}
@@ -146,9 +154,19 @@ function VideoWithdrawPreview({ url }: { url: string }) {
   );
 }
 
-function ScaleTrainingPreview({ url }: { url: string }) {
+function ScaleTrainingPreview({
+  url,
+  title,
+  ctaLabel,
+}: {
+  url: string;
+  title: string;
+  ctaLabel: string;
+}) {
   const valid = isValidPromoUrl(url);
   const host = hostLabel(url);
+  const headline = title.trim() || "Headline text";
+  const button = ctaLabel.trim() || "Button text";
 
   return (
     <div
@@ -162,14 +180,14 @@ function ScaleTrainingPreview({ url }: { url: string }) {
         </span>
       </div>
       <p className="brand-font mb-2 text-[13px] font-medium leading-snug text-text-heading">
-        Scale Your <span className="text-pulse-700">{brand.productName}</span> To $1,000+ Per Day
+        {headline}
       </p>
       <div
         className={`inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-grad-pulse px-3 py-2.5 text-[12px] font-medium text-black shadow-pulse ${
           valid ? "" : "opacity-50"
         }`}
       >
-        Click Here To Access Training
+        {button}
         <ArrowRight size={14} />
       </div>
       <p className="mt-2 truncate text-[10px] text-text-muted" title={url.trim() || undefined}>
@@ -426,28 +444,73 @@ export default function AdminPromoLinksPage() {
           <div className="space-y-4">
             <div className="dashboard-nested-card space-y-4 p-4 sm:p-5">
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
-                <div>
-                  <label htmlFor="external-training-url" className={labelClass}>
-                    Free member training URL
-                  </label>
-                  <input
-                    id="external-training-url"
-                    type="url"
-                    value={form.externalTrainingUrl}
-                    onChange={(e) => {
-                      setForm((prev) => ({ ...prev, externalTrainingUrl: e.target.value }));
-                      setSuccess(false);
-                    }}
-                    className={fieldClass}
-                    placeholder="https://..."
-                  />
-                  <p className={hintClass}>
-                    Powers the dashboard bonus ad, earnings banner, and support upsell CTA.
-                  </p>
+                <div className="space-y-3.5">
+                  <div>
+                    <label htmlFor="external-training-title" className={labelClass}>
+                      Headline text
+                    </label>
+                    <input
+                      id="external-training-title"
+                      type="text"
+                      value={form.externalTrainingTitle}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, externalTrainingTitle: e.target.value }));
+                        setSuccess(false);
+                      }}
+                      className={fieldClass}
+                      placeholder="Multiply Your Earnings To $1,000 – $5,000 A Day"
+                    />
+                    <p className={hintClass}>Main headline on the earnings / free training banner.</p>
+                  </div>
+                  <div>
+                    <label htmlFor="external-training-cta" className={labelClass}>
+                      Button text
+                    </label>
+                    <input
+                      id="external-training-cta"
+                      type="text"
+                      value={form.externalTrainingCtaLabel}
+                      onChange={(e) => {
+                        setForm((prev) => ({
+                          ...prev,
+                          externalTrainingCtaLabel: e.target.value,
+                        }));
+                        setSuccess(false);
+                      }}
+                      className={fieldClass}
+                      placeholder="Click Here To Learn How"
+                    />
+                    <p className={hintClass}>
+                      CTA label on the earnings banner and dashboard bonus ad button.
+                    </p>
+                  </div>
+                  <div>
+                    <label htmlFor="external-training-url" className={labelClass}>
+                      Free member training URL
+                    </label>
+                    <input
+                      id="external-training-url"
+                      type="url"
+                      value={form.externalTrainingUrl}
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, externalTrainingUrl: e.target.value }));
+                        setSuccess(false);
+                      }}
+                      className={fieldClass}
+                      placeholder="https://..."
+                    />
+                    <p className={hintClass}>
+                      Powers the dashboard bonus ad, earnings banner, and support upsell CTA.
+                    </p>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <PreviewLabel>Earnings banner</PreviewLabel>
-                  <TrainingBannerPreview url={form.externalTrainingUrl} />
+                  <TrainingBannerPreview
+                    url={form.externalTrainingUrl}
+                    title={form.externalTrainingTitle}
+                    ctaLabel={form.externalTrainingCtaLabel}
+                  />
                 </div>
               </div>
             </div>
@@ -493,26 +556,66 @@ export default function AdminPromoLinksPage() {
           />
           <div className="dashboard-nested-card space-y-4 p-4 sm:p-5">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
-              <div>
-                <label htmlFor="scale-training-url" className={labelClass}>
-                  Scale Training URL
-                </label>
-                <input
-                  id="scale-training-url"
-                  type="url"
-                  value={form.scaleTrainingUrl}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, scaleTrainingUrl: e.target.value }));
-                    setSuccess(false);
-                  }}
-                  className={fieldClass}
-                  placeholder="https://..."
-                />
-                <p className={hintClass}>Destination for the Scale Training page primary CTA.</p>
+              <div className="space-y-3.5">
+                <div>
+                  <label htmlFor="scale-training-title" className={labelClass}>
+                    Headline text
+                  </label>
+                  <input
+                    id="scale-training-title"
+                    type="text"
+                    value={form.scaleTrainingTitle}
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, scaleTrainingTitle: e.target.value }));
+                      setSuccess(false);
+                    }}
+                    className={fieldClass}
+                    placeholder="Scale Your NullPing Cash To $1,000+ Per Day"
+                  />
+                  <p className={hintClass}>Main headline on the Scale Training page.</p>
+                </div>
+                <div>
+                  <label htmlFor="scale-training-cta" className={labelClass}>
+                    Button text
+                  </label>
+                  <input
+                    id="scale-training-cta"
+                    type="text"
+                    value={form.scaleTrainingCtaLabel}
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, scaleTrainingCtaLabel: e.target.value }));
+                      setSuccess(false);
+                    }}
+                    className={fieldClass}
+                    placeholder="Click Here To Access Training"
+                  />
+                  <p className={hintClass}>Primary CTA label on the Scale Training page.</p>
+                </div>
+                <div>
+                  <label htmlFor="scale-training-url" className={labelClass}>
+                    Scale Training URL
+                  </label>
+                  <input
+                    id="scale-training-url"
+                    type="url"
+                    value={form.scaleTrainingUrl}
+                    onChange={(e) => {
+                      setForm((prev) => ({ ...prev, scaleTrainingUrl: e.target.value }));
+                      setSuccess(false);
+                    }}
+                    className={fieldClass}
+                    placeholder="https://..."
+                  />
+                  <p className={hintClass}>Destination for the Scale Training page primary CTA.</p>
+                </div>
               </div>
               <div className="space-y-2">
                 <PreviewLabel>Scale Training page</PreviewLabel>
-                <ScaleTrainingPreview url={form.scaleTrainingUrl} />
+                <ScaleTrainingPreview
+                  url={form.scaleTrainingUrl}
+                  title={form.scaleTrainingTitle}
+                  ctaLabel={form.scaleTrainingCtaLabel}
+                />
               </div>
             </div>
           </div>

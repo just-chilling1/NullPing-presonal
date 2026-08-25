@@ -226,7 +226,7 @@ export function upgradeCdnImageUrl(url: string): string {
   });
 }
 
-function imageDedupeKey(url: string): string {
+export function imageDedupeKey(url: string): string {
   try {
     const parsed = new URL(url);
     const path = parsed.pathname
@@ -328,33 +328,108 @@ export function extractPageImageUrl(html: string, pageUrl: string): string | nul
 }
 
 const JUNK_IMAGE_PATTERN =
-  /(?:logo|icon|avatar|badge|sprite|pixel|tracking|spacer|1x1|emoji|favicon|banner-ad|placeholder|spinner|loader|dummy|blank|transparent|wordmark|og-default)/i;
+  /(?:logo|icon|avatar|badge|sprite|pixel|tracking|spacer|1x1|emoji|favicon|banner[-_]?ad|placeholder|spinner|loader|dummy|blank|transparent|wordmark|og-default|nav[-_]?|footer|header[-_]?logo|site[-_]?icon)\b/i;
 
 const PRODUCT_PATH_PATTERN =
   /\/(?:products?|cdn\/shop|wp-content\/uploads|media\/catalog|images\/i\/)\b/i;
+
+const GALLERY_CONTAINER_PATTERN =
+  /product[-_]?(?:gallery|images|media|photo|carousel|thumbs?)|woocommerce-product-gallery|shopify-section--product|gallery__image|product__media/i;
+
+/** Minimum score for commerce pin product-page images. */
+export const MIN_PRODUCT_IMAGE_SCORE = 75;
+
+export type ScrapedImageSource =
+  | "jsonld-product"
+  | "og-image"
+  | "twitter-image"
+  | "product-gallery"
+  | "itemprop-image"
+  | "content-img"
+  | "amazon-dynamic"
+  | "other";
+
+export interface ScrapedImageCandidate {
+  url: string;
+  score: number;
+  source: ScrapedImageSource;
+  matchedKeywords: string[];
+  alt?: string;
+  width?: number;
+  height?: number;
+  productEvidence: string[];
+}
 
 export interface RankedPageImage {
   url: string;
   score: number;
   source: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+  matchedKeywords?: string[];
+  productEvidence?: string[];
+}
+
+function mapSourceLabel(source: string, inGallery: boolean): ScrapedImageSource {
+  if (inGallery) return "product-gallery";
+  if (source === "jsonld-product" || source === "jsonld") return "jsonld-product";
+  if (source.startsWith("og:")) return "og-image";
+  if (source.startsWith("twitter")) return "twitter-image";
+  if (source === "itemprop") return "itemprop-image";
+  if (source === "amazon-dynamic") return "amazon-dynamic";
+  if (source === "content-img" || source === "picture-srcset") return "content-img";
+  return "other";
 }
 
 function scoreImageCandidate(params: {
   url: string;
   alt?: string;
+  title?: string;
   width?: number;
   height?: number;
   sourceWeight: number;
+  source: string;
   keywords: string[];
-}): number {
+  inGallery?: boolean;
+  nearProductTitle?: boolean;
+  isProductPage?: boolean;
+}): { score: number; matchedKeywords: string[]; productEvidence: string[] } {
   let score = params.sourceWeight;
-  const haystack = `${params.url} ${params.alt ?? ""}`.toLowerCase();
+  const evidence: string[] = [];
+  const haystack = `${params.url} ${params.alt ?? ""} ${params.title ?? ""}`.toLowerCase();
 
-  if (JUNK_IMAGE_PATTERN.test(haystack)) score -= 80;
+  if (params.source === "jsonld-product" || params.source === "jsonld") {
+    evidence.push("JSON-LD Product.image");
+  }
+  if (params.source.startsWith("og:") && params.isProductPage) {
+    evidence.push("og:image on product page");
+  }
+  if (params.inGallery) {
+    score += 30;
+    evidence.push("product gallery container");
+  }
+  if (params.nearProductTitle) {
+    score += 25;
+    evidence.push("near product title/H1");
+  }
+
+  if (JUNK_IMAGE_PATTERN.test(haystack)) {
+    score -= 100;
+    evidence.push("junk/logo/icon penalty");
+  }
   if (/\.svg(\?|$)/i.test(params.url)) score -= 40;
-  if (/\.gif(\?|$)/i.test(params.url) && /pixel|track|spacer|1x1/i.test(haystack)) score -= 60;
-  if (PRODUCT_PATH_PATTERN.test(params.url)) score += 16;
-  if (/(?:hero|featured|product|gallery|main[-_]?image)/i.test(haystack)) score += 10;
+  if (/\.gif(\?|$)/i.test(params.url) && /pixel|track|spacer|1x1/i.test(haystack)) score -= 100;
+  if (/avatar|profile|author|testimonial/i.test(haystack)) score -= 80;
+  if (/banner|promo[-_]?bar|advert/i.test(haystack)) score -= 90;
+  if (PRODUCT_PATH_PATTERN.test(params.url)) {
+    score += 40;
+    evidence.push("product CDN path");
+  }
+  if (/(?:hero|featured|product|gallery|main[-_]?image)/i.test(haystack)) {
+    score += 10;
+    evidence.push("product/gallery path words");
+  }
 
   if (params.width && params.height) {
     if (params.width < 240 || params.height < 240) score -= 50;
@@ -365,27 +440,50 @@ function scoreImageCandidate(params: {
     score += 8;
   }
 
+  const matchedKeywords: string[] = [];
   for (const keyword of params.keywords) {
-    if (keyword.length > 2 && haystack.includes(keyword)) score += 18;
+    if (keyword.length > 2 && haystack.includes(keyword.toLowerCase())) {
+      matchedKeywords.push(keyword);
+      score += 18;
+    }
   }
-
-  const matchCount = params.keywords.filter(
-    (keyword) => keyword.length > 2 && haystack.includes(keyword)
-  ).length;
-  if (matchCount >= 2) score += matchCount * 6;
+  if (matchedKeywords.length >= 2) {
+    score += matchedKeywords.length * 6;
+    evidence.push(`product tokens: ${matchedKeywords.slice(0, 4).join(", ")}`);
+  } else if (matchedKeywords.length === 1) {
+    evidence.push(`product token: ${matchedKeywords[0]}`);
+  }
 
   // Content <img> without product terms is often unrelated chrome; keep meta/JSON-LD
   // product heroes even when the CDN path has no keyword (common on Shopify/CDN).
-  if (params.keywords.length > 0 && matchCount === 0 && params.sourceWeight < 85) {
-    score -= 55;
+  if (params.keywords.length > 0 && matchedKeywords.length === 0 && params.sourceWeight < 85) {
+    score -= 70;
+    evidence.push("no product relationship");
   }
 
-  return score;
+  return { score, matchedKeywords, productEvidence: evidence };
 }
 
 function numericAttr(value: string | undefined): number | undefined {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function detectProductPage($: cheerio.CheerioAPI): boolean {
+  const ogType = $('meta[property="og:type"]').attr("content")?.toLowerCase() ?? "";
+  if (ogType.includes("product")) return true;
+  if ($('[itemtype*="Product"]').length > 0) return true;
+  for (const node of collectJsonLdNodes($)) {
+    if ([...PRODUCT_JSONLD_TYPES].some((type) => jsonLdTypeMatches(node, type))) return true;
+  }
+  return false;
+}
+
+function elementInGallery($: cheerio.CheerioAPI, el: unknown): boolean {
+  const $el = $(el as never);
+  const classes = `${$el.attr("class") ?? ""} ${$el.parent().attr("class") ?? ""} ${$el.parent().parent().attr("class") ?? ""}`;
+  const id = `${$el.attr("id") ?? ""} ${$el.parent().attr("id") ?? ""}`;
+  return GALLERY_CONTAINER_PATTERN.test(`${classes} ${id}`);
 }
 
 /** Rank every usable image on a page — meta tags, JSON-LD, lazy-load attrs, and srcset. */
@@ -397,6 +495,8 @@ export function rankPageImages(
   const $ = cheerio.load(html);
   const ranked: RankedPageImage[] = [];
   const seen = new Set<string>();
+  const isProductPage = detectProductPage($);
+  const pageH1 = $("h1").first().text().trim().toLowerCase();
 
   const add = (
     raw: string,
@@ -404,7 +504,8 @@ export function rankPageImages(
     source: string,
     alt?: string,
     width?: number,
-    height?: number
+    height?: number,
+    extras?: { inGallery?: boolean; nearProductTitle?: boolean; title?: string }
   ) => {
     if (!raw?.trim()) return;
     const abs = resolveAbsoluteUrl(pageUrl, raw);
@@ -413,17 +514,42 @@ export function rankPageImages(
     const key = imageDedupeKey(upgraded);
     if (seen.has(key)) return;
     seen.add(key);
+
+    let weight = sourceWeight;
+    let sourceLabel = source;
+    if (source === "jsonld" && sourceWeight >= 90) {
+      sourceLabel = "jsonld-product";
+      weight = 100;
+    } else if (source.startsWith("og:") && isProductPage) {
+      weight = 95;
+    } else if (extras?.inGallery) {
+      weight = Math.max(weight, 90);
+      sourceLabel = "product-gallery";
+    }
+
+    const scored = scoreImageCandidate({
+      url: upgraded,
+      alt,
+      title: extras?.title,
+      width,
+      height,
+      sourceWeight: weight,
+      source: sourceLabel,
+      keywords,
+      inGallery: extras?.inGallery,
+      nearProductTitle: extras?.nearProductTitle,
+      isProductPage,
+    });
+
     ranked.push({
       url: upgraded,
-      score: scoreImageCandidate({
-        url: upgraded,
-        alt,
-        width,
-        height,
-        sourceWeight,
-        keywords,
-      }),
-      source,
+      score: scored.score,
+      source: sourceLabel,
+      alt,
+      width,
+      height,
+      matchedKeywords: scored.matchedKeywords,
+      productEvidence: scored.productEvidence,
     });
   };
 
@@ -458,7 +584,7 @@ export function rankPageImages(
   });
 
   for (const { url, weight } of extractImagesFromJsonLd($)) {
-    add(url, weight, "jsonld");
+    add(url, weight, weight >= 90 ? "jsonld-product" : "jsonld");
   }
 
   $("picture source[srcset]").each((_, el) => {
@@ -469,8 +595,14 @@ export function rankPageImages(
   $("img").each((_, el) => {
     const $el = $(el);
     const alt = $el.attr("alt") ?? "";
+    const title = $el.attr("title") ?? "";
     const width = numericAttr($el.attr("width"));
     const height = numericAttr($el.attr("height"));
+    const inGallery = elementInGallery($, el);
+    const nearProductTitle =
+      Boolean(pageH1) &&
+      (alt.toLowerCase().includes(pageH1.slice(0, 24)) ||
+        title.toLowerCase().includes(pageH1.slice(0, 24)));
 
     const srcset =
       $el.attr("srcset") || $el.attr("data-srcset") || $el.attr("data-lazy-srcset") || "";
@@ -489,7 +621,11 @@ export function rankPageImages(
       $el.attr("src") ||
       "";
 
-    add(src, 70, "content-img", alt, best?.width ?? width, height);
+    add(src, inGallery ? 90 : 70, inGallery ? "product-gallery" : "content-img", alt, best?.width ?? width, height, {
+      inGallery,
+      nearProductTitle,
+      title,
+    });
 
     const amazonMap = $el.attr("data-a-dynamic-image");
     if (amazonMap) {
@@ -503,7 +639,8 @@ export function rankPageImages(
             "amazon-dynamic",
             alt,
             typeof pair[0] === "number" ? pair[0] : undefined,
-            typeof pair[1] === "number" ? pair[1] : undefined
+            typeof pair[1] === "number" ? pair[1] : undefined,
+            { inGallery, nearProductTitle, title }
           );
         }
       } catch {
@@ -513,6 +650,20 @@ export function rankPageImages(
   });
 
   return ranked.sort((a, b) => b.score - a.score);
+}
+
+export function rankedToScrapedCandidate(ranked: RankedPageImage): ScrapedImageCandidate {
+  const inGallery = ranked.source === "product-gallery";
+  return {
+    url: ranked.url,
+    score: ranked.score,
+    source: mapSourceLabel(ranked.source, inGallery),
+    matchedKeywords: ranked.matchedKeywords ?? [],
+    alt: ranked.alt,
+    width: ranked.width,
+    height: ranked.height,
+    productEvidence: ranked.productEvidence ?? [],
+  };
 }
 
 /** Any usable page image when og:image / JSON-LD is missing. */
@@ -526,11 +677,16 @@ function imageFromHtml(html: string, pageUrl: string): string | null {
   return extractPageImageUrl(html, pageUrl) ?? extractAnyPageImageUrl(html, pageUrl);
 }
 
-/** Scrape a page and return image URLs ranked by relevance to keywords and post topic. */
-export async function scrapeRelevantImagesFromUrl(
+/** Scrape a page and return structured image candidates ranked by product relevance. */
+export async function scrapeRelevantImageCandidates(
   url: string,
-  options?: { keywords?: string[]; limit?: number }
-): Promise<string[]> {
+  options?: {
+    keywords?: string[];
+    limit?: number;
+    /** When true, never fall back to low-score images. */
+    hardThreshold?: number;
+  }
+): Promise<ScrapedImageCandidate[]> {
   let safeUrl: string;
   try {
     safeUrl = (await assertPublicHttpsUrlResolved(url)).toString();
@@ -541,12 +697,12 @@ export async function scrapeRelevantImagesFromUrl(
   const keywords = (options?.keywords ?? [])
     .map((word) => word.toLowerCase().trim())
     .filter((word) => word.length > 2);
-  const limit = options?.limit ?? 6;
+  const limit = options?.limit ?? 12;
+  const hardThreshold = options?.hardThreshold;
 
-  const run = async (): Promise<string[]> => {
+  const run = async (): Promise<ScrapedImageCandidate[]> => {
     const ranked: RankedPageImage[] = [];
     const seen = new Set<string>();
-    const minScore = keywords.length > 0 ? 28 : 20;
 
     const absorb = (html: string) => {
       for (const candidate of rankPageImages(html, safeUrl, keywords)) {
@@ -557,20 +713,28 @@ export async function scrapeRelevantImagesFromUrl(
       }
     };
 
-    const pick = () => {
-      const matched = ranked
-        .filter((candidate) => candidate.score > minScore)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, limit)
-        .map((candidate) => candidate.url);
-      return matched.length > 0 ? matched : ranked.slice(0, limit).map((candidate) => candidate.url);
+    const pick = (): ScrapedImageCandidate[] => {
+      let list = [...ranked].sort((a, b) => b.score - a.score);
+      if (typeof hardThreshold === "number") {
+        list = list.filter((candidate) => candidate.score >= hardThreshold);
+      } else {
+        const minScore = keywords.length > 0 ? 28 : 20;
+        const matched = list.filter((candidate) => candidate.score > minScore);
+        list = matched.length > 0 ? matched : list;
+      }
+      return list.slice(0, limit).map(rankedToScrapedCandidate);
     };
 
     const direct = await fetchDirectHtml(safeUrl);
     if (direct) absorb(direct);
 
     const fromDirect = pick();
-    if (fromDirect.length >= Math.min(3, limit) && ranked.some((c) => c.score > minScore)) {
+    if (
+      fromDirect.length >= Math.min(3, limit) &&
+      (typeof hardThreshold === "number"
+        ? ranked.some((c) => c.score >= hardThreshold)
+        : ranked.some((c) => c.score > (keywords.length > 0 ? 28 : 20)))
+    ) {
       return fromDirect;
     }
 
@@ -582,6 +746,15 @@ export async function scrapeRelevantImagesFromUrl(
 
   const found = await withScrapeRetries(run, (urls) => Boolean(urls && urls.length > 0));
   return found ?? [];
+}
+
+/** Scrape a page and return image URLs ranked by relevance to keywords and post topic. */
+export async function scrapeRelevantImagesFromUrl(
+  url: string,
+  options?: { keywords?: string[]; limit?: number }
+): Promise<string[]> {
+  const candidates = await scrapeRelevantImageCandidates(url, options);
+  return candidates.map((c) => c.url);
 }
 
 /** Scrape an affiliate/product page and return its primary image URL, if any. */

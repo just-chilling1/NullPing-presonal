@@ -38,16 +38,20 @@ export async function upsertPromoLinksToDb(settings: PromoLinksSettings): Promis
     exclusive_offers_enabled: settings.exclusiveOffersEnabled,
     exclusive_offers: settings.exclusiveOffers,
     external_training_url: settings.externalTrainingUrl.trim(),
+    external_training_title: settings.externalTrainingTitle.trim(),
+    external_training_cta_label: settings.externalTrainingCtaLabel.trim(),
     video_withdraw_url: settings.videoWithdrawUrl.trim(),
     scale_training_url: settings.scaleTrainingUrl.trim(),
+    scale_training_title: settings.scaleTrainingTitle.trim(),
+    scale_training_cta_label: settings.scaleTrainingCtaLabel.trim(),
     updated_at: new Date().toISOString(),
   };
 
   const { error } = await admin.from("site_promo_settings").upsert(row, { onConflict: "id" });
   if (error) {
-    if (/site_promo_settings/i.test(error.message) && /schema cache|does not exist/i.test(error.message)) {
+    if (/site_promo_settings/i.test(error.message) && /schema cache|does not exist|column/i.test(error.message)) {
       throw new Error(
-        "Promo links table is missing on this Supabase project. Run: PROJECT_REF=your-project-ref node scripts/apply-promo-settings-migration.mjs"
+        "Promo links schema is out of date on this Supabase project. Run: PROJECT_REF=your-project-ref node scripts/apply-promo-settings-migration.mjs"
       );
     }
     throw new Error(error.message);

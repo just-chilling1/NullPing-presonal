@@ -1,8 +1,9 @@
 import { brand } from "./brand.config";
 
 export const supportRoutes = {
-  contact: "/support",
-  /** @deprecated FAQ lives on the main support page */
+  home: "/support",
+  contact: "/support/contact",
+  /** FAQ lives on the main support page */
   faq: "/support#faq",
 } as const;
 
@@ -10,13 +11,15 @@ const SUPPORT_EMAIL = "NullPingProfit@neoai.freshdesk.com";
 
 export const support = {
   email: SUPPORT_EMAIL,
-  /** In-app contact form anchor on the support page */
-  contactUrl: "/support#contact",
+  /** Dedicated in-app contact form page */
+  contactUrl: "/support/contact",
   /** Freshdesk help portal — browse articles and track tickets */
   helpCenterUrl: "https://neoaifreshdesk.freshdesk.com",
   headline: "Need Help?",
   pageTitle: "Support",
   pageSubtitle: `Help with ${brand.productName} — money pages, Pinterest traffic, premium tools, and your account`,
+  contactPageTitle: "Contact Support",
+  contactPageSubtitle: "Send us a message — we usually reply within about 2 hours",
   subcopy: "Our support team is here for you 24/7",
   ctaLabel: "Contact Support",
   floatingWidget: {

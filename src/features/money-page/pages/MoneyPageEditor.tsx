@@ -19,6 +19,7 @@ import {
   isMoneyPageVariationId,
 } from "@/features/money-page/lib/variations";
 import { sitePublicPath } from "@/lib/app-url";
+import { uploadMoneyPageImage } from "@/features/money-page/lib/upload-client";
 
 const FIELD_LABELS: Partial<Record<keyof MoneyPageCopy, string>> = {
   headline: "Headline",
@@ -49,6 +50,12 @@ export default function MoneyPageEditor() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [heroOptions, setHeroOptions] = useState<string[]>([]);
+  const [heroOptionsLoading, setHeroOptionsLoading] = useState(false);
+  const [heroOptionsEmpty, setHeroOptionsEmpty] = useState(false);
+
+  const customizeBusy =
+    busy === "theme" || busy === "design" || busy === "regen" || busy === "hero";
 
   function applyThemeFromPayload(data: Record<string, unknown>) {
     if (isMoneyPageColorThemeId(data.colorTheme)) {
@@ -123,6 +130,22 @@ export default function MoneyPageEditor() {
           setError(rebuilt?.error || "Could not refresh the live preview");
         }
       }
+
+      setHeroOptionsLoading(true);
+      try {
+        const optRes = await fetch(`/api/assets/${assetId}/hero-options`);
+        const optData = await optRes.json().catch(() => ({}));
+        const images = Array.isArray(optData.images)
+          ? optData.images.filter((u: unknown): u is string => typeof u === "string" && u.length > 0)
+          : [];
+        setHeroOptions(images);
+        setHeroOptionsEmpty(images.length === 0);
+      } catch {
+        setHeroOptions([]);
+        setHeroOptionsEmpty(true);
+      } finally {
+        setHeroOptionsLoading(false);
+      }
     } catch {
       setError("Could not load asset");
     } finally {
@@ -160,6 +183,60 @@ export default function MoneyPageEditor() {
       return false;
     } finally {
       setBusy("");
+    }
+  }
+
+  async function applyHeroImage(nextUrl: string, options?: { continueBusy?: boolean }) {
+    if (!copy || nextUrl === (copy.heroImage ?? "")) {
+      if (options?.continueBusy) setBusy("");
+      return;
+    }
+    if (!options?.continueBusy && busy) return;
+    const previous = copy.heroImage;
+    const nextCopy = { ...copy, heroImage: nextUrl };
+    setCopy(nextCopy);
+    if (!options?.continueBusy) {
+      setBusy("hero");
+      setError("");
+    }
+    try {
+      const res = await fetch(`/api/assets/${assetId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          copy: nextCopy,
+          affiliateUrl,
+          colorTheme,
+          variationId,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCopy({ ...nextCopy, heroImage: previous });
+        setError(typeof data.error === "string" ? data.error : "Could not update photo");
+        return;
+      }
+      setSite(data.site);
+      if (isMoneyPageCopy(data.site.sales_page_json)) setCopy(data.site.sales_page_json);
+      applyThemeFromPayload(data);
+    } catch {
+      setCopy({ ...nextCopy, heroImage: previous });
+      setError("Could not update photo");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function onUploadHero(file: File | null) {
+    if (!file || busy) return;
+    setBusy("hero");
+    setError("");
+    try {
+      const url = await uploadMoneyPageImage(file);
+      await applyHeroImage(url, { continueBusy: true });
+    } catch (err) {
+      setBusy("");
+      setError(err instanceof Error ? err.message : "Upload failed");
     }
   }
 
@@ -344,6 +421,75 @@ export default function MoneyPageEditor() {
         <GlassPanel className="p-6 text-sm text-ink-4">No preview available yet.</GlassPanel>
       )}
 
+      {copy ? (
+        <GlassPanel className="space-y-5 p-6 sm:p-7">
+          <div>
+            <h2 className="ds-h3">Sales page photo</h2>
+            <p className="mt-1 text-sm text-ink-2">
+              Upload your own photo or pick a niche stock image. Changes apply right away.
+            </p>
+          </div>
+
+          <div className="money-hero-current">
+            {copy.heroImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={copy.heroImage} alt="Current sales page photo" className="money-hero-current-img" />
+            ) : (
+              <div className="money-hero-current-empty">No photo yet</div>
+            )}
+          </div>
+
+          <label className="money-hero-upload">
+            <span className="field-label">Upload a photo</span>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+              disabled={customizeBusy}
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                e.target.value = "";
+                void onUploadHero(file);
+              }}
+            />
+          </label>
+
+          <div>
+            <p className="field-label">Or choose one of these</p>
+            {heroOptionsLoading ? (
+              <p className="mt-2 text-xs text-ink-3">Loading photos…</p>
+            ) : heroOptionsEmpty ? (
+              <p className="mt-2 text-xs text-ink-3">No stock photos found. Upload your own instead.</p>
+            ) : (
+              <div className="money-hero-grid" role="radiogroup" aria-label="Sales page stock photos">
+                {heroOptions.map((url) => {
+                  const selected = copy.heroImage === url;
+                  return (
+                    <button
+                      key={url}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      disabled={customizeBusy}
+                      className={`money-hero-thumb ${selected ? "is-selected" : ""}`}
+                      onClick={() => void applyHeroImage(url)}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="" className="money-hero-thumb-img" />
+                      {selected ? (
+                        <span className="money-hero-thumb-check" aria-hidden>
+                          <Check size={14} strokeWidth={3} />
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          {busy === "hero" ? <p className="text-xs text-ink-3">Updating photo…</p> : null}
+        </GlassPanel>
+      ) : null}
+
       <div className="money-page-customize-grid">
         <GlassPanel className="space-y-5 p-6 sm:p-7">
           <div>
@@ -359,7 +505,7 @@ export default function MoneyPageEditor() {
                   type="button"
                   role="radio"
                   aria-checked={selected}
-                  disabled={busy === "theme" || busy === "design" || busy === "regen"}
+                  disabled={customizeBusy}
                   className={`money-theme-card ${selected ? "is-selected" : ""}`}
                   style={{ "--theme-accent": theme.swatch } as React.CSSProperties}
                   onClick={() => void changeTheme(theme.id)}
@@ -397,7 +543,7 @@ export default function MoneyPageEditor() {
                   type="button"
                   role="radio"
                   aria-checked={selected}
-                  disabled={busy === "theme" || busy === "design" || busy === "regen"}
+                  disabled={customizeBusy}
                   className={`money-theme-card money-design-card ${selected ? "is-selected" : ""}`}
                   onClick={() => void changeVariation(variation.id)}
                 >

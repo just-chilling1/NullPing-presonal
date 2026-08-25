@@ -20,6 +20,8 @@ export function EarningsBanner({
   const [visible, setVisible] = useState(true);
   const { settings } = usePromoLinks();
   const ctaUrl = settings.externalTrainingUrl;
+  const title = settings.externalTrainingTitle;
+  const ctaLabel = settings.externalTrainingCtaLabel;
 
   if (!visible || !ctaUrl) return null;
 
@@ -53,13 +55,8 @@ export function EarningsBanner({
         </span>
 
         <h3 className="mx-auto mb-4 max-w-3xl text-xl font-medium uppercase leading-tight tracking-tight text-text-heading sm:text-2xl md:text-[1.75rem]">
-          Wake Up With An Extra{" "}
-          <span className="text-pulse-700">$1,000–$5,000</span> In Your Bank Account Tomorrow
+          {title}
         </h3>
-
-        <p className="mx-auto mb-6 max-w-2xl text-sm leading-relaxed text-text-secondary sm:text-base">
-          Discover how to scale to $1,000–$5,000 every single day — without doing any extra work.
-        </p>
 
         <a
           href={ctaUrl}
@@ -67,7 +64,7 @@ export function EarningsBanner({
           rel="noopener noreferrer"
           className="inline-flex min-h-[54px] w-full max-w-xl items-center justify-center rounded-xl bg-grad-pulse px-8 py-4 text-sm font-medium uppercase tracking-wide text-pulse-900 shadow-pulse transition-all duration-200 hover:brightness-110 active:scale-[0.98] sm:text-base"
         >
-          Watch The Free Training {">>"}
+          {ctaLabel}
         </a>
 
         <p className="mt-5 text-[13px] font-medium uppercase tracking-wider text-[var(--np-danger)] sm:text-sm">
@@ -111,8 +108,7 @@ export function EarningsBanner({
           isLarge ? "mb-2 text-xl sm:text-2xl" : "mb-1.5 text-sm sm:text-base"
         )}
       >
-        Multiply Your Earnings To{" "}
-        <span className="text-pulse-700">$1,000 – $5,000</span> A Day
+        {title}
       </h3>
 
       <a
@@ -124,7 +120,7 @@ export function EarningsBanner({
           isLarge ? "min-h-[48px] px-8 py-3 text-sm" : "min-h-[40px] px-5 py-2 text-[13px]"
         )}
       >
-        Click Here To Learn How
+        {ctaLabel}
       </a>
     </div>
   );

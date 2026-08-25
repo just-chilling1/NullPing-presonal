@@ -1,91 +1,63 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  collectScrapedImageCandidates,
-  fetchAnyFallbackImage,
+  collectStructuredScrapedImageCandidates,
+  downloadImageForHash,
+  fetchPixabayImage,
+  MIN_STOCK_PRODUCT_RELEVANCE,
   normalizeImageUrl,
-  persistExternalImage,
-  pickUnusedScrapedImageUrl,
+  persistExternalImageWithMeta,
 } from "@/features/blog-builder/lib/images";
-import { SiteImagePool } from "@/features/blog-builder/lib/site-image-pool";
-import { inferNicheKey } from "@/features/money-page/lib/niche";
+import {
+  MIN_PRODUCT_IMAGE_SCORE,
+  scrapePage,
+  type ScrapedImageCandidate,
+} from "@/features/blog-builder/lib/scrape";
 import type { PinCopy } from "@/features/traffic/lib/pin-rules";
 import {
-  cleanProductLabel,
-  productSearchTokens,
-} from "@/features/traffic/lib/product-label";
+  buildProductIdentity,
+  productOnlyStockQueries,
+  type ProductIdentity,
+} from "@/features/traffic/lib/product-identity";
+import {
+  isImageAlreadyUsed,
+  mergeUsedImageRecords,
+  recordsFromUrls,
+  strongNormalizeImageUrl,
+  type UsedImageRecord,
+} from "@/features/traffic/lib/image-identity";
+import { cleanProductLabel } from "@/features/traffic/lib/product-label";
 
 export { cleanProductLabel } from "@/features/traffic/lib/product-label";
+export { strongNormalizeImageUrl } from "@/features/traffic/lib/image-identity";
 
-const NICHE_STOCK_QUERIES: Record<string, string[]> = {
-  health: ["sleep supplement", "wellness product", "health supplement bottle", "nighttime wellness"],
-  fitness: ["boxing gloves", "fitness workout gym", "workout product", "sports training"],
-  finance: ["laptop desk productivity", "finance notebook", "investing desk"],
-  marketing: ["laptop app workspace", "digital marketing desk", "software dashboard"],
-  selfhelp: ["journal planner desk", "personal development notebook", "motivation workspace"],
-  beauty: ["skincare product bottle", "serum bottle", "beauty product"],
-  education: ["online course study desk", "learning notebook", "student laptop"],
-  business: ["home office workspace", "entrepreneur desk laptop", "business notebook"],
-  travel: ["pet product", "travel lifestyle photo", "home garden outdoor"],
-};
+export type PinImageSource = "product_page" | "pixabay";
 
-/** Pixabay queries anchored to the cleaned product name — never pin-headline fluff. */
-function productStockQueries(productName: string, hobby?: string | null): string[] {
-  const cleaned = cleanProductLabel(productName);
-  const tokens = productSearchTokens(cleaned);
-  const base = tokens.length > 0 ? tokens.join(" ") : "";
-  const niche = inferNicheKey(cleaned, hobby || "");
-  const nicheQueries = NICHE_STOCK_QUERIES[niche] ?? [];
-
-  if (!base) {
-    const hobbyBits = productSearchTokens(hobby || "");
-    return [
-      ...nicheQueries,
-      ...(hobbyBits.length
-        ? [`${hobbyBits.slice(0, 4).join(" ")} product`, hobbyBits.slice(0, 3).join(" ")]
-        : []),
-    ]
-      .filter(Boolean)
-      .slice(0, 8);
-  }
-
-  const queries = [`${base} product`, `${base} bottle`, base, ...nicheQueries];
-
-  if (/melatonin/i.test(cleaned)) {
-    queries.unshift("melatonin supplement bottle", "melatonin sleep aid");
-  }
-
-  const combat = /box|glove|mma|martial|kick|sparr|punch/i.test(`${cleaned} ${hobby || ""}`);
-  if (combat) {
-    if (/glove/i.test(cleaned)) {
-      queries.push("boxing gloves", "mma gloves", "red boxing glove", "sparring gloves");
-    } else {
-      queries.push("boxing training", "punching bag", "boxing ring");
-    }
-  }
-
-  const fitness = /fitness|gym|sport|workout/i.test(hobby || "");
-  if (fitness && !combat) queries.push(`${tokens[0]} fitness`);
-
-  return [...new Set(queries.filter(Boolean))].slice(0, 8);
+export interface ResolvedPinBackground {
+  url: string | null;
+  normalizedUrl?: string;
+  contentHash?: string;
+  imageSource?: PinImageSource | null;
+  relevanceScore?: number;
+  matchReason?: string;
 }
 
 /**
- * Product-tagged Flickr photos via LoremFlickr — works without API keys and
- * stays related to the product (unlike random Picsum).
- * Rotates tag order/variants by seed so pins do not share the same lock+tags.
+ * Product-tagged Flickr photos via LoremFlickr — kept for non-commerce callers only.
+ * Commerce pin pipeline must never use this.
  */
 export function productPhotoFallbackUrl(productName: string, seed = 0, pinIdx = 0): string | null {
   const cleaned = cleanProductLabel(productName);
-  const baseTags = productSearchTokens(cleaned).slice(0, 3);
+  const baseTags = cleaned
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2)
+    .slice(0, 3);
   if (baseTags.length === 0) return null;
   const variants = [
     baseTags,
     [...baseTags].reverse(),
     [...baseTags, "product"].slice(0, 3),
-    [...baseTags, "lifestyle"].slice(0, 3),
-    [baseTags[0], "photo", "product"].filter(Boolean),
-    [...baseTags, "review"].slice(0, 3),
-    [...baseTags, "wellness"].slice(0, 3),
   ];
   const tags = variants[Math.abs(seed + pinIdx * 13) % variants.length] ?? baseTags;
   const lock =
@@ -99,8 +71,8 @@ function picsumPinFallbackUrl(productName: string, seed: number): string {
 }
 
 /**
- * Unique non-AI fallback for a pin slot after scrape retries fail.
- * LoremFlickr tagged photos first, then any Picsum image.
+ * Unique non-AI fallback — NON-commerce features only.
+ * Product pin pipeline must never call this.
  */
 export function uniquePinFallbackUrl(params: {
   productName: string;
@@ -133,9 +105,8 @@ export function uniquePinFallbackUrl(params: {
 }
 
 /**
- * Ordered background candidates for the pin OG image renderer.
- * Never fall back to the shared money-page hero for pins after the first —
- * that caused every pin to show the same unrelated photo when primary URLs failed.
+ * Renderer candidates: ONLY the assigned source (and same-URL pinImages backup).
+ * Never invents Picsum/LoremFlickr/hero substitutes.
  */
 export function pinRenderBackgroundCandidates(params: {
   sourceImageUrl?: string | null;
@@ -147,300 +118,306 @@ export function pinRenderBackgroundCandidates(params: {
   hobby?: string | null;
   width?: number;
   height?: number;
-  /** Backgrounds already used by sibling pins — never reuse at render time. */
   excludeUrls?: (string | null | undefined)[];
 }): string[] {
-  const cleaned = cleanProductLabel(params.productName) || params.productName;
-  const excluded = new Set(
-    (params.excludeUrls ?? [])
-      .filter((url): url is string => Boolean(url?.trim()))
-      .map((url) => normalizeImageUrl(url))
-  );
-  const uniqueFallback = productPhotoFallbackUrl(
-    cleaned,
-    params.pinIdx * 17 + params.headline.length + 3,
-    params.pinIdx
-  );
-  const anyFallback = picsumPinFallbackUrl(
-    cleaned || "product",
-    params.pinIdx * 17 + params.headline.length + 3
-  );
+  const candidates = [params.sourceImageUrl, params.pinImageUrl]
+    .filter((u): u is string => Boolean(u?.trim()))
+    .filter((url) => /^https?:\/\//i.test(url))
+    .filter((url) => !/picsum\.photos|loremflickr\.com/i.test(url));
 
-  const candidates = [
-    params.sourceImageUrl,
-    params.pinImageUrl,
-    uniqueFallback,
-    anyFallback,
-  ];
+  // Deduplicate same underlying image if both fields point at variants.
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const url of candidates) {
+    const key = strongNormalizeImageUrl(url);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(url);
+  }
+  return out;
+}
 
-  // Shared hero only for pin 0, and only as last resort.
-  if (params.pinIdx === 0) {
-    candidates.push(params.heroImage);
+function isGenericFallbackUrl(url: string): boolean {
+  return /picsum\.photos|loremflickr\.com/i.test(url);
+}
+
+async function claimCandidate(params: {
+  url: string;
+  score: number;
+  reason: string;
+  imageSource: PinImageSource;
+  registry: UsedImageRecord[];
+  userId: string;
+  supabase: SupabaseClient;
+}): Promise<ResolvedPinBackground | null> {
+  if (isGenericFallbackUrl(params.url)) return null;
+  const normalizedUrl = strongNormalizeImageUrl(params.url);
+  if (isImageAlreadyUsed({ url: params.url, normalizedUrl }, params.registry)) {
+    return null;
   }
 
-  return candidates
-    .filter((u): u is string => Boolean(u?.trim()))
-    .filter((url) => !excluded.has(normalizeImageUrl(url)));
+  let contentHash: string | undefined;
+  let finalUrl = params.url;
+
+  try {
+    const persisted = await persistExternalImageWithMeta({
+      url: params.url,
+      userId: params.userId,
+      supabase: params.supabase,
+    });
+    if (persisted) {
+      contentHash = persisted.contentHash;
+      finalUrl = persisted.url;
+      if (
+        isImageAlreadyUsed(
+          { url: finalUrl, normalizedUrl: strongNormalizeImageUrl(finalUrl), contentHash },
+          params.registry
+        )
+      ) {
+        return null;
+      }
+    } else {
+      const downloaded = await downloadImageForHash(params.url);
+      if (!downloaded) return null;
+      contentHash = downloaded.contentHash;
+      if (isImageAlreadyUsed({ url: params.url, normalizedUrl, contentHash }, params.registry)) {
+        return null;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  const record: UsedImageRecord = {
+    normalizedUrl: strongNormalizeImageUrl(finalUrl),
+    contentHash,
+    sourceUrl: finalUrl,
+  };
+  params.registry.push(record);
+
+  return {
+    url: finalUrl,
+    normalizedUrl: record.normalizedUrl,
+    contentHash,
+    imageSource: params.imageSource,
+    relevanceScore: params.score,
+    matchReason: params.reason,
+  };
 }
 
 /**
- * Resolve unique Pinterest pin backgrounds:
- * unused scraped affiliate images → Pixabay stock → any non-AI photo.
- *
- * Each image URL is assigned at most once per batch.
+ * Resolve unique Pinterest pin backgrounds for commerce products.
+ * Hierarchy: product-page (≥ threshold) → Pixabay product queries (≥ threshold) → null.
+ * Never uses Picsum, LoremFlickr, or generic niche imagery.
  */
 export async function resolvePinBackgroundImages(params: {
   pins: PinCopy[];
   productName: string;
+  siteTitle?: string | null;
   hobby?: string | null;
   scrapeUrl?: string | null;
   scrapeUrls?: string[];
   preferredImages?: (string | null | undefined)[];
   /** Already-used backgrounds (prior batches) — never reuse these. */
   excludeImages?: (string | null | undefined)[];
+  /** Durable used-image registry from sales_page_json. */
+  usedIdentities?: UsedImageRecord[];
   userId: string;
   supabase: SupabaseClient;
-}): Promise<(string | null)[]> {
-  const pool = new SiteImagePool();
-  const results: (string | null)[] = [];
-  const usedKeys = new Set<string>();
+}): Promise<{
+  backgrounds: ResolvedPinBackground[];
+  usedIdentities: UsedImageRecord[];
+  identity: ProductIdentity;
+}> {
+  const registry: UsedImageRecord[] = mergeUsedImageRecords(
+    [...(params.usedIdentities ?? []), ...recordsFromUrls(params.excludeImages ?? [])],
+    []
+  );
 
-  const productName = cleanProductLabel(params.productName) || params.productName.trim();
-
-  const collectHttpUrls = (list: (string | null | undefined)[] | undefined) =>
-    [
-      ...new Set(
-        (list ?? []).filter((u): u is string => {
-          if (typeof u !== "string") return false;
-          const trimmed = u.trim();
-          return trimmed.length > 0 && /^https?:\/\//i.test(trimmed) && !/picsum\.photos/i.test(trimmed);
-        })
-      ),
-    ];
-
-  const preferred = collectHttpUrls(params.preferredImages);
-  const excluded = collectHttpUrls(params.excludeImages);
-
-  const markUsed = (...urls: (string | null | undefined)[]) => {
-    for (const url of urls) {
-      if (!url?.trim()) continue;
-      usedKeys.add(normalizeImageUrl(url));
-      pool.seed([{ url, stockId: normalizeImageUrl(url) }]);
+  // Scrape primary page once for identity meta.
+  let pageMeta: Awaited<ReturnType<typeof scrapePage>> = null;
+  const primaryUrl = params.scrapeUrl?.trim() || params.scrapeUrls?.[0]?.trim() || "";
+  if (primaryUrl) {
+    try {
+      pageMeta = await scrapePage(primaryUrl);
+    } catch {
+      pageMeta = null;
     }
-  };
-
-  const isUsed = (url: string | null | undefined) =>
-    Boolean(url?.trim() && usedKeys.has(normalizeImageUrl(url)));
-
-  const heroForFirstPin = preferred[0] ?? null;
-
-  // Exclude prior/extra-batch images and preferred aliases — but leave the first-pin
-  // hero free so it can be claimed exactly once.
-  markUsed(...excluded, ...preferred.slice(1));
-  if (heroForFirstPin) {
-    pool.seed([{ url: heroForFirstPin, stockId: normalizeImageUrl(heroForFirstPin) }]);
   }
 
-  const stockQueries = productStockQueries(productName, params.hobby);
-  const productTokens = productSearchTokens(productName);
+  const identity = buildProductIdentity({
+    productName: params.productName,
+    siteTitle: params.siteTitle,
+    hobby: params.hobby,
+    pageTitle: pageMeta?.title,
+    pageDescription: pageMeta?.description,
+    pageH1: pageMeta?.h1,
+    brand: pageMeta?.brand,
+    canonicalUrl: primaryUrl || undefined,
+  });
+
+  console.info(`[PINS] Product: ${identity.normalizedProductName} (${identity.productType})`);
 
   const hasScrapeTargets = Boolean(
     params.scrapeUrl?.trim() || (params.scrapeUrls?.length ?? 0) > 0
   );
-  const scrapedCandidates = hasScrapeTargets
-    ? await collectScrapedImageCandidates({
+
+  console.info("[PINS] Scraping product page...");
+  const scrapedPool: ScrapedImageCandidate[] = hasScrapeTargets
+    ? await collectStructuredScrapedImageCandidates({
         scrapeUrl: params.scrapeUrl,
         scrapeUrls: params.scrapeUrls,
-        scrapeKeywords: productTokens,
+        scrapeKeywords: identity.strongTokens.length
+          ? identity.strongTokens
+          : identity.productTokens,
         limit: Math.max(24, params.pins.length * 3),
+        hardThreshold: MIN_PRODUCT_IMAGE_SCORE,
       })
     : [];
 
-  const excludeForImages = () => [...usedKeys];
+  const validProduct = scrapedPool.filter((c) => c.score >= MIN_PRODUCT_IMAGE_SCORE);
+  console.info(`[PINS] Found ${scrapedPool.length} image candidates`);
+  console.info(`[PINS] Valid product images: ${validProduct.length}`);
 
-  const pickUnusedFallback = (pinIdx: number, headlineLen: number): string | null =>
-    uniquePinFallbackUrl({
-      productName,
-      pinIdx,
-      usedKeys,
-      hobby: params.hobby,
-      headlineLen,
+  // Preferred hero only if it is already a valid product candidate (or scores via pool match).
+  const preferred = (params.preferredImages ?? [])
+    .filter((u): u is string => Boolean(u?.trim() && /^https?:\/\//i.test(u)))
+    .filter((u) => !isGenericFallbackUrl(u));
+
+  const heroUrl = preferred[0] ?? null;
+  const heroInPool = heroUrl
+    ? validProduct.find((c) => strongNormalizeImageUrl(c.url) === strongNormalizeImageUrl(heroUrl))
+    : undefined;
+
+  const orderedPool: ScrapedImageCandidate[] = [];
+  if (heroInPool) {
+    orderedPool.push(heroInPool);
+  } else if (heroUrl && pageMeta?.imageUrl && strongNormalizeImageUrl(heroUrl) === strongNormalizeImageUrl(pageMeta.imageUrl)) {
+    // Hero is the scraped page primary image — treat as product_page with threshold credit.
+    orderedPool.push({
+      url: heroUrl,
+      score: MIN_PRODUCT_IMAGE_SCORE + 5,
+      source: "og-image",
+      matchedKeywords: identity.strongTokens.slice(0, 3),
+      productEvidence: ["money-page hero matches product page image"],
     });
-
-  for (let i = 0; i < params.pins.length; i++) {
-    const pin = params.pins[i];
-    const keywords = [
-      ...productTokens,
-      ...(pin.keywords ?? []).flatMap((k) => productSearchTokens(cleanProductLabel(k))),
-    ].slice(0, 12);
-
-    let chosen: string | null = null;
-
-    // 1) At most one known product photo (money-page hero) on the first pin.
-    if (i === 0 && heroForFirstPin && !isUsed(heroForFirstPin)) {
-      chosen = heroForFirstPin;
-    }
-
-    // 2) Next unused scraped affiliate image — each scraped URL at most once per batch.
-    if (!chosen && scrapedCandidates.length > 0) {
-      const scraped = await pickUnusedScrapedImageUrl({
-        candidates: scrapedCandidates,
-        excludeUrls: excludeForImages(),
-      });
-      if (scraped && !isUsed(scraped)) {
-        chosen = scraped;
-      }
-    }
-
-    // 3) Product-name Pixabay stock (never re-scrape through the pool).
-    if (!chosen) {
-      const queryList =
-        stockQueries.length > 0 ? stockQueries : [productName.trim()].filter(Boolean);
-      const rotated = [
-        ...queryList.slice(i % Math.max(queryList.length, 1)),
-        ...queryList.slice(0, i % Math.max(queryList.length, 1)),
-      ];
-      for (let q = 0; q < rotated.length && !chosen; q++) {
-        try {
-          const resolved = await pool.resolveUnique({
-            title: cleanedTitleForStock(pin, productName),
-            subject: [
-              productName,
-              "Photorealistic product photo matching this exact product",
-              "horizontal landscape composition",
-              "no text overlay",
-            ].join(". "),
-            hobby: params.hobby?.trim() || undefined,
-            scrapeKeywords: keywords.length ? keywords : productTokens,
-            pickOffset: i * 5 + q,
-            seedBoost: i * 19 + q * 5 + keywords.length + (pin.headline?.length ?? 0) + usedKeys.size,
-            customQuery: rotated[q],
-            orientation: "horizontal",
-            preferStock: true,
-            allowPicsumFallback: false,
-          });
-          if (resolved.url && !isUsed(resolved.url)) {
-            chosen = resolved.url;
-          }
-        } catch {
-          // try next query
-        }
-      }
-    }
-
-    // 4) Any non-AI photo after scrape retries — Pixabay/Picsum, then tagged fallback.
-    if (!chosen || isUsed(chosen)) {
-      const anyImage = await fetchAnyFallbackImage({
-        title: productName || pin.title || "product",
-        subject: productName,
-        hobby: params.hobby ?? undefined,
-        seedOffset: i * 19 + (pin.headline?.length ?? 0) + usedKeys.size,
-      });
-      if (anyImage && !isUsed(anyImage)) {
-        chosen = anyImage;
-      } else {
-        chosen = pickUnusedFallback(i, pin.headline?.length ?? 0);
-      }
-    }
-
-    if (!chosen || isUsed(chosen)) {
-      results.push(null);
+  }
+  for (const c of validProduct) {
+    if (orderedPool.some((x) => strongNormalizeImageUrl(x.url) === strongNormalizeImageUrl(c.url))) {
       continue;
     }
+    orderedPool.push(c);
+  }
 
-    try {
-      const persisted = await persistExternalImage({
-        url: chosen,
+  const results: ResolvedPinBackground[] = [];
+  let poolIdx = 0;
+  let rejectedUnrelated = 0;
+  let rejectedDupes = 0;
+
+  for (let i = 0; i < params.pins.length; i++) {
+    let assigned: ResolvedPinBackground | null = null;
+
+    while (poolIdx < orderedPool.length && !assigned) {
+      const candidate = orderedPool[poolIdx++];
+      if (candidate.score < MIN_PRODUCT_IMAGE_SCORE) {
+        rejectedUnrelated++;
+        console.info(
+          `[PINS] rejected image:\nscore=${candidate.score}\nreason=${candidate.productEvidence.join(", ") || "below threshold"}`
+        );
+        continue;
+      }
+      if (isImageAlreadyUsed({ url: candidate.url }, registry)) {
+        rejectedDupes++;
+        continue;
+      }
+      assigned = await claimCandidate({
+        url: candidate.url,
+        score: candidate.score,
+        reason:
+          candidate.productEvidence.join(" + ") ||
+          `${candidate.source} score=${candidate.score}`,
+        imageSource: "product_page",
+        registry,
         userId: params.userId,
         supabase: params.supabase,
       });
-      let finalUrl = persisted ?? chosen;
+      if (!assigned) rejectedDupes++;
+    }
 
-      // Persisted CDN path might collide with an earlier pin — force a fresh fallback.
-      if (isUsed(finalUrl) && normalizeImageUrl(finalUrl) !== normalizeImageUrl(chosen)) {
-        const retry = pickUnusedFallback(i, (pin.headline?.length ?? 0) + 13);
-        if (!retry) {
-          results.push(null);
+    // Pixabay product-only queries when product-page pool is exhausted.
+    if (!assigned) {
+      const queries = productOnlyStockQueries(identity);
+      for (let q = 0; q < queries.length && !assigned; q++) {
+        const hit = await fetchPixabayImage(identity.normalizedProductName, identity.normalizedProductName, {
+          customQuery: queries[q],
+          orientation: "horizontal",
+          pickOffset: i * 5 + q,
+          seedBoost: i * 19 + q * 5 + registry.length,
+          excludeUrls: registry.map((r) => r.sourceUrl || "").filter(Boolean),
+          excludeStockIds: registry.map((r) => r.normalizedUrl),
+          productTokens: identity.productTokens,
+          strongTokens: identity.strongTokens,
+          minRelevance: MIN_STOCK_PRODUCT_RELEVANCE,
+        });
+        if (!hit?.url) continue;
+        if ((hit.relevanceScore ?? 0) < MIN_STOCK_PRODUCT_RELEVANCE) {
+          rejectedUnrelated++;
           continue;
         }
-        chosen = retry;
-        const persistedRetry = await persistExternalImage({
-          url: retry,
+        if (isImageAlreadyUsed({ url: hit.url }, registry)) {
+          rejectedDupes++;
+          continue;
+        }
+        assigned = await claimCandidate({
+          url: hit.url,
+          score: hit.relevanceScore ?? MIN_STOCK_PRODUCT_RELEVANCE,
+          reason: hit.matchReason || `pixabay query: ${queries[q]}`,
+          imageSource: "pixabay",
+          registry,
           userId: params.userId,
           supabase: params.supabase,
         });
-        finalUrl = persistedRetry ?? retry;
-        if (isUsed(finalUrl)) {
-          results.push(null);
-          continue;
-        }
-      } else if (isUsed(finalUrl)) {
-        results.push(null);
-        continue;
       }
-
-      results.push(finalUrl);
-      markUsed(chosen, finalUrl);
-    } catch {
-      if (isUsed(chosen)) {
-        results.push(null);
-        continue;
-      }
-      results.push(chosen);
-      markUsed(chosen);
     }
 
-    // If pin 0 skipped the hero, still burn it so later pins never reuse it.
-    if (i === 0 && heroForFirstPin && !isUsed(heroForFirstPin)) {
-      markUsed(heroForFirstPin);
+    if (assigned?.url) {
+      console.info(
+        `[PINS] Pin ${i + 1} -> ${assigned.imageSource} score=${assigned.relevanceScore}`
+      );
+      results.push(assigned);
+    } else {
+      console.info(`[PINS] Pin ${i + 1} -> no trustworthy image`);
+      results.push({
+        url: null,
+        imageSource: null,
+        relevanceScore: undefined,
+        matchReason: "no trustworthy product image",
+      });
     }
   }
 
-  return ensureUniquePinBackgrounds(results, {
-    productName,
-    hobby: params.hobby,
-    pins: params.pins,
-  });
+  console.info(`[PINS] Rejected unrelated images: ${rejectedUnrelated}`);
+  console.info(`[PINS] Rejected duplicates: ${rejectedDupes}`);
+
+  return { backgrounds: results, usedIdentities: registry, identity };
 }
 
-/** Replace duplicate backgrounds within a batch — each pin gets a unique image URL. */
+/** Replace duplicate backgrounds within a batch — null out dupes (no generic fill). */
 export function ensureUniquePinBackgrounds(
   backgrounds: (string | null)[],
-  params: {
+  _params?: {
     productName: string;
     hobby?: string | null;
     pins: PinCopy[];
   }
 ): (string | null)[] {
   const used = new Set<string>();
-  return backgrounds.map((url, idx) => {
-    if (url) {
-      const key = normalizeImageUrl(url);
-      if (!used.has(key)) {
-        used.add(key);
-        return url;
-      }
-    }
-
-    for (let attempt = 0; attempt < 24; attempt++) {
-      const replacement = uniquePinFallbackUrl({
-        productName: params.productName,
-        pinIdx: idx + attempt,
-        usedKeys: used,
-        hobby: params.hobby,
-        headlineLen: (params.pins[idx]?.headline?.length ?? 0) + attempt * 7,
-      });
-      if (!replacement) continue;
-      const replacementKey = normalizeImageUrl(replacement);
-      if (used.has(replacementKey)) continue;
-      used.add(replacementKey);
-      return replacement;
-    }
-
+  return backgrounds.map((url) => {
+    if (!url) return null;
+    if (isGenericFallbackUrl(url)) return null;
+    const key = strongNormalizeImageUrl(url);
+    if (used.has(key)) return null;
+    used.add(key);
     return url;
   });
-}
-
-function cleanedTitleForStock(pin: PinCopy, productName: string): string {
-  return productName || pin.title || pin.headline || "product";
 }
