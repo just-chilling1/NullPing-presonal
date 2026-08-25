@@ -371,16 +371,6 @@ export default function RecurringStreamPage() {
             </div>
           ) : null}
 
-          {lastAttachedId ? (
-            <p className="rounded-xl border border-success/25 bg-success/10 px-3.5 py-2.5 text-sm text-success shadow-[0_0_24px_-12px_rgba(52,211,153,0.55)]">
-              Your authority section is live on your money page — visitors will see it on your next
-              publish.{" "}
-              <Link href={`/money-page/${selectedSiteId}`} className="font-medium underline">
-                Review &amp; publish now
-              </Link>
-            </p>
-          ) : null}
-
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-text-muted">
               <Filter size={13} aria-hidden />
@@ -468,6 +458,17 @@ export default function RecurringStreamPage() {
               }}
             />
             <div className="flex flex-wrap gap-2 border-t border-[var(--np-line)] bg-[color-mix(in_srgb,var(--np-surface)_88%,var(--np-signal-100))] p-4 md:p-5">
+              {lastAttachedId === previewArticle.id ? (
+                <p className="mb-1 w-full rounded-lg border border-success/25 bg-success/10 px-3 py-2 text-sm text-success">
+                  Section added — publish your money page to make it live.{" "}
+                  <Link
+                    href={`/money-page/${selectedSiteId}`}
+                    className="font-semibold underline underline-offset-2"
+                  >
+                    Review &amp; publish now
+                  </Link>
+                </p>
+              ) : null}
               <button
                 type="button"
                 disabled={loadingAction?.articleId === previewArticle.id}
@@ -504,6 +505,13 @@ export default function RecurringStreamPage() {
       </AnimatePresence>
 
       <div className={clsx("space-y-4", refreshing && "pointer-events-none opacity-60")}>
+        {lastAttachedId ? (
+          <p className="rounded-xl border border-success/25 bg-success/10 px-3.5 py-2.5 text-sm text-success shadow-[0_0_24px_-12px_rgba(52,211,153,0.55)]">
+            Your authority section is live on your money page — visitors will see it on your next
+            publish.
+          </p>
+        ) : null}
+
         <div className="flex items-end justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-text-heading">Article library</h2>
@@ -597,6 +605,18 @@ export default function RecurringStreamPage() {
                       </span>
                     ) : null}
                   </div>
+
+                  {lastAttachedId === article.id ? (
+                    <p className="rounded-lg border border-success/25 bg-success/10 px-3 py-2 text-[12px] leading-relaxed text-success">
+                      Section added — publish your money page to make it live.{" "}
+                      <Link
+                        href={`/money-page/${selectedSiteId}`}
+                        className="font-semibold underline underline-offset-2"
+                      >
+                        Review &amp; publish now
+                      </Link>
+                    </p>
+                  ) : null}
 
                   <div className="mt-auto space-y-2 border-t border-[var(--np-line)] pt-3">
                     <button

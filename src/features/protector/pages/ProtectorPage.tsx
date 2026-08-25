@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Lock,
   CheckCircle,
+  Check,
   Mail,
   KeyRound,
   Clock,
@@ -366,11 +367,18 @@ export default function ProtectorPage() {
                     </div>
                     <span
                       className={cn(
-                        "text-[13px] font-medium uppercase tracking-wider",
+                        "inline-flex shrink-0 items-center gap-1.5 text-[13px] font-medium uppercase tracking-wider",
                         check.ok ? "text-success" : "text-[var(--np-warning)]"
                       )}
                     >
-                      {check.ok ? "CHECKED" : "Review"}
+                      {check.ok ? (
+                        <>
+                          <Check size={14} strokeWidth={2.5} aria-hidden />
+                          CHECKED
+                        </>
+                      ) : (
+                        "Review"
+                      )}
                     </span>
                   </div>
                 </GlassPanel>
