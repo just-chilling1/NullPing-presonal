@@ -4,7 +4,7 @@ import { resolveVaultPinDrafts } from "./vault-images";
 
 /**
  * Insert 10 ready Pinterest pins for a vault money page.
- * Images come from the affiliate page scrape (3 retries), then any non-AI photo.
+ * Images come from the shared product pin resolver (scrape → product Pixabay → empty).
  * Skips if pins already exist for the site.
  */
 export async function seedVaultPins(params: {
@@ -14,7 +14,7 @@ export async function seedVaultPins(params: {
   entry: VaultCatalogEntry;
   scrapeUrl?: string | null;
   heroImage?: string | null;
-  /** Pre-seeded unique pin images — skips live scrape/resolve when present. */
+  /** Pre-seeded unique pin images — generic URLs are re-resolved. */
   preloadedPinImages?: string[] | null;
   salesPageJson?: Record<string, unknown> | null;
 }): Promise<number> {
@@ -36,17 +36,23 @@ export async function seedVaultPins(params: {
   });
   const batchId = crypto.randomUUID();
 
-  const rows = copies.map((pin, idx) => ({
-    user_id: params.userId,
-    site_id: params.siteId,
-    batch_id: batchId,
-    idx,
-    headline: pin.headline,
-    title: pin.title,
-    description: pin.description,
-    keywords: pin.keywords,
-    source_image_url: pin.imageUrl,
-  }));
+  const rows = copies.map((pin, idx) => {
+    const source =
+      pin.imageUrl?.trim() && !/picsum\.photos|loremflickr\.com/i.test(pin.imageUrl)
+        ? pin.imageUrl.trim()
+        : null;
+    return {
+      user_id: params.userId,
+      site_id: params.siteId,
+      batch_id: batchId,
+      idx,
+      headline: pin.headline,
+      title: pin.title,
+      description: pin.description,
+      keywords: pin.keywords,
+      source_image_url: source,
+    };
+  });
 
   let { data: inserted, error } = await params.supabase.from("site_pins").insert(rows).select("id");
 
@@ -69,7 +75,7 @@ export async function seedVaultPins(params: {
   await Promise.all(
     inserted.map(async (row, idx) => {
       const imagePath = `/api/pins/${row.id}/image`;
-      const source = copies[idx]?.imageUrl;
+      const source = rows[idx]?.source_image_url;
       if (source) pinImages[row.id] = source;
       await params.supabase
         .from("site_pins")
@@ -81,7 +87,7 @@ export async function seedVaultPins(params: {
     })
   );
 
-  if (Object.keys(pinImages).length > 0) {
+  if (Object.keys(pinImages).length > 0 || params.salesPageJson) {
     await params.supabase
       .from("sites")
       .update({

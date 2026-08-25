@@ -112,47 +112,20 @@ const NICHE_PIN_HOOKS: Record<VaultNiche, string[]> = {
   ],
 };
 
-const NICHE_PHOTO_TAGS: Record<VaultNiche, string> = {
-  "Health & Wellness": "wellness,sleep,healthy",
-  "Finance & Investing": "finance,investing,budget",
-  "Fitness & Sports": "fitness,workout,gym",
-  "Digital Marketing": "marketing,laptop,analytics",
-  "Self-Help & Personal Development": "journal,mindfulness,growth",
-  "Beauty & Skincare": "skincare,beauty,serum",
-  "Education & Learning": "study,desk,books",
-  "Business & Entrepreneurship": "startup,office,laptop",
-  "Travel & Lifestyle": "travel,luggage,lifestyle",
-};
-
 export interface VaultPinDraft extends PinCopy {
-  /** Ready-to-display background image for this pin (unique per template + index). */
+  /** Background URL after product-accurate resolve; empty until resolved. */
   imageUrl: string;
 }
 
-function productPhotoTokens(productName: string): string {
-  return productName
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length > 2)
-    .slice(0, 4)
-    .join(" ");
-}
-
 /**
- * Deterministic Pinterest-sized (2:3) image URL for a vault pin.
- * Unique per catalog entry + pin index — scraped/stock photos only, never AI.
+ * @deprecated Do not use for pin backgrounds — LoremFlickr is unrelated stock.
+ * Kept only so old imports compile; always returns empty.
  */
-export function buildVaultPinImageUrl(entry: VaultCatalogEntry, pinIdx: number): string {
-  const productBits = productPhotoTokens(entry.productName);
-  const tags = productBits
-    ? productBits.split(" ").slice(0, 3).join(",")
-    : NICHE_PHOTO_TAGS[entry.niche];
-  const lock = Math.abs(entry.id * 97 + pinIdx * 31 + 11) % 100_000;
-  return `https://loremflickr.com/1000/1500/${encodeURIComponent(tags)}/all?lock=${lock}`;
+export function buildVaultPinImageUrl(_entry: VaultCatalogEntry, _pinIdx: number): string {
+  return "";
 }
 
-/** Build 10 deterministic pin drafts (copy + unique images) for vault preview/install. */
+/** Build 10 pin copy drafts. Images are assigned later by the product pin resolver. */
 export function buildVaultPinDrafts(entry: VaultCatalogEntry): VaultPinDraft[] {
   const name = entry.productName;
   const hooks = NICHE_PIN_HOOKS[entry.niche];
@@ -184,7 +157,7 @@ export function buildVaultPinDrafts(entry: VaultCatalogEntry): VaultPinDraft[] {
         0,
         6
       ),
-      imageUrl: buildVaultPinImageUrl(entry, i),
+      imageUrl: "",
     };
   });
 }

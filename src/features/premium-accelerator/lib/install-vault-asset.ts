@@ -180,7 +180,8 @@ export async function installVaultAsset(params: {
     userId: params.user.id,
     siteId: created.id,
     entry,
-    scrapeUrl: useTemplate ? null : affiliateUrl,
+    // Always pass affiliate URL so re-resolved slots can scrape product images.
+    scrapeUrl: affiliateUrl,
     heroImage,
     preloadedPinImages: preloadedPins,
     salesPageJson: copy as unknown as Record<string, unknown>,

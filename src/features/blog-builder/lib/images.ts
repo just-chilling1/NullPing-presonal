@@ -129,6 +129,8 @@ interface ImagePickOptions {
 
 export interface StockImageResult {
   url: string;
+  /** Fallback URL if primary fails to download (e.g. Pixabay webformat vs large). */
+  alternateUrl?: string;
   stockId: string;
   tags?: string;
   relevanceScore?: number;
@@ -350,6 +352,98 @@ export async function fetchPixabayImage(
     return null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Return multiple relevant Pixabay hits for a query (unique stock ids).
+ * Prefers stable `webformatURL` (cdn.pixabay.com) with `largeImageURL` as alternate.
+ */
+export async function fetchPixabayImageCandidates(
+  title: string,
+  subject: string,
+  options?: ImagePickOptions & {
+    productTokens?: string[];
+    strongTokens?: string[];
+    categoryTokens?: string[];
+    minRelevance?: number;
+    limit?: number;
+  }
+): Promise<StockImageResult[]> {
+  if (!PIXABAY_API_KEY) return [];
+
+  const query =
+    options?.customQuery?.trim() ||
+    buildPixabayQuery(title, subject, options?.hobby);
+  if (!query) return [];
+
+  const url = new URL("https://pixabay.com/api/");
+  url.searchParams.set("key", PIXABAY_API_KEY);
+  url.searchParams.set("q", query);
+  url.searchParams.set("image_type", "photo");
+  url.searchParams.set("orientation", options?.orientation ?? "all");
+  url.searchParams.set("safesearch", "true");
+  url.searchParams.set("order", "popular");
+  url.searchParams.set("per_page", "40");
+  url.searchParams.set("min_width", "640");
+
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(PIXABAY_TIMEOUT_MS) });
+    if (!response.ok) return [];
+
+    const data = (await response.json()) as { hits?: PixabayHit[] };
+    let hits = (data.hits ?? []).filter((h) => h.largeImageURL || h.webformatURL);
+    if (hits.length === 0) return [];
+
+    const seed =
+      title.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) + (options?.seedBoost ?? 0) * 17;
+    const offset = options?.pickOffset ?? 0;
+    const exclude = options?.excludeUrls ?? [];
+    const excludeIds = new Set(options?.excludeStockIds ?? []);
+    const productTokens = options?.productTokens ?? [];
+    const strongTokens = options?.strongTokens ?? productTokens;
+    const minRelevance = options?.minRelevance;
+    const limit = Math.max(1, options?.limit ?? 12);
+    const out: StockImageResult[] = [];
+    const seen = new Set<string>();
+
+    for (let i = 0; i < hits.length && out.length < limit; i++) {
+      const hit = hits[(seed + offset + i) % hits.length];
+      const large = hit.largeImageURL || null;
+      const web = hit.webformatURL || null;
+      // Prefer stable CDN webformat first — pixabay.com/get/ large URLs often break later.
+      const primary = web || large;
+      if (!primary) continue;
+      const stockId = stockIdForHit(hit, primary);
+      if (excludeIds.has(stockId) || seen.has(stockId)) continue;
+      if (isExcludedUrl(primary, exclude)) continue;
+
+      let relevance: ImageRelevance | null = null;
+      if (typeof minRelevance === "number" && (productTokens.length > 0 || strongTokens.length > 0)) {
+        relevance = scoreStockProductRelevance({
+          query,
+          tags: hit.tags,
+          pageURL: hit.pageURL,
+          productTokens,
+          strongTokens,
+          categoryTokens: options?.categoryTokens,
+        });
+        if (relevance.score < minRelevance) continue;
+      }
+
+      seen.add(stockId);
+      out.push({
+        url: primary,
+        alternateUrl: large && large !== primary ? large : undefined,
+        stockId,
+        tags: hit.tags,
+        relevanceScore: relevance?.score,
+        matchReason: relevance?.reason ?? `pixabay:${query}`,
+      });
+    }
+    return out;
+  } catch {
+    return [];
   }
 }
 

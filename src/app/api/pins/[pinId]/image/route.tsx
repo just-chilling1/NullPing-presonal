@@ -62,20 +62,37 @@ async function toDataImageUrl(url: string): Promise<string | null> {
   if (url.startsWith("data:image/")) return url;
   // Never load unrelated stock fallbacks in the renderer.
   if (/picsum\.photos|loremflickr\.com/i.test(url)) return null;
-  try {
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(12_000),
-      headers: { "User-Agent": "NullPingPinImage/1.0", Accept: "image/*,*/*" },
-      redirect: "follow",
-    });
-    if (!res.ok) return null;
-    const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.byteLength < 64) return null;
-    const mime = sniffMime(buf);
-    return `data:${mime};base64,${buf.toString("base64")}`;
-  } catch {
-    return null;
+
+  const attempts: Record<string, string>[] = [
+    {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+      Referer: "https://pixabay.com/",
+    },
+    {
+      "User-Agent": "NullPingPinImage/1.1",
+      Accept: "image/*,*/*",
+    },
+  ];
+
+  for (const headers of attempts) {
+    try {
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(15_000),
+        headers,
+        redirect: "follow",
+      });
+      if (!res.ok) continue;
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.byteLength < 64) continue;
+      const mime = sniffMime(buf);
+      return `data:${mime};base64,${buf.toString("base64")}`;
+    } catch {
+      /* try next */
+    }
   }
+  return null;
 }
 
 /**

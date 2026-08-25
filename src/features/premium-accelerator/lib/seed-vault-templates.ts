@@ -76,7 +76,8 @@ export async function seedAcceleratorTemplate(params: {
   const copy = buildVaultMoneyPageCopy(params.entry, heroImage);
   const pinDrafts = buildVaultPinDrafts(params.entry).map((draft, i) => ({
     ...draft,
-    imageUrl: pinImages[i] || draft.imageUrl,
+    // Never fall back to draft placeholders — only product-resolved URLs.
+    imageUrl: pinImages[i]?.trim() || "",
   }));
 
   const salesPageJson = {

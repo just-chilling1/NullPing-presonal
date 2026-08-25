@@ -2,82 +2,94 @@
 import { getServiceRoleClient } from "@/lib/api-auth";
 import { scrapePageWithCache } from "@/features/blog-builder/lib/scrape-cache";
 import {
-  fetchNicheRelatedImage,
+  fetchPixabayImageCandidates,
+  MIN_STOCK_PRODUCT_RELEVANCE,
   normalizeImageUrl,
   persistExternalImage,
 } from "@/features/blog-builder/lib/images";
 import { resolvePinBackgroundImages } from "@/features/traffic/lib/pin-images";
-import { productSearchTokens } from "@/features/traffic/lib/product-label";
+import {
+  buildProductIdentity,
+  productOnlyStockQueries,
+} from "@/features/traffic/lib/product-identity";
+import { recordsFromUrls } from "@/features/traffic/lib/image-identity";
 import type { VaultCatalogEntry } from "./catalog";
 import { buildVaultPinDrafts, type VaultPinDraft } from "./vault-pins";
 
 /** Hero + 10 pins per vault page. */
 export const VAULT_IMAGE_SLOT_COUNT = 11;
-/** At least 25% of images must be niche/product-related stock (never AI). */
-export const VAULT_NICHE_IMAGE_RATIO = 0.25;
 
-function nicheRelatedSlotCount(total = VAULT_IMAGE_SLOT_COUNT): number {
-  return Math.max(1, Math.ceil(total * VAULT_NICHE_IMAGE_RATIO));
+function isGenericFallbackUrl(url: string): boolean {
+  return /picsum\.photos|loremflickr\.com/i.test(url);
 }
 
 function markUsed(used: Set<string>, url: string | null | undefined) {
-  if (url?.trim()) used.add(normalizeImageUrl(url));
+  if (url?.trim() && !isGenericFallbackUrl(url)) used.add(normalizeImageUrl(url));
 }
 
 /**
- * Resolve one unique product-relevant image for a vault seed slot when the
- * full pin resolver is unavailable. Prefer product-token stock; empty string
- * when nothing trustworthy is found (never Picsum/LoremFlickr for product pins).
+ * Product-only Pixabay fill for a single vault slot (no niche lifestyle queries).
+ * Used when the full pin resolver is unavailable.
  */
 export async function resolveUniqueVaultImage(params: {
   entry: VaultCatalogEntry;
   slot: number;
   used: Set<string>;
-  nicheRelated: boolean;
+  nicheRelated?: boolean;
 }): Promise<string> {
-  const { entry, slot, used, nicheRelated } = params;
-  let chosen: string | null = null;
+  const { entry, slot, used } = params;
+  const identity = buildProductIdentity({
+    productName: entry.productName,
+    hobby: entry.niche,
+  });
+  const queries = productOnlyStockQueries(identity);
 
-  if (nicheRelated) {
-    const stock = await fetchNicheRelatedImage({
-      niche: entry.productName,
-      productName: entry.productName,
-      seedOffset: entry.id * 31 + slot * 19 + used.size,
+  for (let q = 0; q < queries.length; q++) {
+    const hits = await fetchPixabayImageCandidates(identity.normalizedProductName, identity.normalizedProductName, {
+      customQuery: queries[q],
+      orientation: "all",
+      pickOffset: slot * 5 + q,
+      seedBoost: entry.id * 31 + slot * 19 + used.size,
       excludeUrls: [...used],
+      productTokens: identity.productTokens,
+      strongTokens: identity.strongTokens,
+      categoryTokens: identity.categoryTokens,
+      minRelevance: MIN_STOCK_PRODUCT_RELEVANCE,
+      limit: 12,
     });
-    if (stock && !used.has(normalizeImageUrl(stock))) {
-      chosen = stock;
+    for (const hit of hits) {
+      if (!hit?.url || isGenericFallbackUrl(hit.url)) continue;
+      if ((hit.relevanceScore ?? 0) < MIN_STOCK_PRODUCT_RELEVANCE) continue;
+      const tryUrl = hit.url;
+      if (used.has(normalizeImageUrl(tryUrl))) continue;
+      markUsed(used, tryUrl);
+      return tryUrl;
     }
   }
 
-  if (!chosen || used.has(normalizeImageUrl(chosen))) {
-    return "";
-  }
-
-  markUsed(used, chosen);
-  return chosen;
+  return "";
 }
 
 /**
- * Pre-seed image pack for one catalog entry: no sales-page hero + 10 pin backgrounds.
- * Pins use the shared product pin resolver (product-page scrape → Pixabay product queries).
- * Empty pin slots are allowed when no trustworthy product image exists.
+ * Pre-seed image pack: 10 pin backgrounds via the shared product pin resolver.
+ * Empty pin slots when no trustworthy product image exists.
  */
 export async function resolveVaultSeedImagePack(params: {
   entry: VaultCatalogEntry;
   used?: Set<string>;
   admin: SupabaseClient;
   ownerId: string;
+  scrapeUrl?: string | null;
 }): Promise<{ heroImage: string; pinImages: string[] }> {
   const used = params.used ?? new Set<string>();
   const pinDrafts = await resolveVaultPinDrafts({
     entry: params.entry,
+    scrapeUrl: params.scrapeUrl ?? null,
     heroImage: "",
     excludeImages: [...used],
     userId: params.ownerId,
     supabase: params.admin,
     preloadedPinImages: null,
-    scrapeUrl: null,
   });
 
   const pinImages = pinDrafts.map((draft) => draft.imageUrl?.trim() || "");
@@ -88,7 +100,10 @@ export async function resolveVaultSeedImagePack(params: {
   return { heroImage: "", pinImages };
 }
 
-/** Scrape the affiliate page, else a product-related stock photo. Empty = no sales-page image. */
+/**
+ * Sales-page hero: scrape affiliate page first, then product-only Pixabay.
+ * Never LoremFlickr / Picsum / generic niche lifestyle.
+ */
 export async function resolveVaultHeroImage(params: {
   productName: string;
   niche: string;
@@ -102,20 +117,37 @@ export async function resolveVaultHeroImage(params: {
     const admin = getServiceRoleClient();
     const scraped = await scrapePageWithCache(scrapeUrl, admin);
     const hero = scraped.data?.imageUrl?.trim() || "";
-    if (hero && !used.has(normalizeImageUrl(hero))) {
+    if (hero && !isGenericFallbackUrl(hero) && !used.has(normalizeImageUrl(hero))) {
       markUsed(used, hero);
       return hero;
     }
   }
 
-  const nicheImage = await fetchNicheRelatedImage({
-    niche: params.productName,
+  const identity = buildProductIdentity({
     productName: params.productName,
-    excludeUrls: [...used],
+    hobby: params.niche,
   });
-  if (nicheImage && !used.has(normalizeImageUrl(nicheImage))) {
-    markUsed(used, nicheImage);
-    return nicheImage;
+  const queries = productOnlyStockQueries(identity);
+  for (let q = 0; q < queries.length; q++) {
+    const hits = await fetchPixabayImageCandidates(identity.normalizedProductName, identity.normalizedProductName, {
+      customQuery: queries[q],
+      orientation: "all",
+      pickOffset: q,
+      seedBoost: used.size + q * 17,
+      excludeUrls: [...used],
+      productTokens: identity.productTokens,
+      strongTokens: identity.strongTokens,
+      categoryTokens: identity.categoryTokens,
+      minRelevance: MIN_STOCK_PRODUCT_RELEVANCE,
+      limit: 8,
+    });
+    for (const hit of hits) {
+      if (!hit?.url || isGenericFallbackUrl(hit.url)) continue;
+      if ((hit.relevanceScore ?? 0) < MIN_STOCK_PRODUCT_RELEVANCE) continue;
+      if (used.has(normalizeImageUrl(hit.url))) continue;
+      markUsed(used, hit.url);
+      return hit.url;
+    }
   }
 
   return "";
@@ -140,17 +172,74 @@ export async function resolveVaultPinDrafts(params: {
   const scrapeUrl = params.scrapeUrl?.trim() || "";
   const used = new Set<string>();
   markUsed(used, params.heroImage);
+  for (const url of params.excludeImages ?? []) {
+    markUsed(used, url);
+  }
+
+  const sanitizePreloaded = (url: string | undefined | null) => {
+    const trimmed = url?.trim() || "";
+    if (!trimmed || isGenericFallbackUrl(trimmed)) return "";
+    return trimmed;
+  };
 
   if (params.preloadedPinImages?.length) {
     const results: VaultPinDraft[] = [];
-    for (let i = 0; i < drafts.length; i++) {
-      const draft = drafts[i];
-      let finalUrl = params.preloadedPinImages[i]?.trim() || "";
-      if (finalUrl && /picsum\.photos|loremflickr\.com/i.test(finalUrl)) {
-        finalUrl = "";
+    const needResolveIdx: number[] = [];
+    const pending = drafts.map((draft, i) => {
+      const pre = sanitizePreloaded(params.preloadedPinImages?.[i]);
+      if (pre && !used.has(normalizeImageUrl(pre))) {
+        markUsed(used, pre);
+        return { ...draft, imageUrl: pre };
       }
-      if (finalUrl) markUsed(used, finalUrl);
+      needResolveIdx.push(i);
+      return { ...draft, imageUrl: "" };
+    });
 
+    if (needResolveIdx.length > 0 && params.userId && params.supabase) {
+      const { backgrounds } = await resolvePinBackgroundImages({
+        pins: needResolveIdx.map((i) => ({
+          headline: drafts[i].headline,
+          title: drafts[i].title,
+          description: drafts[i].description,
+          keywords: drafts[i].keywords ?? [],
+        })),
+        productName: params.entry.productName,
+        hobby: params.entry.niche,
+        scrapeUrl: scrapeUrl || null,
+        preferredImages: [],
+        excludeImages: [
+          ...(params.excludeImages ?? []),
+          ...(params.heroImage ? [params.heroImage] : []),
+          ...Object.values(pending)
+            .map((p) => p.imageUrl)
+            .filter(Boolean),
+        ],
+        usedIdentities: recordsFromUrls([
+          ...(params.excludeImages ?? []),
+          params.heroImage,
+          ...pending.map((p) => p.imageUrl),
+        ]),
+        userId: params.userId,
+        supabase: params.supabase,
+      });
+      needResolveIdx.forEach((draftIdx, bi) => {
+        const url = backgrounds[bi]?.url || "";
+        pending[draftIdx] = { ...pending[draftIdx], imageUrl: url };
+        markUsed(used, url);
+      });
+    } else if (needResolveIdx.length > 0) {
+      for (const draftIdx of needResolveIdx) {
+        const url = await resolveUniqueVaultImage({
+          entry: params.entry,
+          slot: draftIdx + 1,
+          used,
+        });
+        pending[draftIdx] = { ...pending[draftIdx], imageUrl: url };
+      }
+    }
+
+    for (let i = 0; i < pending.length; i++) {
+      let finalUrl = pending[i].imageUrl;
       if (finalUrl && params.userId && params.supabase) {
         try {
           const persisted = await persistExternalImage({
@@ -164,8 +253,7 @@ export async function resolveVaultPinDrafts(params: {
           /* keep remote URL */
         }
       }
-
-      results.push({ ...draft, imageUrl: finalUrl });
+      results.push({ ...pending[i], imageUrl: finalUrl });
     }
     return results;
   }
@@ -186,6 +274,7 @@ export async function resolveVaultPinDrafts(params: {
         ...(params.excludeImages ?? []),
         ...(params.heroImage ? [params.heroImage] : []),
       ],
+      usedIdentities: recordsFromUrls([...(params.excludeImages ?? []), params.heroImage]),
       userId: params.userId,
       supabase: params.supabase,
     });
@@ -196,18 +285,15 @@ export async function resolveVaultPinDrafts(params: {
     }));
   }
 
-  // Without supabase, only use product-token stock — never generic fallbacks.
+  // No supabase — still use product-only Pixabay (same relevance rules).
   const results: VaultPinDraft[] = [];
   for (let i = 0; i < drafts.length; i++) {
-    const stock = await fetchNicheRelatedImage({
-      niche: params.entry.productName,
-      productName: params.entry.productName,
-      seedOffset: i * 19 + productSearchTokens(params.entry.productName).length,
-      excludeUrls: [...used],
+    const url = await resolveUniqueVaultImage({
+      entry: params.entry,
+      slot: i + 1,
+      used,
     });
-    let chosen = stock && !used.has(normalizeImageUrl(stock)) ? stock : "";
-    if (chosen) markUsed(used, chosen);
-    results.push({ ...drafts[i], imageUrl: chosen });
+    results.push({ ...drafts[i], imageUrl: url });
   }
   return results;
 }

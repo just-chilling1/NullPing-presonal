@@ -30,9 +30,9 @@ interface PinRow {
 }
 
 function pinImageSrc(url: string) {
-  const base = url.includes("?") ? url : `${url}?v=12`;
-  if (base.includes("v=")) return base.replace(/([?&])v=\d+/, "$1v=12");
-  return `${base}&v=12`;
+  const base = url.includes("?") ? url : `${url}?v=13`;
+  if (base.includes("v=")) return base.replace(/([?&])v=\d+/, "$1v=13");
+  return `${base}&v=13`;
 }
 
 function pinDownloadHref(url: string | null) {

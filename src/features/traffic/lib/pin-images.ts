@@ -1,8 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   collectStructuredScrapedImageCandidates,
-  downloadImageForHash,
-  fetchPixabayImage,
+  fetchPixabayImageCandidates,
   MIN_STOCK_PRODUCT_RELEVANCE,
   normalizeImageUrl,
   persistExternalImageWithMeta,
@@ -143,6 +142,7 @@ function isGenericFallbackUrl(url: string): boolean {
 
 async function claimCandidate(params: {
   url: string;
+  alternateUrl?: string | null;
   score: number;
   reason: string;
   imageSource: PinImageSource;
@@ -151,61 +151,71 @@ async function claimCandidate(params: {
   supabase: SupabaseClient;
 }): Promise<ResolvedPinBackground | null> {
   if (isGenericFallbackUrl(params.url)) return null;
-  const normalizedUrl = strongNormalizeImageUrl(params.url);
-  if (isImageAlreadyUsed({ url: params.url, normalizedUrl }, params.registry)) {
-    return null;
-  }
+  const tryUrls = [params.url, params.alternateUrl]
+    .filter((u): u is string => Boolean(u?.trim()))
+    .filter((u) => !isGenericFallbackUrl(u));
 
-  let contentHash: string | undefined;
-  let finalUrl = params.url;
+  const isHostedUrl = (u: string) =>
+    /\/blog-images\/|supabase\.co\/storage/i.test(u);
+  const isStableCdn = (u: string) =>
+    /cdn\.pixabay\.com|\/blog-images\/|supabase\.co\/storage/i.test(u);
 
-  try {
-    const persisted = await persistExternalImageWithMeta({
-      url: params.url,
-      userId: params.userId,
-      supabase: params.supabase,
-    });
-    if (persisted) {
-      contentHash = persisted.contentHash;
-      finalUrl = persisted.url;
+  for (const candidateUrl of tryUrls) {
+    const normalizedUrl = strongNormalizeImageUrl(candidateUrl);
+    if (isImageAlreadyUsed({ url: candidateUrl, normalizedUrl }, params.registry)) {
+      continue;
+    }
+
+    try {
+      // Download + prefer hosting on our CDN. Raw pixabay.com/get/ URLs often 404 later.
+      const persisted = await persistExternalImageWithMeta({
+        url: candidateUrl,
+        userId: params.userId,
+        supabase: params.supabase,
+      });
+      if (!persisted?.contentHash) continue;
+
+      let finalUrl = persisted.url;
+      if (!isHostedUrl(finalUrl)) {
+        // Upload failed — only keep a stable CDN URL we already verified downloads.
+        if (!isStableCdn(candidateUrl)) continue;
+        finalUrl = candidateUrl;
+      }
+
       if (
         isImageAlreadyUsed(
-          { url: finalUrl, normalizedUrl: strongNormalizeImageUrl(finalUrl), contentHash },
+          {
+            url: finalUrl,
+            normalizedUrl: strongNormalizeImageUrl(finalUrl),
+            contentHash: persisted.contentHash,
+          },
           params.registry
         )
       ) {
-        return null;
+        continue;
       }
-    } else {
-      // Persist failed — still try to hash; if download fails, keep the remote URL.
-      const downloaded = await downloadImageForHash(params.url);
-      if (downloaded) {
-        contentHash = downloaded.contentHash;
-        if (isImageAlreadyUsed({ url: params.url, normalizedUrl, contentHash }, params.registry)) {
-          return null;
-        }
-      }
+
+      const record: UsedImageRecord = {
+        normalizedUrl: strongNormalizeImageUrl(finalUrl),
+        contentHash: persisted.contentHash,
+        sourceUrl: finalUrl,
+      };
+      params.registry.push(record);
+
+      return {
+        url: finalUrl,
+        normalizedUrl: record.normalizedUrl,
+        contentHash: persisted.contentHash,
+        imageSource: params.imageSource,
+        relevanceScore: params.score,
+        matchReason: params.reason,
+      };
+    } catch {
+      continue;
     }
-  } catch {
-    // Keep remote URL when storage/download errors — better than blank pins.
-    finalUrl = params.url;
   }
 
-  const record: UsedImageRecord = {
-    normalizedUrl: strongNormalizeImageUrl(finalUrl),
-    contentHash,
-    sourceUrl: finalUrl,
-  };
-  params.registry.push(record);
-
-  return {
-    url: finalUrl,
-    normalizedUrl: record.normalizedUrl,
-    contentHash,
-    imageSource: params.imageSource,
-    relevanceScore: params.score,
-    matchReason: params.reason,
-  };
+  return null;
 }
 
 /**
@@ -352,38 +362,54 @@ export async function resolvePinBackgroundImages(params: {
     if (!assigned) {
       const queries = productOnlyStockQueries(identity);
       for (let q = 0; q < queries.length && !assigned; q++) {
-        const hit = await fetchPixabayImage(identity.normalizedProductName, identity.normalizedProductName, {
-          customQuery: queries[q],
-          // Allow portrait/square product shots — pin OG uses object-fit contain.
-          orientation: "all",
-          pickOffset: i * 5 + q,
-          seedBoost: i * 19 + q * 5 + registry.length,
-          excludeUrls: registry.map((r) => r.sourceUrl || "").filter(Boolean),
-          excludeStockIds: [...usedStockIds],
-          productTokens: identity.productTokens,
-          strongTokens: identity.strongTokens,
-          categoryTokens: identity.categoryTokens,
-          minRelevance: MIN_STOCK_PRODUCT_RELEVANCE,
-        });
-        if (!hit?.url) continue;
-        if ((hit.relevanceScore ?? 0) < MIN_STOCK_PRODUCT_RELEVANCE) {
-          rejectedUnrelated++;
-          continue;
-        }
-        if (isImageAlreadyUsed({ url: hit.url }, registry)) {
+        const hits = await fetchPixabayImageCandidates(
+          identity.normalizedProductName,
+          identity.normalizedProductName,
+          {
+            customQuery: queries[q],
+            orientation: "all",
+            pickOffset: i * 7 + q,
+            seedBoost: i * 19 + q * 5 + registry.length + usedStockIds.size,
+            excludeUrls: registry.map((r) => r.sourceUrl || "").filter(Boolean),
+            excludeStockIds: [...usedStockIds],
+            productTokens: identity.productTokens,
+            strongTokens: identity.strongTokens,
+            categoryTokens: identity.categoryTokens,
+            minRelevance: MIN_STOCK_PRODUCT_RELEVANCE,
+            limit: 16,
+          }
+        );
+
+        for (const hit of hits) {
+          if (!hit?.url) continue;
+          if ((hit.relevanceScore ?? 0) < MIN_STOCK_PRODUCT_RELEVANCE) {
+            rejectedUnrelated++;
+            continue;
+          }
+          if (hit.stockId && usedStockIds.has(hit.stockId.replace(/:large$/, ""))) {
+            rejectedDupes++;
+            continue;
+          }
+          if (isImageAlreadyUsed({ url: hit.url }, registry)) {
+            rejectedDupes++;
+            continue;
+          }
+          assigned = await claimCandidate({
+            url: hit.url,
+            alternateUrl: hit.alternateUrl,
+            score: hit.relevanceScore ?? MIN_STOCK_PRODUCT_RELEVANCE,
+            reason: hit.matchReason || `pixabay query: ${queries[q]}`,
+            imageSource: "pixabay",
+            registry,
+            userId: params.userId,
+            supabase: params.supabase,
+          });
+          if (assigned) {
+            if (hit.stockId) usedStockIds.add(hit.stockId.replace(/:large$/, ""));
+            break;
+          }
           rejectedDupes++;
-          continue;
         }
-        assigned = await claimCandidate({
-          url: hit.url,
-          score: hit.relevanceScore ?? MIN_STOCK_PRODUCT_RELEVANCE,
-          reason: hit.matchReason || `pixabay query: ${queries[q]}`,
-          imageSource: "pixabay",
-          registry,
-          userId: params.userId,
-          supabase: params.supabase,
-        });
-        if (assigned && hit.stockId) usedStockIds.add(hit.stockId);
       }
     }
 

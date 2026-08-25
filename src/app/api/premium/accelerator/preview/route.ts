@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   const guard = featureApiGuard("premium-accelerator");
   if (guard) return guard;
 
-  const { user } = await getApiUser();
+  const { user, supabase } = await getApiUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_STORE_HEADERS });
   }
@@ -54,6 +54,7 @@ export async function GET(request: Request) {
   const variation = getMoneyPageVariation(entry.variationId);
 
   const admin = getServiceRoleClient();
+  const imageClient = admin ?? supabase;
   const template = admin ? await loadTemplateSite(admin, entry.id) : null;
 
   if (isTemplateComplete(template)) {
@@ -76,17 +77,17 @@ export async function GET(request: Request) {
       ctaHrefOverride: previewCta,
     });
 
-    const pins =
-      vaultPins.length > 0
-        ? vaultPins.map((pin, i) => ({
-            ...pin,
-            imageUrl: pinImages[i] || String(pin.imageUrl ?? ""),
-          }))
-        : await resolveVaultPinDrafts({
-            entry,
-            heroImage,
-            preloadedPinImages: pinImages,
-          });
+    // Re-resolve any missing/generic preloaded pin images with the product pipeline.
+    const pins = await resolveVaultPinDrafts({
+      entry,
+      scrapeUrl: affiliateUrl || null,
+      heroImage,
+      preloadedPinImages: pinImages.length
+        ? pinImages
+        : vaultPins.map((pin) => String(pin.imageUrl ?? "")),
+      userId: user.id,
+      supabase: imageClient,
+    });
 
     return NextResponse.json(
       {
@@ -128,6 +129,8 @@ export async function GET(request: Request) {
     entry,
     scrapeUrl: affiliateUrl || null,
     heroImage,
+    userId: user.id,
+    supabase: imageClient,
   });
 
   return NextResponse.json(

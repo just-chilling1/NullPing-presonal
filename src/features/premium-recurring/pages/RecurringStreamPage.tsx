@@ -352,9 +352,10 @@ export default function RecurringStreamPage() {
 
           {lastAttachedId ? (
             <p className="rounded-xl border border-success/25 bg-success/10 px-3.5 py-2.5 text-sm text-success shadow-[0_0_24px_-12px_rgba(52,211,153,0.55)]">
-              Authority section added to your money page.{" "}
+              Your authority section is live on your money page — visitors will see it on your next
+              publish.{" "}
               <Link href={`/money-page/${selectedSiteId}`} className="font-medium underline">
-                Review &amp; publish
+                Review &amp; publish now
               </Link>
             </p>
           ) : null}

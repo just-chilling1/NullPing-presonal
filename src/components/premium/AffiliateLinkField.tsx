@@ -26,6 +26,8 @@ interface AffiliateLinkFieldProps {
   actionMode?: "save-to-vault" | "apply";
   /** Called after a successful Apply Link (apply mode only). */
   onApply?: (url: string) => void;
+  /** Override the success hint shown after Apply Link (apply mode only). */
+  appliedMessage?: string;
 }
 
 function validVaultLinks(links: ArmedLink[]): ArmedLink[] {
@@ -40,6 +42,7 @@ export function AffiliateLinkField({
   manualLabel,
   actionMode = "save-to-vault",
   onApply,
+  appliedMessage = "This link will be used on money page CTAs when you install a page.",
 }: AffiliateLinkFieldProps) {
   const [vaultLinks, setVaultLinks] = useState<ArmedLink[]>([]);
   const [loadingVault, setLoadingVault] = useState(true);
@@ -280,9 +283,7 @@ export function AffiliateLinkField({
       </div>
 
       {actionMode === "apply" && applied ? (
-        <p className="text-xs text-pulse-700">
-          This link will be used on money page CTAs when you install a page.
-        </p>
+        <p className="text-xs text-pulse-700">{appliedMessage}</p>
       ) : null}
 
       {saveError && <p className="text-xs text-error">{saveError}</p>}

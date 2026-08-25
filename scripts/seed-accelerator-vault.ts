@@ -20,12 +20,6 @@
 
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { createClient } from "@supabase/supabase-js";
-import {
-  countSeededAcceleratorTemplates,
-  seedAcceleratorTemplates,
-} from "../src/features/premium-accelerator/lib/seed-vault-templates";
-import { ACCELERATOR_TARGET_COUNT } from "../src/features/premium-accelerator/lib/catalog";
 
 function loadEnvLocal() {
   const path = join(process.cwd(), ".env.local");
@@ -42,6 +36,9 @@ function loadEnvLocal() {
   }
 }
 
+// Load .env.local before app modules read process.env at import time (e.g. PIXABAY_API_KEY).
+loadEnvLocal();
+
 function argValue(name: string): string | undefined {
   const prefix = `--${name}=`;
   const hit = process.argv.find((a) => a.startsWith(prefix));
@@ -49,7 +46,13 @@ function argValue(name: string): string | undefined {
 }
 
 async function main() {
-  loadEnvLocal();
+  const { createClient } = await import("@supabase/supabase-js");
+  const { countSeededAcceleratorTemplates, seedAcceleratorTemplates } = await import(
+    "../src/features/premium-accelerator/lib/seed-vault-templates"
+  );
+  const { ACCELERATOR_TARGET_COUNT } = await import(
+    "../src/features/premium-accelerator/lib/catalog"
+  );
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
@@ -75,6 +78,13 @@ async function main() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  const { data: ownerUser, error: ownerErr } = await admin.auth.admin.getUserById(ownerId);
+  if (ownerErr || !ownerUser?.user) {
+    throw new Error(
+      `TEMPLATE_OWNER_ID is not a valid Supabase Auth user (${ownerId}). Pick a real user UUID from Supabase → Authentication → Users.`
+    );
+  }
+
   const already = await countSeededAcceleratorTemplates(admin);
   console.log(
     `Unlimited vault seed — target ${ACCELERATOR_TARGET_COUNT}, already complete: ${already}, offset=${offset}, limit=${limit}${force ? " (force)" : ""}`
@@ -82,6 +92,7 @@ async function main() {
   console.log(
     "Rules: no sales-page hero photo; pin images via pin-generator logic (product-page → Pixabay)."
   );
+  console.log(`Template owner: ${ownerUser.user.email ?? ownerId}`);
 
   const result = await seedAcceleratorTemplates({
     admin,

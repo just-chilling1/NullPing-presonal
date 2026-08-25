@@ -25,8 +25,8 @@ function withPinImageUrls<T extends { id: string; image_url?: string | null }>(p
   return pins.map((pin) => ({
     ...pin,
     image_url: pin.image_url?.startsWith("http")
-      ? `/api/pins/${pin.id}/image?v=12`
-      : pin.image_url || `/api/pins/${pin.id}/image?v=12`,
+      ? `/api/pins/${pin.id}/image?v=13`
+      : pin.image_url || `/api/pins/${pin.id}/image?v=13`,
   }));
 }
 

@@ -19,7 +19,6 @@ import {
 import { PageHeader } from "@/components/ui/page-header";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { WorkflowPage } from "@/components/ui/workflow-page";
-import { WorkflowStepsBar } from "@/components/ui/workflow-steps";
 import { EmptyState } from "@/components/ui/empty-state";
 
 interface ResultsPayload {
@@ -143,7 +142,6 @@ export default function ResultsPage() {
 
   return (
     <WorkflowPage className="results-workspace">
-      <WorkflowStepsBar current="results" />
       <PageHeader
         eyebrow="Step 3"
         title="Your results"

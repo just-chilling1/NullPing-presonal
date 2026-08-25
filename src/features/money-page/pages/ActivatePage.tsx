@@ -19,8 +19,10 @@ import { brand } from "@/config/brand.config";
 import { PageHeader } from "@/components/ui/page-header";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { WorkflowPage } from "@/components/ui/workflow-page";
-import { WorkflowStepsBar } from "@/components/ui/workflow-steps";
 import { AiLoadingBar } from "@/components/ui/AiLoadingBar";
+import { AffiliateLinkField } from "@/components/premium/AffiliateLinkField";
+import { isMoneyPageCopy, type MoneyPageCopy } from "@/features/money-page/lib/types";
+import type { ArmedLink } from "@/features/blog-builder/types";
 
 const STAGES = [
   "Analyzing product",
@@ -131,6 +133,11 @@ export default function ActivateAssetPage() {
   const [phase, setPhase] = useState<"form" | "activating" | "ready">("form");
   const [stageIndex, setStageIndex] = useState(0);
   const [assetId, setAssetId] = useState("");
+  const [pageCopy, setPageCopy] = useState<MoneyPageCopy | null>(null);
+  const [readyAffiliateUrl, setReadyAffiliateUrl] = useState("");
+  const [linkSaving, setLinkSaving] = useState(false);
+  const [linkSaved, setLinkSaved] = useState(false);
+  const [linkError, setLinkError] = useState("");
 
   const progressPct = useMemo(() => {
     if (stageIndex >= STAGES.length) return 100;
@@ -145,6 +152,43 @@ export default function ActivateAssetPage() {
   const currentLabel =
     stageIndex >= STAGES.length ? "Finalizing asset" : STAGES[Math.min(stageIndex, STAGES.length - 1)];
 
+  async function saveAffiliateLink(url: string) {
+    if (!assetId || !pageCopy) {
+      setLinkError("Could not update this sales page. Open the money page to try again.");
+      return;
+    }
+
+    setLinkSaving(true);
+    setLinkError("");
+    setLinkSaved(false);
+
+    try {
+      const res = await fetch(`/api/assets/${assetId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          copy: pageCopy,
+          affiliateUrl: url,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLinkError(typeof data.error === "string" ? data.error : "Could not update affiliate link.");
+        return;
+      }
+
+      setReadyAffiliateUrl(url);
+      if (isMoneyPageCopy(data.site?.sales_page_json)) {
+        setPageCopy(data.site.sales_page_json);
+      }
+      setLinkSaved(true);
+    } catch {
+      setLinkError("Could not update affiliate link. Please try again.");
+    } finally {
+      setLinkSaving(false);
+    }
+  }
+
   async function activate() {
     setError("");
     if (!productUrl.trim() && !productName.trim()) {
@@ -154,6 +198,8 @@ export default function ActivateAssetPage() {
 
     setPhase("activating");
     setStageIndex(0);
+    setLinkSaved(false);
+    setLinkError("");
 
     const timer = window.setInterval(() => {
       setStageIndex((prev) => Math.min(prev + 1, STAGES.length - 1));
@@ -174,8 +220,26 @@ export default function ActivateAssetPage() {
         return;
       }
 
+      const site = data.site as
+        | {
+            id?: string;
+            sales_page_json?: unknown;
+            armed_links?: ArmedLink[];
+            product_url?: string | null;
+          }
+        | undefined;
+      const links = Array.isArray(site?.armed_links) ? site.armed_links : [];
+      const existingLink = links[0]?.url || affiliateUrl.trim() || "";
+
       setStageIndex(STAGES.length);
-      setAssetId(data.assetId);
+      setAssetId(typeof data.assetId === "string" ? data.assetId : site?.id || "");
+      if (isMoneyPageCopy(site?.sales_page_json)) {
+        setPageCopy(site.sales_page_json);
+      } else {
+        setPageCopy(null);
+      }
+      setReadyAffiliateUrl(existingLink);
+      setLinkSaved(Boolean(existingLink && affiliateUrl.trim()));
       setPhase("ready");
     } catch {
       window.clearInterval(timer);
@@ -189,7 +253,6 @@ export default function ActivateAssetPage() {
 
     return (
       <WorkflowPage width="full">
-        <WorkflowStepsBar current="activate" />
         <PageHeader
           title="Your sales page is ready"
           subtitle={`${brand.productName} built a money page for this product. Preview it, publish when you're happy, then use Generate Traffic when you want Pinterest pins.`}
@@ -213,6 +276,54 @@ export default function ActivateAssetPage() {
                 </p>
               </div>
             </div>
+
+            <section className="activate-ready-link" aria-labelledby="activate-ready-link-title">
+              <div className="activate-field-heading">
+                <Link2 size={16} strokeWidth={1.75} className="text-pulse-500" aria-hidden />
+                <div>
+                  <h2 id="activate-ready-link-title" className="activate-field-title">
+                    Add or update your affiliate link{" "}
+                    <span className="activate-optional-badge">Optional</span>
+                  </h2>
+                  <p className="activate-field-hint">
+                    You can publish without a CTA. If you add a link here, this sales page updates to include
+                    CTA buttons that use it.
+                  </p>
+                </div>
+              </div>
+
+              <AffiliateLinkField
+                value={readyAffiliateUrl}
+                onChange={(url) => {
+                  setReadyAffiliateUrl(url);
+                  setLinkSaved(false);
+                  setLinkError("");
+                }}
+                onApply={(url) => {
+                  void saveAffiliateLink(url);
+                }}
+                actionMode="apply"
+                inputId="activate-ready-affiliate-link"
+                appliedMessage="CTA buttons on this sales page now use your affiliate link."
+              />
+
+              {linkSaving ? (
+                <p className="activate-ready-link-status flex items-center gap-2 text-sm text-text-muted">
+                  <Loader2 size={14} className="animate-spin" aria-hidden />
+                  Updating sales page…
+                </p>
+              ) : null}
+              {linkSaved && !linkSaving ? (
+                <p className="activate-ready-link-status text-sm text-success">
+                  Affiliate link saved — CTAs are on this sales page.
+                </p>
+              ) : null}
+              {linkError ? (
+                <p className="activate-ready-link-status text-sm text-[var(--np-danger)]" role="alert">
+                  {linkError}
+                </p>
+              ) : null}
+            </section>
 
             <ol className="activate-ready-steps" aria-label="Next steps">
               <li className="activate-ready-step is-current">
@@ -265,7 +376,7 @@ export default function ActivateAssetPage() {
               </p>
               <ul className="activate-aside-list">
                 <li>Confirm the product name &amp; offer</li>
-                <li>Check the CTA / affiliate link</li>
+                <li>Optional: add an affiliate link for CTAs</li>
                 <li>Publish before sending traffic</li>
               </ul>
             </div>
@@ -278,7 +389,6 @@ export default function ActivateAssetPage() {
   if (phase === "activating") {
     return (
       <WorkflowPage width="wide">
-        <WorkflowStepsBar current="activate" />
         <PageHeader
           title="Activating your asset…"
           subtitle={`Sit tight — ${brand.productName} is doing the work.`}
@@ -293,7 +403,6 @@ export default function ActivateAssetPage() {
 
   return (
     <WorkflowPage width="full">
-      <WorkflowStepsBar current="activate" />
       <PageHeader
         eyebrow="Step 1"
         title="What do you want to promote?"

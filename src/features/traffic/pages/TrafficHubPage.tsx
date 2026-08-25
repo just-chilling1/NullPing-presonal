@@ -7,7 +7,6 @@ import { brand } from "@/config/brand.config";
 import { PageHeader } from "@/components/ui/page-header";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { WorkflowPage } from "@/components/ui/workflow-page";
-import { WorkflowStepsBar } from "@/components/ui/workflow-steps";
 import { EmptyState } from "@/components/ui/empty-state";
 
 interface TrafficAssetRow {
@@ -39,7 +38,6 @@ export default function TrafficHubPage() {
 
   return (
     <WorkflowPage className="traffic-workspace">
-      <WorkflowStepsBar current="traffic" />
       <PageHeader
         eyebrow="Step 2"
         title="Generate Traffic"
