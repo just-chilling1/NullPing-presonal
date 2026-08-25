@@ -52,7 +52,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   const hideSupportBanner =
     pathname === "/support" ||
-    pathname.startsWith("/support/");
+    pathname.startsWith("/support/") ||
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/");
 
   if (isAuthPage || isPublicPage) {
     return <>{children}</>;
