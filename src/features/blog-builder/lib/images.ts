@@ -159,13 +159,14 @@ export function scoreStockProductRelevance(params: {
   for (const token of params.strongTokens) {
     if (token.length > 2 && haystack.includes(token.toLowerCase())) {
       matched.push(token);
-      score += 22;
+      // First strong token match is enough to clear the commerce threshold (~70).
+      score += matched.length === 1 ? 55 : 12;
     }
   }
   for (const token of params.productTokens) {
     if (token.length > 2 && !matched.includes(token) && haystack.includes(token.toLowerCase())) {
       matched.push(token);
-      score += 12;
+      score += 10;
     }
   }
 
@@ -179,13 +180,16 @@ export function scoreStockProductRelevance(params: {
     score -= 40;
   }
 
-  // Supplement/product packaging cues help when tokens match partially
-  if (matched.length > 0 && /\b(bottle|supplement|gummies|packaging|product|serum)\b/i.test(haystack)) {
-    score += 10;
+  // Product packaging / ball / bottle cues help when tokens match
+  if (
+    matched.length > 0 &&
+    /\b(bottle|supplement|gummies|packaging|product|serum|ball|gloves?|kit|box)\b/i.test(haystack)
+  ) {
+    score += 8;
   }
 
-  if (matched.length >= 2) score += 12;
-  if (matched.length === 0) score -= 25;
+  if (matched.length >= 2) score += 8;
+  if (matched.length === 0) score -= 30;
 
   const reason =
     matched.length > 0

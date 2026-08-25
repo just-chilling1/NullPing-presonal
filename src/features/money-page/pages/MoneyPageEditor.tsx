@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Check, CheckCircle2, ClipboardCheck, ExternalLink, Loader2, Scale, BookOpen } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  ClipboardCheck,
+  ExternalLink,
+  ImagePlus,
+  Loader2,
+  Scale,
+  BookOpen,
+  Trash2,
+} from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { WorkflowPage } from "@/components/ui/workflow-page";
@@ -53,6 +63,7 @@ export default function MoneyPageEditor() {
   const [heroOptions, setHeroOptions] = useState<string[]>([]);
   const [heroOptionsLoading, setHeroOptionsLoading] = useState(false);
   const [heroOptionsEmpty, setHeroOptionsEmpty] = useState(false);
+  const heroFileInputRef = useRef<HTMLInputElement>(null);
 
   const customizeBusy =
     busy === "theme" || busy === "design" || busy === "regen" || busy === "hero";
@@ -187,13 +198,24 @@ export default function MoneyPageEditor() {
   }
 
   async function applyHeroImage(nextUrl: string, options?: { continueBusy?: boolean }) {
-    if (!copy || nextUrl === (copy.heroImage ?? "")) {
+    if (!copy) {
+      if (options?.continueBusy) setBusy("");
+      return;
+    }
+    const normalizedNext = nextUrl.trim();
+    const previous = copy.heroImage;
+    if (normalizedNext === (previous ?? "").trim()) {
       if (options?.continueBusy) setBusy("");
       return;
     }
     if (!options?.continueBusy && busy) return;
-    const previous = copy.heroImage;
-    const nextCopy = { ...copy, heroImage: nextUrl };
+
+    const nextCopy: MoneyPageCopy = { ...copy };
+    if (normalizedNext) {
+      nextCopy.heroImage = normalizedNext;
+    } else {
+      delete nextCopy.heroImage;
+    }
     setCopy(nextCopy);
     if (!options?.continueBusy) {
       setBusy("hero");
@@ -238,6 +260,11 @@ export default function MoneyPageEditor() {
       setBusy("");
       setError(err instanceof Error ? err.message : "Upload failed");
     }
+  }
+
+  async function removeHeroImage() {
+    if (!copy?.heroImage || busy) return;
+    await applyHeroImage("");
   }
 
   async function changeTheme(themeId: MoneyPageColorThemeId) {
@@ -430,31 +457,63 @@ export default function MoneyPageEditor() {
             </p>
           </div>
 
-          <div className="money-hero-current">
-            {copy.heroImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={copy.heroImage} alt="Current sales page photo" className="money-hero-current-img" />
-            ) : (
-              <div className="money-hero-current-empty">No photo yet</div>
-            )}
+          <div className="money-hero-layout">
+            <div className="money-hero-current">
+              {copy.heroImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={copy.heroImage} alt="Current sales page photo" className="money-hero-current-img" />
+              ) : (
+                <div className="money-hero-current-empty">
+                  <ImagePlus size={22} strokeWidth={1.75} aria-hidden />
+                  <span>No photo yet</span>
+                </div>
+              )}
+            </div>
+
+            <div className="money-hero-actions">
+              <input
+                ref={heroFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+                className="sr-only"
+                tabIndex={-1}
+                disabled={customizeBusy}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  e.target.value = "";
+                  void onUploadHero(file);
+                }}
+              />
+              <button
+                type="button"
+                className="btn-primary money-hero-upload-btn"
+                disabled={customizeBusy}
+                onClick={() => heroFileInputRef.current?.click()}
+              >
+                {busy === "hero" ? (
+                  <Loader2 size={16} strokeWidth={2.25} className="animate-spin" aria-hidden />
+                ) : (
+                  <ImagePlus size={16} strokeWidth={2.25} aria-hidden />
+                )}
+                {busy === "hero" ? "Updating photo…" : "Upload a photo"}
+              </button>
+              {copy.heroImage ? (
+                <button
+                  type="button"
+                  className="btn-secondary money-hero-remove-btn"
+                  disabled={customizeBusy}
+                  onClick={() => void removeHeroImage()}
+                >
+                  <Trash2 size={16} strokeWidth={2.25} aria-hidden />
+                  Remove photo
+                </button>
+              ) : null}
+              <p className="money-hero-upload-hint">PNG, JPG, WebP, GIF, or AVIF · max 8MB</p>
+            </div>
           </div>
 
-          <label className="money-hero-upload">
-            <span className="field-label">Upload a photo</span>
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
-              disabled={customizeBusy}
-              onChange={(e) => {
-                const file = e.target.files?.[0] ?? null;
-                e.target.value = "";
-                void onUploadHero(file);
-              }}
-            />
-          </label>
-
-          <div>
-            <p className="field-label">Or choose one of these</p>
+          <div className="money-hero-stock">
+            <p className="money-hero-stock-label">Or choose one of these</p>
             {heroOptionsLoading ? (
               <p className="mt-2 text-xs text-ink-3">Loading photos…</p>
             ) : heroOptionsEmpty ? (
@@ -486,7 +545,6 @@ export default function MoneyPageEditor() {
               </div>
             )}
           </div>
-          {busy === "hero" ? <p className="text-xs text-ink-3">Updating photo…</p> : null}
         </GlassPanel>
       ) : null}
 

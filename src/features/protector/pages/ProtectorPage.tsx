@@ -370,7 +370,7 @@ export default function ProtectorPage() {
                         check.ok ? "text-success" : "text-[var(--np-warning)]"
                       )}
                     >
-                      {check.ok ? "OK" : "Review"}
+                      {check.ok ? "DONE" : "Review"}
                     </span>
                   </div>
                 </GlassPanel>

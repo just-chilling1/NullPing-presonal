@@ -3988,14 +3988,36 @@ html[data-sidebar="collapsed"] {
     }
   }
 
+  .money-hero-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .money-hero-layout {
+      flex-direction: row;
+      align-items: stretch;
+      gap: 1.25rem;
+    }
+  }
+
   .money-hero-current {
     width: 100%;
-    max-width: 20rem;
+    max-width: none;
+    flex: 1 1 16rem;
+    min-height: 10rem;
     aspect-ratio: 16 / 10;
     overflow: hidden;
     border-radius: 0.75rem;
     border: 1px solid var(--np-line);
     background: var(--np-surface-field);
+  }
+
+  @media (min-width: 640px) {
+    .money-hero-current {
+      max-width: 22rem;
+    }
   }
 
   .money-hero-current-img {
@@ -4008,25 +4030,60 @@ html[data-sidebar="collapsed"] {
   .money-hero-current-empty {
     display: flex;
     height: 100%;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 0.5rem;
     font-size: 0.8125rem;
     color: var(--np-ink-3);
   }
 
-  .money-hero-upload input[type="file"] {
-    display: block;
+  .money-hero-actions {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .money-hero-upload-btn,
+  .money-hero-remove-btn {
+    display: inline-flex;
     width: 100%;
-    margin-top: 0.35rem;
-    font-size: 0.875rem;
-    color: var(--np-ink-2);
+    max-width: 18rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+  }
+
+  .money-hero-upload-hint {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--np-ink-3);
+  }
+
+  .money-hero-stock {
+    padding-top: 0.25rem;
+    border-top: 1px solid color-mix(in srgb, var(--np-line) 80%, transparent);
+  }
+
+  .money-hero-stock-label {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--np-ink-3);
   }
 
   .money-hero-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
-    margin-top: 0.5rem;
+    margin-top: 0.65rem;
   }
 
   @media (min-width: 640px) {

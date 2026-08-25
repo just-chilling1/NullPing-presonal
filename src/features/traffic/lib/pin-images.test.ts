@@ -161,6 +161,16 @@ describe("stock relevance", () => {
     });
     assert.ok(rel.score >= 70);
   });
+
+  it("accepts a single-token product like football when tags match", () => {
+    const rel = scoreStockProductRelevance({
+      query: "football",
+      tags: "football, sport, ball, american football",
+      productTokens: ["football"],
+      strongTokens: ["football"],
+    });
+    assert.ok(rel.score >= 70, `expected >= 70, got ${rel.score}`);
+  });
 });
 
 describe("product page ranking threshold", () => {

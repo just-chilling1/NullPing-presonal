@@ -18,10 +18,10 @@ export function SupportRefundSection() {
   const { refundPolicy } = support;
 
   return (
-    <motion.section variants={itemVariants} className="card-base">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--np-line-pulse)] bg-pulse-100">
-          <FileText className="h-6 w-6 text-pulse-700" />
+    <motion.section variants={itemVariants} className="card-base overflow-hidden p-0">
+      <div className="flex items-center gap-3 border-b border-border-dim/80 px-5 py-4 sm:px-6">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[var(--np-line-pulse)] bg-pulse-100">
+          <FileText className="h-5 w-5 text-pulse-700" />
         </div>
         <div>
           <h2 className="ds-h3">{refundPolicy.title}</h2>
@@ -29,9 +29,12 @@ export function SupportRefundSection() {
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
         {refundPolicy.items.map((item) => (
-          <div key={item.title} className="rounded-xl border border-border-dim/80 bg-page/60 p-4">
+          <div
+            key={item.title}
+            className="flex h-full flex-col rounded-xl border border-[var(--np-line)] bg-[color-mix(in_srgb,var(--np-surface-field)_65%,transparent)] p-4"
+          >
             <h3 className="ds-h4 mb-2 text-pulse-700">{item.title}</h3>
             <p className="text-sm leading-relaxed text-text-secondary">{item.body}</p>
           </div>

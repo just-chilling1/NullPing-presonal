@@ -245,10 +245,15 @@ export function productOnlyStockQueries(identity: ProductIdentity): string[] {
         queries.push(`${core} ebook cover`, `${core} book cover`);
         break;
       case "physical":
-        queries.push(`${core} product`, `${core} packaging`, `${core} bottle`);
+        queries.push(`${core} product`, `${core} gear`, `${core} equipment`);
         break;
       default:
-        queries.push(`${core} product`, `${core} packaging`);
+        // Short single-token products (e.g. "football") — keep visual queries product-literal.
+        if (strong.length === 1) {
+          queries.push(core, `${core} ball`, `${core} sport`, `${core} equipment`);
+        } else {
+          queries.push(`${core} product`, `${core} gear`);
+        }
     }
   }
 

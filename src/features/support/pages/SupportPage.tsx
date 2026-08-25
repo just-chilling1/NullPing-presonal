@@ -3,19 +3,16 @@
 import { motion } from "framer-motion";
 import { faqSections } from "@/config/faq.config";
 import { SupportPageLayout } from "../components/SupportPageLayout";
-import { SupportChannelCards } from "../components/SupportChannelCards";
-import { SupportStatCards } from "../components/SupportStatCards";
+import { SupportHeroSection } from "../components/SupportHeroSection";
 import {
-  SupportFaqAccordion,
   SupportFaqCardHeader,
+  SupportFaqSections,
 } from "../components/SupportFaqAccordion";
 import {
   SupportRefundSection,
   containerVariants,
   itemVariants,
 } from "../components/SupportRefundSection";
-
-const allFaqs = faqSections.flatMap((section) => section.items);
 
 export default function SupportPage() {
   return (
@@ -24,20 +21,16 @@ export default function SupportPage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex flex-col gap-5"
+        className="flex max-w-5xl flex-col gap-5"
       >
         <motion.div variants={itemVariants}>
-          <SupportStatCards />
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <SupportChannelCards />
+          <SupportHeroSection />
         </motion.div>
 
         <motion.div variants={itemVariants} id="faq" className="card-base overflow-hidden p-0">
           <SupportFaqCardHeader />
-          <div className="px-4 pb-3 sm:px-5">
-            <SupportFaqAccordion items={allFaqs} />
+          <div className="px-4 pb-5 pt-2 sm:px-6 sm:pb-6">
+            <SupportFaqSections sections={faqSections} />
           </div>
         </motion.div>
 

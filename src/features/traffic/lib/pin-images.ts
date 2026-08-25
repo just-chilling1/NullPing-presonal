@@ -177,15 +177,18 @@ async function claimCandidate(params: {
         return null;
       }
     } else {
+      // Persist failed — still try to hash; if download fails, keep the remote URL.
       const downloaded = await downloadImageForHash(params.url);
-      if (!downloaded) return null;
-      contentHash = downloaded.contentHash;
-      if (isImageAlreadyUsed({ url: params.url, normalizedUrl, contentHash }, params.registry)) {
-        return null;
+      if (downloaded) {
+        contentHash = downloaded.contentHash;
+        if (isImageAlreadyUsed({ url: params.url, normalizedUrl, contentHash }, params.registry)) {
+          return null;
+        }
       }
     }
   } catch {
-    return null;
+    // Keep remote URL when storage/download errors — better than blank pins.
+    finalUrl = params.url;
   }
 
   const record: UsedImageRecord = {

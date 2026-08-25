@@ -6,7 +6,7 @@ import { support } from "@/config/support.config";
 
 export function SupportPageLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="page-container">
+    <div className="page-container mx-auto w-full max-w-6xl">
       <PageHeader eyebrow="Help" title={support.pageTitle} subtitle={support.pageSubtitle} />
       {children}
     </div>
