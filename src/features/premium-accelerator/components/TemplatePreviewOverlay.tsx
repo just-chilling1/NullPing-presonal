@@ -198,10 +198,7 @@ export function TemplatePreviewOverlay({
                             decoding="async"
                             referrerPolicy="no-referrer"
                             onError={(e) => {
-                              const img = e.currentTarget;
-                              if (img.dataset.fallback === "1") return;
-                              img.dataset.fallback = "1";
-                              img.src = `https://picsum.photos/seed/vault-${preview.catalogId}-${i}/1000/1500`;
+                              e.currentTarget.style.display = "none";
                             }}
                           />
                         ) : (

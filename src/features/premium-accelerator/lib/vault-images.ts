@@ -72,6 +72,7 @@ export async function resolveUniqueVaultImage(params: {
 
 /**
  * Pre-seed image pack: 10 pin backgrounds via the shared product pin resolver.
+ * Hero is always empty — Unlimited money pages are text-only.
  * Empty pin slots when no trustworthy product image exists.
  */
 export async function resolveVaultSeedImagePack(params: {

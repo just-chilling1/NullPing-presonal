@@ -10,8 +10,6 @@ import {
   getAcceleratorCatalogEntry,
   type VaultCatalogEntry,
 } from "./catalog";
-import { isTemplateComplete, loadTemplateSite, PLACEHOLDER_CTA } from "./seed-vault-templates";
-import { resolveVaultHeroImage } from "./vault-images";
 import { buildVaultMoneyPageCopy } from "./vault-copy";
 import { seedVaultPins } from "./seed-vault-pins";
 
@@ -21,15 +19,10 @@ export interface InstallVaultAssetResult {
   pinCount: number;
 }
 
-function rewriteCtaInHtml(html: string, affiliateUrl: string): string {
-  if (!html) return html;
-  return html.split(PLACEHOLDER_CTA).join(affiliateUrl);
-}
-
 /**
  * Install a vault catalog entry as a live member-owned money page.
- * Prefers a pre-seeded template (instant clone) so members never wait on image generation.
- * Falls back to on-demand build when the template has not been seeded yet.
+ * Money pages are text-only (no hero photos). Pins are resolved fresh against
+ * the product + affiliate URL so stock stays niche-relevant.
  */
 export async function installVaultAsset(params: {
   supabase: SupabaseClient;
@@ -47,27 +40,7 @@ export async function installVaultAsset(params: {
     throw new Error("affiliateUrl is required");
   }
 
-  const template = await loadTemplateSite(params.supabase, entry.id);
-  const useTemplate = isTemplateComplete(template);
-
-  const templateJson = (template?.sales_page_json ?? null) as Record<string, unknown> | null;
-  const preloadedPins = Array.isArray(templateJson?.vaultPinImages)
-    ? (templateJson.vaultPinImages as string[])
-    : null;
-  const heroImage = useTemplate
-    ? String(templateJson?.heroImage ?? "").trim()
-    : await resolveVaultHeroImage({
-        productName: entry.productName,
-        niche: entry.niche,
-        scrapeUrl: affiliateUrl,
-      });
-
-  const copy = useTemplate
-    ? ({
-        ...templateJson,
-        heroImage: heroImage || undefined,
-      } as ReturnType<typeof buildVaultMoneyPageCopy>)
-    : buildVaultMoneyPageCopy(entry, heroImage);
+  const copy = buildVaultMoneyPageCopy(entry, null);
 
   const armedLinks: ArmedLink[] = [
     {
@@ -140,7 +113,6 @@ export async function installVaultAsset(params: {
     created = second.data as InstallVaultAssetResult["site"];
   }
 
-  // Rebuild HTML with the member CTA/site id (copy + unique images already come from seed).
   const finalHtml = buildMoneyPageHtml({
     siteId: created.id,
     productName: entry.productName,
@@ -154,11 +126,7 @@ export async function installVaultAsset(params: {
     .from("sites")
     .update({
       sales_page_html: finalHtml,
-      sales_page_json: {
-        ...copy,
-        heroImage: heroImage || undefined,
-        vaultPinImages: preloadedPins ?? undefined,
-      },
+      sales_page_json: copy,
       title: copy.headline.slice(0, 180),
       tagline: copy.subheadline.slice(0, 160),
       site_type: "product",
@@ -180,10 +148,9 @@ export async function installVaultAsset(params: {
     userId: params.user.id,
     siteId: created.id,
     entry,
-    // Always pass affiliate URL so re-resolved slots can scrape product images.
     scrapeUrl: affiliateUrl,
-    heroImage,
-    preloadedPinImages: preloadedPins,
+    heroImage: null,
+    preloadedPinImages: null,
     salesPageJson: copy as unknown as Record<string, unknown>,
   });
 

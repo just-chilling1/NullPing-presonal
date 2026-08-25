@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   ExternalLink,
   ImagePlus,
+  Link2,
   Loader2,
   Scale,
   BookOpen,
@@ -16,6 +17,7 @@ import {
 import { PageHeader } from "@/components/ui/page-header";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { WorkflowPage } from "@/components/ui/workflow-page";
+import { AffiliateLinkField } from "@/components/premium/AffiliateLinkField";
 import { isMoneyPageCopy, type MoneyPageCopy } from "@/features/money-page/lib/types";
 import {
   getMoneyPageColorTheme,
@@ -63,6 +65,9 @@ export default function MoneyPageEditor() {
   const [heroOptions, setHeroOptions] = useState<string[]>([]);
   const [heroOptionsLoading, setHeroOptionsLoading] = useState(false);
   const [heroOptionsEmpty, setHeroOptionsEmpty] = useState(false);
+  const [linkSaving, setLinkSaving] = useState(false);
+  const [linkSaved, setLinkSaved] = useState(false);
+  const [linkError, setLinkError] = useState("");
   const heroFileInputRef = useRef<HTMLInputElement>(null);
 
   const customizeBusy =
@@ -167,6 +172,45 @@ export default function MoneyPageEditor() {
   useEffect(() => {
     void load();
   }, [assetId]);
+
+  async function saveAffiliateLink(url: string) {
+    if (!copy) {
+      setLinkError("Could not update this sales page.");
+      return;
+    }
+
+    setLinkSaving(true);
+    setLinkError("");
+    setLinkSaved(false);
+
+    try {
+      const res = await fetch(`/api/assets/${assetId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          copy,
+          affiliateUrl: url,
+          colorTheme,
+          variationId,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setLinkError(typeof data.error === "string" ? data.error : "Could not update affiliate link.");
+        return;
+      }
+
+      setAffiliateUrl(url);
+      setSite(data.site);
+      applyThemeFromPayload(data);
+      if (isMoneyPageCopy(data.site.sales_page_json)) setCopy(data.site.sales_page_json);
+      setLinkSaved(true);
+    } catch {
+      setLinkError("Could not update affiliate link. Please try again.");
+    } finally {
+      setLinkSaving(false);
+    }
+  }
 
   async function save(nextTheme?: MoneyPageColorThemeId, nextVariation?: MoneyPageVariationId) {
     setBusy(nextTheme ? "theme" : nextVariation ? "design" : "save");
@@ -449,11 +493,57 @@ export default function MoneyPageEditor() {
       )}
 
       {copy ? (
+        <GlassPanel className="money-affiliate-link space-y-4 p-6 sm:p-7">
+          <div className="flex items-start gap-3">
+            <Link2 size={18} strokeWidth={1.75} className="mt-0.5 shrink-0 text-pulse-500" aria-hidden />
+            <div>
+              <h2 className="ds-h3">Add or update your affiliate link</h2>
+              <p className="mt-1 text-sm text-ink-2">
+                Optional — you can publish without a CTA. If you add a link, this sales page updates to include
+                CTA buttons that use it.
+              </p>
+            </div>
+          </div>
+
+          <AffiliateLinkField
+            value={affiliateUrl}
+            onChange={(url) => {
+              setAffiliateUrl(url);
+              setLinkSaved(false);
+              setLinkError("");
+            }}
+            onApply={(url) => {
+              void saveAffiliateLink(url);
+            }}
+            actionMode="apply"
+            inputId="money-page-affiliate-link"
+            manualLabel="Affiliate link URL"
+            appliedMessage="CTA buttons on this sales page now use your affiliate link."
+          />
+
+          {linkSaving ? (
+            <p className="flex items-center gap-2 text-sm text-text-muted">
+              <Loader2 size={14} className="animate-spin" aria-hidden />
+              Updating sales page…
+            </p>
+          ) : null}
+          {linkSaved && !linkSaving ? (
+            <p className="text-sm text-success">Affiliate link saved — CTAs are on this sales page.</p>
+          ) : null}
+          {linkError ? (
+            <p className="text-sm text-[var(--np-danger)]" role="alert">
+              {linkError}
+            </p>
+          ) : null}
+        </GlassPanel>
+      ) : null}
+
+      {copy ? (
         <GlassPanel className="space-y-5 p-6 sm:p-7">
           <div>
             <h2 className="ds-h3">Sales page photo</h2>
             <p className="mt-1 text-sm text-ink-2">
-              Upload your own photo or pick a niche stock image. Changes apply right away.
+              Upload your own photo or pick a product-related image. Changes apply right away.
             </p>
           </div>
 
@@ -513,13 +603,16 @@ export default function MoneyPageEditor() {
           </div>
 
           <div className="money-hero-stock">
-            <p className="money-hero-stock-label">Or choose one of these</p>
+            <p className="money-hero-stock-label">Or choose a product-related photo</p>
             {heroOptionsLoading ? (
-              <p className="mt-2 text-xs text-ink-3">Loading photos…</p>
+              <p className="mt-2 text-xs text-ink-3">Finding product photos…</p>
             ) : heroOptionsEmpty ? (
-              <p className="mt-2 text-xs text-ink-3">No stock photos found. Upload your own instead.</p>
+              <p className="mt-2 text-xs text-ink-3">
+                No product-related photos found. Upload your own, or add an affiliate / product link so we can
+                pull images from the offer page.
+              </p>
             ) : (
-              <div className="money-hero-grid" role="radiogroup" aria-label="Sales page stock photos">
+              <div className="money-hero-grid" role="radiogroup" aria-label="Product-related sales page photos">
                 {heroOptions.map((url) => {
                   const selected = copy.heroImage === url;
                   return (

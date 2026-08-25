@@ -82,7 +82,7 @@ const CATEGORY_HINTS: Array<{ type: ProductType; pattern: RegExp; categories: st
   {
     type: "software",
     pattern: /\b(software|saas|app|dashboard|platform|plugin|extension|api|crm|canva|ai tool)\b/i,
-    categories: ["software", "app", "ui", "screenshot"],
+    categories: ["software", "dashboard", "mockup", "interface"],
   },
   {
     type: "course",
@@ -102,7 +102,7 @@ const CATEGORY_HINTS: Array<{ type: ProductType; pattern: RegExp; categories: st
   {
     type: "app",
     pattern: /\b(mobile app|ios|android|iphone)\b/i,
-    categories: ["app", "mobile", "screenshot"],
+    categories: ["mobile", "smartphone", "mockup"],
   },
   {
     type: "subscription",
@@ -116,8 +116,9 @@ const CATEGORY_HINTS: Array<{ type: ProductType; pattern: RegExp; categories: st
   },
   {
     type: "physical",
-    pattern: /\b(gloves?|bottle|kit|gear|equipment|device|gadget|cream|lotion)\b/i,
-    categories: ["product", "packaging"],
+    pattern:
+      /\b(gloves?|bottle|kit|gear|equipment|device|gadget|cream|lotion|packing\s*cubes?|cubes?|luggage|suitcase|organizer|carry[- ]?on|backpack|pillow|umbrella|charger|pump|planters?|frames?|lamp|throw|blanket|camera|earbuds?|buds|chair|pump|sheets?|containers?)\b/i,
+    categories: ["product", "packaging", "gear", "travel"],
   },
 ];
 
@@ -241,16 +242,50 @@ export function productOnlyStockQueries(identity: ProductIdentity): string[] {
       break;
     case "software":
     case "app":
-      if (core) queries.push(`${core} software`, `${core} app screenshot`, `${core} dashboard`);
+      if (core) {
+        queries.push(
+          `${core} software mockup`,
+          `${core} app interface`,
+          `${core} dashboard ui`,
+          `${core} saas product`
+        );
+      }
       break;
     case "course":
-      if (core) queries.push(`${core} course`, `${core} online training`, `${core} masterclass`);
+      if (core) {
+        queries.push(
+          `${core} course workbook`,
+          `${core} online course`,
+          `${core} training materials`,
+          `${core} masterclass`
+        );
+      }
       break;
     case "ebook":
       if (core) queries.push(`${core} ebook`, `${core} book cover`);
       break;
     case "physical":
-      if (core) queries.push(`${core} product`, `${core} gear`, `${core} equipment`, core);
+      if (core) {
+        queries.push(
+          `${core} product`,
+          `${core} gear`,
+          `${core} equipment`,
+          `${core} packing`,
+          `${core} travel accessory`,
+          `${core} organizer`,
+          core
+        );
+      }
+      // Common travel-organizer products need explicit luggage framing.
+      if (/\b(packing|cube|cubes|organizer|luggage|carry)\b/i.test(name)) {
+        queries.unshift(
+          "packing cubes luggage",
+          "travel packing cubes",
+          "luggage organizer cubes",
+          "suitcase packing cubes",
+          "travel organizer bag"
+        );
+      }
       break;
     default:
       if (strong.length === 1) {

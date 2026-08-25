@@ -66,14 +66,15 @@ export async function seedAcceleratorTemplate(params: {
     return "skipped";
   }
 
-  const { heroImage, pinImages } = await resolveVaultSeedImagePack({
+  const { pinImages } = await resolveVaultSeedImagePack({
     entry: params.entry,
     used: params.usedImages,
     admin: params.admin,
     ownerId: params.ownerId,
   });
 
-  const copy = buildVaultMoneyPageCopy(params.entry, heroImage);
+  // Money pages stay text-only — no hero photos in the Unlimited vault.
+  const copy = buildVaultMoneyPageCopy(params.entry, null);
   const pinDrafts = buildVaultPinDrafts(params.entry).map((draft, i) => ({
     ...draft,
     // Never fall back to draft placeholders — only product-resolved URLs.
@@ -82,7 +83,7 @@ export async function seedAcceleratorTemplate(params: {
 
   const salesPageJson = {
     ...copy,
-    heroImage,
+    heroImage: "",
     vaultPinImages: pinImages,
     vaultPins: pinDrafts,
   };
@@ -103,7 +104,7 @@ export async function seedAcceleratorTemplate(params: {
   const html = buildMoneyPageHtml({
     siteId,
     productName: params.entry.productName,
-    copy: { ...copy, heroImage },
+    copy,
     ctaUrl: PLACEHOLDER_CTA,
     colorTheme: params.entry.colorTheme,
     variationId: params.entry.variationId,

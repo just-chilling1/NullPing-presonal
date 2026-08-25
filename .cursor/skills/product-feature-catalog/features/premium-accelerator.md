@@ -9,9 +9,9 @@
 
 Images rules when seeding:
 
-- Never AI-generated
-- No duplicate URLs across the full 200-page vault
-- At least **25%** of each page’s images (hero + 10 pins) are niche/product-related stock
+- Money pages are **text-only** (no hero / sales-page photos)
+- Pin images: never AI-generated; product/niche-related stock only (no fruit/lifestyle fillers)
+- No duplicate pin URLs across the full 200-page vault
 
 ## User flow
 

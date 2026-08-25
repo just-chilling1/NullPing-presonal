@@ -19,6 +19,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { WorkflowPage } from "@/components/ui/workflow-page";
 import { sitePublicPath } from "@/lib/app-url";
+import { TrafficGenerationQuota } from "@/features/traffic/components/TrafficGenerationQuota";
+import type { ThreadGenerationQuota } from "@/features/publish-kit/lib/thread-generation-quota";
 
 interface PinRow {
   id: string;
@@ -50,6 +52,7 @@ export default function TrafficPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
+  const [quota, setQuota] = useState<ThreadGenerationQuota | null>(null);
 
   async function load() {
     setLoading(true);
@@ -63,6 +66,7 @@ export default function TrafficPage() {
       const siteData = await siteRes.json().catch(() => ({}));
       const loadedPins = pinData.pins ?? [];
       setPins(loadedPins);
+      if (pinData.quota) setQuota(pinData.quota as ThreadGenerationQuota);
       if (siteData.site?.slug) setSlug(siteData.site.slug);
 
       if (loadedPins.length > 0) {
@@ -84,6 +88,11 @@ export default function TrafficPage() {
   }, [assetId]);
 
   async function generate() {
+    if (quota && quota.remaining <= 0) {
+      setError(`Daily pin generation limit reached (${quota.limit}). Try again tomorrow.`);
+      return;
+    }
+
     setBusy(true);
     setError("");
     const previousPins = pins;
@@ -99,12 +108,15 @@ export default function TrafficPage() {
         }),
       });
       const raw = await res.text();
-      let data: { pins?: PinRow[]; error?: string } = {};
+      let data: { pins?: PinRow[]; error?: string; quota?: ThreadGenerationQuota } = {};
       try {
-        data = raw ? (JSON.parse(raw) as { pins?: PinRow[]; error?: string }) : {};
+        data = raw
+          ? (JSON.parse(raw) as { pins?: PinRow[]; error?: string; quota?: ThreadGenerationQuota })
+          : {};
       } catch {
         data = {};
       }
+      if (data.quota) setQuota(data.quota);
       if (!res.ok) {
         setError(data.error || raw.slice(0, 180) || "Could not generate pins");
         if (previousPins.length > 0) setPins(previousPins);
@@ -131,10 +143,12 @@ export default function TrafficPage() {
     window.setTimeout(() => setCopied(""), 1200);
   }
 
+  const quotaBlocked = quota !== null && quota.remaining <= 0;
+
   return (
     <WorkflowPage className="traffic-workspace">
       <Link href="/traffic" className="traffic-back-link">
-        <ArrowLeft size={16} strokeWidth={2} aria-hidden />
+        <ArrowLeft size={18} strokeWidth={2.25} aria-hidden />
         Back to Generate Traffic
       </Link>
       <PageHeader
@@ -142,6 +156,8 @@ export default function TrafficPage() {
         title="Generate Pinterest traffic"
         subtitle="NullPing prepares Pinterest pins that send visitors straight to your money page."
       />
+
+      <TrafficGenerationQuota quota={quota} loading={loading && !quota} />
 
       {error && pins.length === 0 ? <div className="alert-banner">{error}</div> : null}
 
@@ -195,16 +211,18 @@ export default function TrafficPage() {
             <button
               type="button"
               className="btn-primary traffic-generate-cta"
-              disabled={busy}
+              disabled={busy || quotaBlocked}
               onClick={() => void generate()}
             >
               <Pin size={18} strokeWidth={1.75} aria-hidden />
-              Generate Traffic Assets
-              <ArrowRight size={18} strokeWidth={2.25} aria-hidden />
+              {quotaBlocked ? "Daily limit reached" : "Generate Traffic Assets"}
+              {!quotaBlocked ? <ArrowRight size={18} strokeWidth={2.25} aria-hidden /> : null}
             </button>
 
             <p className="traffic-hero-note">
-              Post the pins to Pinterest and use the provided link. Each visitor goes directly to your money page.
+              {quotaBlocked
+                ? "Come back after midnight UTC for more generations, or use the pins you already have."
+                : "Post the pins to Pinterest and use the provided link. Each visitor goes directly to your money page."}
             </p>
           </div>
         </GlassPanel>
@@ -258,8 +276,13 @@ export default function TrafficPage() {
                   {error} Your current pins are still available below.
                 </p>
               ) : null}
-              <button type="button" className="btn-primary" disabled={busy} onClick={() => void generate()}>
-                Regenerate traffic assets
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={busy || quotaBlocked}
+                onClick={() => void generate()}
+              >
+                {quotaBlocked ? "Daily limit reached" : "Regenerate traffic assets"}
               </button>
               <button type="button" className="btn-secondary" onClick={() => router.push("/results")}>
                 Save &amp; continue to Results

@@ -23,7 +23,7 @@ export async function GET(
   const { assetId } = await context.params;
   const { data: site, error } = await supabase
     .from("sites")
-    .select("id, product_name, title, hobby, sales_page_json")
+    .select("id, product_name, title, tagline, hobby, sales_page_json, product_url, armed_links")
     .eq("id", assetId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -38,11 +38,31 @@ export async function GET(
     "product";
   const niche = typeof site.hobby === "string" ? site.hobby : "";
   const copy = isMoneyPageCopy(site.sales_page_json) ? site.sales_page_json : null;
+  const pageDescription =
+    copy?.productIntro?.trim() ||
+    copy?.overview?.trim() ||
+    (typeof site.tagline === "string" ? site.tagline.trim() : "") ||
+    "";
   const excludeUrls = copy?.heroImage ? [copy.heroImage] : [];
+
+  const scrapeUrls: string[] = [];
+  if (typeof site.product_url === "string" && site.product_url.trim()) {
+    scrapeUrls.push(site.product_url.trim());
+  }
+  const armed = Array.isArray(site.armed_links) ? site.armed_links : [];
+  for (const link of armed) {
+    const url = link && typeof link === "object" && typeof (link as { url?: string }).url === "string"
+      ? (link as { url: string }).url.trim()
+      : "";
+    if (url && !scrapeUrls.includes(url)) scrapeUrls.push(url);
+  }
 
   const images = await fetchMoneyPageHeroOptions({
     niche,
     productName,
+    siteTitle: typeof site.title === "string" ? site.title : null,
+    pageDescription,
+    scrapeUrls,
     count: 5,
     excludeUrls,
   });

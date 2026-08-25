@@ -146,6 +146,14 @@ export interface ImageRelevance {
   reason: string;
 }
 
+/** Whole-word token match — avoids "app" matching inside "happy". */
+function tokenInHaystack(haystack: string, token: string): boolean {
+  const t = token.trim().toLowerCase();
+  if (t.length < 3) return false;
+  const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:[^a-z0-9]|$)`, "i").test(haystack);
+}
+
 export function scoreStockProductRelevance(params: {
   query: string;
   tags?: string;
@@ -162,59 +170,77 @@ export function scoreStockProductRelevance(params: {
   let score = 20;
 
   for (const token of params.strongTokens) {
-    if (token.length > 2 && haystack.includes(token.toLowerCase())) {
+    if (tokenInHaystack(haystack, token)) {
       matched.push(token);
       score += matched.length === 1 ? 55 : 12;
     }
   }
   for (const token of params.productTokens) {
-    if (token.length > 2 && !matched.includes(token) && haystack.includes(token.toLowerCase())) {
+    if (!matched.includes(token) && tokenInHaystack(haystack, token)) {
       matched.push(token);
       score += 10;
     }
   }
 
   const queryHasStrong = params.strongTokens.some(
-    (t) => t.length > 2 && queryLower.includes(t.toLowerCase())
+    (t) => t.length > 2 && tokenInHaystack(queryLower, t)
   );
   const productPhotoTags =
-    /\b(supplement|vitamin|bottle|pills?|capsule|gummies|tablet|medicine|pharmacy|packaging|serum|product|jar|tub|container|ball|gloves?)\b/i.test(
+    /\b(supplement|vitamin|bottle|pills?|capsule|gummies|tablet|medicine|pharmacy|packaging|serum|jar|tub|container|ball|gloves?|mockup|box|kit|device|gadget|luggage|suitcase|packing|cubes?|organizer|backpack|umbrella|earbuds?|charger|pillow|product)\b/i.test(
       haystack
     );
-  const categoryHit = (params.categoryTokens ?? []).some(
-    (t) => t.length > 2 && haystack.includes(t.toLowerCase())
+  const categoryHit = (params.categoryTokens ?? []).some((t) => tokenInHaystack(haystack, t));
+  const lifestyleTags =
+    /\b(bedroom|lifestyle|office|workspace|laptop|desk|wellness|beautiful|woman|man|couple|sleeping|asleep|portrait|people|businesswoman|entrepreneur|typing|sticky\s*notes?)\b/i.test(
+      haystack
+    );
+  const foodFruitTags =
+    /\b(fruit|fruits|apple|banana|berry|berries|orange|lemon|lime|grape|mango|strawberry|food|vegetable|salad|cuisine|restaurant|meal|dessert|smoothie)\b/i.test(
+      haystack
+    );
+  const productIsFood = params.productTokens.some((t) =>
+    /\b(food|meal|coffee|kitchen|cook|recipe|nutrition|snack)\b/i.test(t)
   );
 
   // Product-named query + product photography tags ⇒ accept even without ingredient in tags.
-  if (matched.length === 0 && queryHasStrong && (productPhotoTags || categoryHit)) {
+  // Do not accept on category alone, and never when the shot is lifestyle/people/food.
+  if (
+    matched.length === 0 &&
+    queryHasStrong &&
+    productPhotoTags &&
+    !lifestyleTags &&
+    !foodFruitTags
+  ) {
     score += 55;
     for (const t of params.strongTokens) {
-      if (t.length > 2 && queryLower.includes(t.toLowerCase()) && !matched.includes(t)) {
+      if (t.length > 2 && tokenInHaystack(queryLower, t) && !matched.includes(t)) {
         matched.push(t);
       }
     }
   }
 
-  // Generic lifestyle without product photography → reject
-  if (
-    matched.length === 0 &&
-    !productPhotoTags &&
-    /\b(bedroom|lifestyle|office|workspace|laptop|desk|wellness|beautiful|woman|couple|sleeping|asleep)\b/i.test(
-      haystack
-    )
-  ) {
+  // Generic lifestyle / people shots without a real product token match → reject
+  if (matched.length === 0 && lifestyleTags) {
+    score -= 55;
+  } else if (matched.length === 0 && !productPhotoTags && lifestyleTags) {
     score -= 40;
+  }
+
+  // Unrelated produce/food stock for non-food products (common Pixabay miss).
+  if (foodFruitTags && !productIsFood) {
+    score -= 70;
   }
 
   if (
     matched.length > 0 &&
-    /\b(bottle|supplement|gummies|packaging|product|serum|ball|gloves?|kit|box|pills?|capsule)\b/i.test(
+    /\b(bottle|supplement|gummies|packaging|serum|ball|gloves?|kit|box|pills?|capsule|mockup|device|luggage|suitcase|packing|cubes?|organizer|backpack)\b/i.test(
       haystack
     )
   ) {
     score += 8;
   }
 
+  if (matched.length > 0 && categoryHit) score += 5;
   if (matched.length >= 2) score += 8;
   if (matched.length === 0) score -= 30;
 
@@ -486,7 +512,7 @@ const NICHE_PHOTO_QUERIES: Record<string, string[]> = {
   beauty: ["skincare serum bottle", "beauty vanity skincare"],
   education: ["study desk books", "student laptop learning"],
   business: ["entrepreneur desk laptop", "business workspace office"],
-  travel: ["happy dog owner", "travel lifestyle outdoor", "home garden patio"],
+  travel: ["packing cubes luggage", "travel packing organizer", "carry on suitcase"],
 };
 
 /**

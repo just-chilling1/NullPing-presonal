@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { scrapePageWithCache } from "@/features/blog-builder/lib/scrape-cache";
-import { fetchNicheRelatedImage } from "@/features/blog-builder/lib/images";
+import { fetchMoneyPageHeroOptions } from "@/features/money-page/lib/hero-options";
 import { slugify } from "@/features/blog-builder/lib/seo";
 import { getOrCreateUserHandle } from "@/lib/user-handle";
 import { getServiceRoleClient } from "@/lib/api-auth";
@@ -127,11 +127,13 @@ export async function activateAsset(params: {
 
   const niche = inferNiche(productName, productContext || scrapedDescription);
   if (!heroImage) {
-    heroImage =
-      (await fetchNicheRelatedImage({
-        niche,
-        productName,
-      })) ?? "";
+    const productPhotos = await fetchMoneyPageHeroOptions({
+      niche,
+      productName,
+      pageDescription: productContext || scrapedDescription,
+      count: 1,
+    });
+    heroImage = productPhotos[0] ?? "";
   }
   const ctaUrl = affiliateUrl || productUrl || "";
   const armedLinks: ArmedLink[] = ctaUrl

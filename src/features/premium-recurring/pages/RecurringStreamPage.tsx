@@ -24,6 +24,7 @@ import { clsx } from "clsx";
 import { brand } from "@/config/brand.config";
 import { cachedClientFetch } from "@/lib/client-fetch-cache";
 import { PageSkeleton } from "@/components/ui/page-skeleton";
+import { PremiumStepsSection } from "@/components/premium/PremiumStepsSection";
 import { PremiumWorkflowShell } from "@/components/premium/PremiumWorkflowShell";
 import { LiveAssetPicker, type LiveAssetSummary } from "@/components/premium/LiveAssetPicker";
 import { GenerationProgress, GENERATION_RESULTS_ID } from "@/components/ui/generation-progress";
@@ -299,6 +300,26 @@ export default function RecurringStreamPage() {
         </>
       }
     >
+      <PremiumStepsSection
+        steps={[
+          {
+            num: "1",
+            title: "Select a live money page",
+            desc: "Pick any published money page — your /m tracking URL gets woven into every article CTA automatically.",
+          },
+          {
+            num: "2",
+            title: "Browse & preview guides",
+            desc: "Filter 100+ authority articles by niche and preview any guide with your tracking link before you commit.",
+          },
+          {
+            num: "3",
+            title: "Add to page or copy",
+            desc: "Add the article as a section on your money page (primary), or copy plain text/HTML for Medium, LinkedIn, or your blog.",
+          },
+        ]}
+      />
+
       <GlassPanel className="overflow-hidden p-0">
         <div className="relative overflow-hidden border-b border-[var(--np-line)] p-5 sm:p-6">
           <div

@@ -5,6 +5,7 @@ import { Check, Filter, Link as LinkIcon, Loader2, Sparkles } from "lucide-react
 import { clsx } from "clsx";
 import { AffiliateLinkField } from "@/components/premium/AffiliateLinkField";
 import { PremiumErrorAlert } from "@/components/premium/PremiumErrorAlert";
+import { PremiumStepsSection } from "@/components/premium/PremiumStepsSection";
 import { PremiumWorkflowShell } from "@/components/premium/PremiumWorkflowShell";
 import { GenerationProgress } from "@/components/ui/generation-progress";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -231,6 +232,26 @@ export default function DfyProfitPage() {
         iframeTitle: "Done-For-You Profit training video",
       }}
     >
+      <PremiumStepsSection
+        steps={[
+          {
+            num: "1",
+            title: "Apply your affiliate link",
+            desc: "Paste your offer URL and click Apply. We scrape the product details and wire your link into every asset in the kit.",
+          },
+          {
+            num: "2",
+            title: "Pick a niche & generate",
+            desc: "Choose the niche that matches your offer, then click Generate. One run builds a live sales page, 3 Pinterest pins, an authority article, and 3 Facebook posts.",
+          },
+          {
+            num: "3",
+            title: "Publish & promote",
+            desc: "Open your live sales page, download the pins, copy the article and Facebook posts, and start driving traffic to your offer.",
+          },
+        ]}
+      />
+
       <GlassPanel className="space-y-5 p-5 sm:p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>

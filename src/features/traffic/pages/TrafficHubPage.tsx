@@ -8,6 +8,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { WorkflowPage } from "@/components/ui/workflow-page";
 import { EmptyState } from "@/components/ui/empty-state";
+import { TrafficGenerationQuota } from "@/features/traffic/components/TrafficGenerationQuota";
+import type { ThreadGenerationQuota } from "@/features/publish-kit/lib/thread-generation-quota";
 
 interface TrafficAssetRow {
   id: string;
@@ -20,6 +22,8 @@ interface TrafficAssetRow {
 export default function TrafficHubPage() {
   const [assets, setAssets] = useState<TrafficAssetRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quotaLoading, setQuotaLoading] = useState(true);
+  const [quota, setQuota] = useState<ThreadGenerationQuota | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -34,6 +38,14 @@ export default function TrafficHubPage() {
       })
       .catch(() => setError("Could not load your assets"))
       .finally(() => setLoading(false));
+
+    void fetch("/api/pins/quota", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((payload) => {
+        if (payload.quota) setQuota(payload.quota as ThreadGenerationQuota);
+      })
+      .catch(() => {})
+      .finally(() => setQuotaLoading(false));
   }, []);
 
   return (
@@ -46,6 +58,8 @@ export default function TrafficHubPage() {
 
       {error ? <div className="alert-banner">{error}</div> : null}
 
+      <TrafficGenerationQuota quota={quota} loading={quotaLoading} />
+
       <GlassPanel className="traffic-hub-intro">
         <p className="traffic-hub-intro-badge">
           <Sparkles size={14} strokeWidth={1.75} aria-hidden />
@@ -53,7 +67,7 @@ export default function TrafficHubPage() {
         </p>
         <p className="traffic-hub-intro-copy">
           Activate Asset builds your sales page. Open Generate Traffic when you are ready to create pin images,
-          titles, descriptions, and tracking links for that page.
+          titles, descriptions, and tracking links for that page. You get 5 pin generations per day.
         </p>
       </GlassPanel>
 

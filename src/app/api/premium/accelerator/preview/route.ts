@@ -12,10 +12,7 @@ import {
   loadTemplateSite,
   PLACEHOLDER_CTA,
 } from "@/features/premium-accelerator/lib/seed-vault-templates";
-import {
-  resolveVaultHeroImage,
-  resolveVaultPinDrafts,
-} from "@/features/premium-accelerator/lib/vault-images";
+import { resolveVaultPinDrafts } from "@/features/premium-accelerator/lib/vault-images";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -56,35 +53,26 @@ export async function GET(request: Request) {
   const admin = getServiceRoleClient();
   const imageClient = admin ?? supabase;
   const template = admin ? await loadTemplateSite(admin, entry.id) : null;
+  // Unlimited money pages are text-only — never embed hero photos.
+  const copy = buildVaultMoneyPageCopy(entry, null);
+  const salesPageHtml = buildMoneyPageHtml({
+    siteId: "preview",
+    productName: entry.productName,
+    copy,
+    ctaUrl: previewCta,
+    colorTheme: entry.colorTheme,
+    variationId: entry.variationId,
+    ctaHrefOverride: previewCta,
+  });
 
   if (isTemplateComplete(template)) {
-    const json = template!.sales_page_json as Record<string, unknown>;
-    const pinImages = Array.isArray(json.vaultPinImages)
-      ? (json.vaultPinImages as string[])
-      : [];
-    const vaultPins = Array.isArray(json.vaultPins)
-      ? (json.vaultPins as Array<Record<string, unknown>>)
-      : [];
-    const heroImage = String(json.heroImage ?? "").trim();
-    const copy = buildVaultMoneyPageCopy(entry, heroImage);
-    const salesPageHtml = buildMoneyPageHtml({
-      siteId: "preview",
-      productName: entry.productName,
-      copy,
-      ctaUrl: previewCta,
-      colorTheme: entry.colorTheme,
-      variationId: entry.variationId,
-      ctaHrefOverride: previewCta,
-    });
-
-    // Re-resolve any missing/generic preloaded pin images with the product pipeline.
+    // Always re-resolve pins with the product pipeline so stale/unrelated
+    // seed images (e.g. fruit stock) are replaced with niche-relevant shots.
     const pins = await resolveVaultPinDrafts({
       entry,
       scrapeUrl: affiliateUrl || null,
-      heroImage,
-      preloadedPinImages: pinImages.length
-        ? pinImages
-        : vaultPins.map((pin) => String(pin.imageUrl ?? "")),
+      heroImage: null,
+      preloadedPinImages: null,
       userId: user.id,
       supabase: imageClient,
     });
@@ -97,9 +85,7 @@ export async function GET(request: Request) {
         templateName: variation.label,
         title: copy.headline,
         tagline: copy.subheadline,
-        salesPageHtml: String(template!.sales_page_html ?? salesPageHtml)
-          .split(PLACEHOLDER_CTA)
-          .join(previewCta),
+        salesPageHtml: salesPageHtml.split(PLACEHOLDER_CTA).join(previewCta),
         pins,
         seeded: true,
         threads: [],
@@ -108,27 +94,10 @@ export async function GET(request: Request) {
     );
   }
 
-  const heroImage = await resolveVaultHeroImage({
-    productName: entry.productName,
-    niche: entry.niche,
-    scrapeUrl: affiliateUrl || null,
-  });
-  const copy = buildVaultMoneyPageCopy(entry, heroImage);
-
-  const salesPageHtml = buildMoneyPageHtml({
-    siteId: "preview",
-    productName: entry.productName,
-    copy,
-    ctaUrl: previewCta,
-    colorTheme: entry.colorTheme,
-    variationId: entry.variationId,
-    ctaHrefOverride: previewCta,
-  });
-
   const pins = await resolveVaultPinDrafts({
     entry,
     scrapeUrl: affiliateUrl || null,
-    heroImage,
+    heroImage: null,
     userId: user.id,
     supabase: imageClient,
   });

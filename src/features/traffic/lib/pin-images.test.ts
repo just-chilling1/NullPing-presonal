@@ -182,6 +182,28 @@ describe("stock relevance", () => {
     });
     assert.ok(rel.score >= 70, `expected >= 70, got ${rel.score}`);
   });
+
+  it("rejects office lifestyle when category token falsely substring-matches", () => {
+    const rel = scoreStockProductRelevance({
+      query: "growth software",
+      tags: "laptop, office, woman, workspace, happy, desk",
+      productTokens: ["growth", "software"],
+      strongTokens: ["growth", "software"],
+      categoryTokens: ["software", "app", "ui", "screenshot"],
+    });
+    assert.ok(rel.score < 70, `expected < 70, got ${rel.score}`);
+  });
+
+  it("does not treat app as matching happy", () => {
+    const rel = scoreStockProductRelevance({
+      query: "crm software",
+      tags: "happy, business, people, office",
+      productTokens: ["crm", "software"],
+      strongTokens: ["crm", "software"],
+      categoryTokens: ["app", "software"],
+    });
+    assert.ok(rel.score < 70, `expected < 70, got ${rel.score}`);
+  });
 });
 
 describe("product page ranking threshold", () => {

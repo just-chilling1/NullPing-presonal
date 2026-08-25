@@ -85,7 +85,7 @@ export const faqSections: FaqSection[] = [
       },
       {
         q: "How many pins do I get, and can I regenerate them?",
-        a: "Each generation creates 10 pins aimed at your money page. You can regenerate pins anytime from the pin workspace if you want fresh images or copy. Unlimited installs also include 10 pins when you install a template.",
+        a: "Each generation creates 10 pins aimed at your money page. You can regenerate from the pin workspace, with a daily limit of 5 pin generations (shown as a counter on Generate Traffic). The counter resets at midnight UTC. Unlimited installs also include 10 pins when you install a template.",
       },
       {
         q: "What is Results?",
