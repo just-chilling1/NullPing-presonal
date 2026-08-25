@@ -316,6 +316,7 @@ export async function resolvePinBackgroundImages(params: {
   let poolIdx = 0;
   let rejectedUnrelated = 0;
   let rejectedDupes = 0;
+  const usedStockIds = new Set<string>();
 
   for (let i = 0; i < params.pins.length; i++) {
     let assigned: ResolvedPinBackground | null = null;
@@ -353,13 +354,15 @@ export async function resolvePinBackgroundImages(params: {
       for (let q = 0; q < queries.length && !assigned; q++) {
         const hit = await fetchPixabayImage(identity.normalizedProductName, identity.normalizedProductName, {
           customQuery: queries[q],
-          orientation: "horizontal",
+          // Allow portrait/square product shots — pin OG uses object-fit contain.
+          orientation: "all",
           pickOffset: i * 5 + q,
           seedBoost: i * 19 + q * 5 + registry.length,
           excludeUrls: registry.map((r) => r.sourceUrl || "").filter(Boolean),
-          excludeStockIds: registry.map((r) => r.normalizedUrl),
+          excludeStockIds: [...usedStockIds],
           productTokens: identity.productTokens,
           strongTokens: identity.strongTokens,
+          categoryTokens: identity.categoryTokens,
           minRelevance: MIN_STOCK_PRODUCT_RELEVANCE,
         });
         if (!hit?.url) continue;
@@ -380,6 +383,7 @@ export async function resolvePinBackgroundImages(params: {
           userId: params.userId,
           supabase: params.supabase,
         });
+        if (assigned && hit.stockId) usedStockIds.add(hit.stockId);
       }
     }
 

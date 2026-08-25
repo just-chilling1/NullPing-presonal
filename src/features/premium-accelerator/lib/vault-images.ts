@@ -59,29 +59,33 @@ export async function resolveUniqueVaultImage(params: {
 }
 
 /**
- * Pre-seed image pack for one catalog entry: 1 hero + 10 pin backgrounds.
- * Empty pin slots are allowed when no product-relevant image exists.
+ * Pre-seed image pack for one catalog entry: no sales-page hero + 10 pin backgrounds.
+ * Pins use the shared product pin resolver (product-page scrape → Pixabay product queries).
+ * Empty pin slots are allowed when no trustworthy product image exists.
  */
 export async function resolveVaultSeedImagePack(params: {
   entry: VaultCatalogEntry;
   used?: Set<string>;
+  admin: SupabaseClient;
+  ownerId: string;
 }): Promise<{ heroImage: string; pinImages: string[] }> {
   const used = params.used ?? new Set<string>();
-  const nicheSlots = nicheRelatedSlotCount(VAULT_IMAGE_SLOT_COUNT);
-  const urls: string[] = [];
+  const pinDrafts = await resolveVaultPinDrafts({
+    entry: params.entry,
+    heroImage: "",
+    excludeImages: [...used],
+    userId: params.ownerId,
+    supabase: params.admin,
+    preloadedPinImages: null,
+    scrapeUrl: null,
+  });
 
-  for (let slot = 0; slot < VAULT_IMAGE_SLOT_COUNT; slot++) {
-    urls.push(
-      await resolveUniqueVaultImage({
-        entry: params.entry,
-        slot,
-        used,
-        nicheRelated: slot < nicheSlots,
-      })
-    );
+  const pinImages = pinDrafts.map((draft) => draft.imageUrl?.trim() || "");
+  for (const url of pinImages) {
+    markUsed(used, url);
   }
 
-  return { heroImage: urls[0], pinImages: urls.slice(1) };
+  return { heroImage: "", pinImages };
 }
 
 /** Scrape the affiliate page, else a product-related stock photo. Empty = no sales-page image. */
@@ -127,6 +131,8 @@ export async function resolveVaultPinDrafts(params: {
   heroImage?: string | null;
   /** When provided (e.g. from seed), use these URLs in order instead of resolving. */
   preloadedPinImages?: string[] | null;
+  /** URLs already used in this vault batch — never reuse across templates. */
+  excludeImages?: string[];
   userId?: string;
   supabase?: SupabaseClient | null;
 }): Promise<VaultPinDraft[]> {
@@ -176,7 +182,10 @@ export async function resolveVaultPinDrafts(params: {
       hobby: params.entry.niche,
       scrapeUrl: scrapeUrl || null,
       preferredImages: params.heroImage ? [params.heroImage] : [],
-      excludeImages: params.heroImage ? [params.heroImage] : [],
+      excludeImages: [
+        ...(params.excludeImages ?? []),
+        ...(params.heroImage ? [params.heroImage] : []),
+      ],
       userId: params.userId,
       supabase: params.supabase,
     });

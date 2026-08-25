@@ -145,11 +145,11 @@ describe("stock relevance", () => {
   it("rejects generic lifestyle stock without product tokens", () => {
     const rel = scoreStockProductRelevance({
       query: "melatonin gummies",
-      tags: "bedroom, sleep, lifestyle, woman",
+      tags: "bedroom, sleep, lifestyle, woman, asleep",
       productTokens: ["melatonin", "gummies", "sleepwell"],
       strongTokens: ["melatonin", "gummies", "sleepwell"],
     });
-    assert.ok(rel.score < 70);
+    assert.ok(rel.score < 70, `expected < 70, got ${rel.score}`);
   });
 
   it("accepts stock that matches product tokens", () => {
@@ -168,6 +168,17 @@ describe("stock relevance", () => {
       tags: "football, sport, ball, american football",
       productTokens: ["football"],
       strongTokens: ["football"],
+    });
+    assert.ok(rel.score >= 70, `expected >= 70, got ${rel.score}`);
+  });
+
+  it("accepts melatonin supplement query when tags are product photography without ingredient word", () => {
+    const rel = scoreStockProductRelevance({
+      query: "melatonin supplement",
+      tags: "tablets, medicine, supplement, vitamin, pharmaceutical",
+      productTokens: ["melatonin"],
+      strongTokens: ["melatonin"],
+      categoryTokens: ["supplement", "bottle", "gummies"],
     });
     assert.ok(rel.score >= 70, `expected >= 70, got ${rel.score}`);
   });

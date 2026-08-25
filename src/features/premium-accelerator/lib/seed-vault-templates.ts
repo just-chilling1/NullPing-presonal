@@ -69,6 +69,8 @@ export async function seedAcceleratorTemplate(params: {
   const { heroImage, pinImages } = await resolveVaultSeedImagePack({
     entry: params.entry,
     used: params.usedImages,
+    admin: params.admin,
+    ownerId: params.ownerId,
   });
 
   const copy = buildVaultMoneyPageCopy(params.entry, heroImage);

@@ -222,40 +222,49 @@ export function productOnlyStockQueries(identity: ProductIdentity): string[] {
   const strong = identity.strongTokens;
   const brand = identity.brand;
   const queries: string[] = [];
+  const core = strong.slice(0, 2).join(" ") || name;
 
-  if (name) queries.push(name);
+  // Prefer multi-word product queries first — bare ingredient names (e.g. "melatonin")
+  // often return 0 Pixabay hits while "melatonin supplement" works.
+  switch (identity.productType) {
+    case "supplement":
+      if (core) {
+        queries.push(
+          `${core} supplement`,
+          `${core} supplement bottle`,
+          `${core} gummies`,
+          `${core} vitamins`,
+          "supplement bottle",
+          "vitamin gummies"
+        );
+      }
+      break;
+    case "software":
+    case "app":
+      if (core) queries.push(`${core} software`, `${core} app screenshot`, `${core} dashboard`);
+      break;
+    case "course":
+      if (core) queries.push(`${core} course`, `${core} online training`, `${core} masterclass`);
+      break;
+    case "ebook":
+      if (core) queries.push(`${core} ebook`, `${core} book cover`);
+      break;
+    case "physical":
+      if (core) queries.push(`${core} product`, `${core} gear`, `${core} equipment`, core);
+      break;
+    default:
+      if (strong.length === 1) {
+        queries.push(core, `${core} ball`, `${core} sport`, `${core} equipment`, `${core} product`);
+      } else if (core) {
+        queries.push(core, `${core} product`, `${core} gear`);
+      }
+  }
+
+  if (name && !queries.includes(name)) queries.push(name);
   if (brand && strong.length > 1) {
     queries.push([brand, ...strong.filter((t) => t !== brand).slice(0, 2)].join(" "));
   }
   if (strong.length >= 2) queries.push(strong.slice(0, 3).join(" "));
-  if (strong.length >= 1) {
-    const core = strong.slice(0, 2).join(" ");
-    switch (identity.productType) {
-      case "supplement":
-        queries.push(`${core} supplement bottle`, `${core} gummies`, `${core} supplement`);
-        break;
-      case "software":
-      case "app":
-        queries.push(`${core} software ui`, `${core} app screenshot`, `${core} dashboard`);
-        break;
-      case "course":
-        queries.push(`${core} course`, `${core} online training`, `${core} masterclass`);
-        break;
-      case "ebook":
-        queries.push(`${core} ebook cover`, `${core} book cover`);
-        break;
-      case "physical":
-        queries.push(`${core} product`, `${core} gear`, `${core} equipment`);
-        break;
-      default:
-        // Short single-token products (e.g. "football") — keep visual queries product-literal.
-        if (strong.length === 1) {
-          queries.push(core, `${core} ball`, `${core} sport`, `${core} equipment`);
-        } else {
-          queries.push(`${core} product`, `${core} gear`);
-        }
-    }
-  }
 
-  return [...new Set(queries.map((q) => q.trim()).filter(Boolean))].slice(0, 8);
+  return [...new Set(queries.map((q) => q.trim()).filter(Boolean))].slice(0, 10);
 }

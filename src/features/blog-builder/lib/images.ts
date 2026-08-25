@@ -150,16 +150,18 @@ export function scoreStockProductRelevance(params: {
   pageURL?: string;
   productTokens: string[];
   strongTokens: string[];
+  categoryTokens?: string[];
 }): ImageRelevance {
-  // Score against image metadata only — the query always contains product tokens.
+  // Pixabay often omits ingredient/brand words from tags even when the query
+  // was product-specific (e.g. "melatonin supplement" → tags "pills, vitamin").
   const haystack = `${params.tags ?? ""} ${params.pageURL ?? ""}`.toLowerCase();
+  const queryLower = (params.query || "").toLowerCase();
   const matched: string[] = [];
   let score = 20;
 
   for (const token of params.strongTokens) {
     if (token.length > 2 && haystack.includes(token.toLowerCase())) {
       matched.push(token);
-      // First strong token match is enough to clear the commerce threshold (~70).
       score += matched.length === 1 ? 55 : 12;
     }
   }
@@ -170,20 +172,43 @@ export function scoreStockProductRelevance(params: {
     }
   }
 
-  // Generic lifestyle tags without product tokens → reject
+  const queryHasStrong = params.strongTokens.some(
+    (t) => t.length > 2 && queryLower.includes(t.toLowerCase())
+  );
+  const productPhotoTags =
+    /\b(supplement|vitamin|bottle|pills?|capsule|gummies|tablet|medicine|pharmacy|packaging|serum|product|jar|tub|container|ball|gloves?)\b/i.test(
+      haystack
+    );
+  const categoryHit = (params.categoryTokens ?? []).some(
+    (t) => t.length > 2 && haystack.includes(t.toLowerCase())
+  );
+
+  // Product-named query + product photography tags ⇒ accept even without ingredient in tags.
+  if (matched.length === 0 && queryHasStrong && (productPhotoTags || categoryHit)) {
+    score += 55;
+    for (const t of params.strongTokens) {
+      if (t.length > 2 && queryLower.includes(t.toLowerCase()) && !matched.includes(t)) {
+        matched.push(t);
+      }
+    }
+  }
+
+  // Generic lifestyle without product photography → reject
   if (
     matched.length === 0 &&
-    /\b(bedroom|lifestyle|office|workspace|laptop|desk|wellness|fitness|gym|beautiful|woman|couple|sleeping)\b/i.test(
+    !productPhotoTags &&
+    /\b(bedroom|lifestyle|office|workspace|laptop|desk|wellness|beautiful|woman|couple|sleeping|asleep)\b/i.test(
       haystack
     )
   ) {
     score -= 40;
   }
 
-  // Product packaging / ball / bottle cues help when tokens match
   if (
     matched.length > 0 &&
-    /\b(bottle|supplement|gummies|packaging|product|serum|ball|gloves?|kit|box)\b/i.test(haystack)
+    /\b(bottle|supplement|gummies|packaging|product|serum|ball|gloves?|kit|box|pills?|capsule)\b/i.test(
+      haystack
+    )
   ) {
     score += 8;
   }
@@ -233,6 +258,7 @@ export async function fetchPixabayImage(
   options?: ImagePickOptions & {
     productTokens?: string[];
     strongTokens?: string[];
+    categoryTokens?: string[];
     minRelevance?: number;
   }
 ): Promise<StockImageResult | null> {
@@ -276,7 +302,9 @@ export async function fetchPixabayImage(
       const vertical = hits.filter((h) => (h.imageHeight ?? 0) >= (h.imageWidth ?? 1));
       if (vertical.length > 0) hits = vertical;
     } else if (options?.orientation === "horizontal") {
-      hits = hits.filter((h) => (h.imageWidth ?? 0) >= (h.imageHeight ?? 1));
+      // Prefer landscape but do not wipe the result set — product bottles are often square/portrait.
+      const horizontal = hits.filter((h) => (h.imageWidth ?? 0) >= (h.imageHeight ?? 1));
+      if (horizontal.length > 0) hits = horizontal;
     }
     if (hits.length === 0) return null;
 
@@ -305,6 +333,7 @@ export async function fetchPixabayImage(
           pageURL: hit.pageURL,
           productTokens,
           strongTokens,
+          categoryTokens: options?.categoryTokens,
         });
         if (relevance.score < minRelevance) continue;
       }

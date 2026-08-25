@@ -25,8 +25,8 @@ function withPinImageUrls<T extends { id: string; image_url?: string | null }>(p
   return pins.map((pin) => ({
     ...pin,
     image_url: pin.image_url?.startsWith("http")
-      ? `/api/pins/${pin.id}/image?v=11`
-      : pin.image_url || `/api/pins/${pin.id}/image?v=11`,
+      ? `/api/pins/${pin.id}/image?v=12`
+      : pin.image_url || `/api/pins/${pin.id}/image?v=12`,
   }));
 }
 
@@ -251,10 +251,14 @@ async function generatePins(request: Request) {
     ];
   });
 
-  const usedIdentities = mergeUsedImageRecords(priorIdentities, [
-    ...existingIdentityRows,
-    ...recordsFromUrls([...priorPinImages, ...existingSourceImages]),
-  ]);
+  // On regenerate, wipe prior image identity so the product pool can be reassigned
+  // (old pin rows are deleted after insert). Extra batches still never reuse.
+  const usedIdentities = regenerate
+    ? []
+    : mergeUsedImageRecords(priorIdentities, [
+        ...existingIdentityRows,
+        ...recordsFromUrls([...priorPinImages, ...existingSourceImages]),
+      ]);
 
   const { backgrounds, usedIdentities: updatedRegistry } = await resolvePinBackgroundImages({
     pins: copies,
@@ -264,11 +268,13 @@ async function generatePins(request: Request) {
     scrapeUrl,
     scrapeUrls,
     preferredImages: extraBatch || regenerate ? [] : [heroImage],
-    excludeImages: [
-      ...(extraBatch || regenerate ? [heroImage] : []),
-      ...priorPinImages,
-      ...existingSourceImages,
-    ],
+    excludeImages: regenerate
+      ? []
+      : [
+          ...(extraBatch ? [heroImage] : []),
+          ...priorPinImages,
+          ...existingSourceImages,
+        ],
     usedIdentities,
     userId: user.id,
     supabase,
@@ -460,7 +466,9 @@ async function generatePins(request: Request) {
       sales_page_json: {
         ...(copyJson && typeof copyJson === "object" ? copyJson : {}),
         pinImages,
-        usedPinImageIdentities: mergeUsedImageRecords(registryWithPins, []),
+        usedPinImageIdentities: regenerate
+          ? mergeUsedImageRecords(registryWithPins, [])
+          : mergeUsedImageRecords(priorIdentities, registryWithPins),
       },
     })
     .eq("id", siteId)

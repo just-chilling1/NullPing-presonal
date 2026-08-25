@@ -1,7 +1,8 @@
 /**
  * Seed all 200 Unlimited (accelerator) sales-page templates on your PC.
  *
- * Images: unique non-AI stock only; ~25% niche/product-related; no duplicates across the vault.
+ * Images: sales pages have no hero photo; 10 pin backgrounds use the shared pin-generator
+ * resolver (product-page scrape → Pixabay product queries). No Picsum/LoremFlickr/AI.
  * After seeding, member install/preview clones stored pages — no generation wait.
  *
  * Usage (PowerShell / CMD from repo root):
@@ -78,7 +79,9 @@ async function main() {
   console.log(
     `Unlimited vault seed — target ${ACCELERATOR_TARGET_COUNT}, already complete: ${already}, offset=${offset}, limit=${limit}${force ? " (force)" : ""}`
   );
-  console.log("Rules: unique images only, no AI images, >=25% niche/product-related per page.");
+  console.log(
+    "Rules: no sales-page hero photo; pin images via pin-generator logic (product-page → Pixabay)."
+  );
 
   const result = await seedAcceleratorTemplates({
     admin,
