@@ -21,7 +21,7 @@ export type AcademyVideo = {
 };
 
 export function getPlatformTutorialVideos(): AcademyVideo[] {
-  return trainingContent.videos;
+  return [...trainingContent.videos];
 }
 
 export function getPremiumTutorialVideos(): AcademyVideo[] {
