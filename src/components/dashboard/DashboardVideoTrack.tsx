@@ -27,7 +27,7 @@ export function DashboardVideoTrack() {
           </div>
           <h2 className="ds-h2">{dashboardContent.startHereTitle}</h2>
         </div>
-        {videos[0] ? <DashboardVideoCard video={videos[0]} priority /> : null}
+        {videos[0] ? <DashboardVideoCard video={videos[0]} /> : null}
       </section>
 
       <DashboardBonusAdCard />

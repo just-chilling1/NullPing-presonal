@@ -44,7 +44,7 @@ export function resolveVideoThumbnail(
   fallbackSrc?: string | null
 ): string | null {
   if (fallbackSrc) return fallbackSrc;
-  return getVimeoThumbnailUrl(videoId);
+  return VIDEO_THUMBNAILS[videoId] ?? null;
 }
 
 export function toEmbedUrl(videoUrl: string, autoplay = true): string {

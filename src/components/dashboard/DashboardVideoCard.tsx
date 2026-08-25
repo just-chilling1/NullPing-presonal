@@ -14,10 +14,9 @@ const VideoOverlay = dynamic(
 
 interface DashboardVideoCardProps {
   video: DashboardVideo;
-  priority?: boolean;
 }
 
-export function DashboardVideoCard({ video, priority = false }: DashboardVideoCardProps) {
+export function DashboardVideoCard({ video }: DashboardVideoCardProps) {
   const [open, setOpen] = useState(false);
   const hasVideo = Boolean(video.id.trim());
 
@@ -33,14 +32,7 @@ export function DashboardVideoCard({ video, priority = false }: DashboardVideoCa
         </div>
 
         <div className="px-5 py-4 sm:px-6">
-          <VideoThumbnail
-            videoId={video.id}
-            thumbnailSrc={video.thumbnailSrc}
-            title={video.title}
-            caption="▶ Click to Play Video"
-            onPlay={handlePlay}
-            eager={priority}
-          />
+          <VideoThumbnail title={video.title} onPlay={handlePlay} />
         </div>
 
         <div className="space-y-2 px-5 py-4 sm:px-6 sm:py-5">

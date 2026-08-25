@@ -14,10 +14,9 @@ const VideoOverlay = dynamic(
 interface TrainingVideoCardProps {
   video: AcademyVideo;
   index?: number;
-  priority?: boolean;
 }
 
-export function TrainingVideoCard({ video, index, priority = false }: TrainingVideoCardProps) {
+export function TrainingVideoCard({ video, index }: TrainingVideoCardProps) {
   const [open, setOpen] = useState(false);
   const hasVideo = Boolean(video.id.trim());
   const stepLabel = index != null ? `${index + 1}` : null;
@@ -48,14 +47,7 @@ export function TrainingVideoCard({ video, index, priority = false }: TrainingVi
         </div>
 
         <div className="px-4 py-3 sm:px-5 sm:py-4">
-          <VideoThumbnail
-            videoId={video.id}
-            thumbnailSrc={video.thumbnailSrc}
-            title={video.title}
-            caption={hasVideo ? "▶ Click to Play Video" : "Video coming soon"}
-            onPlay={handlePlay}
-            eager={priority}
-          />
+          <VideoThumbnail title={video.title} onPlay={handlePlay} />
         </div>
 
         <div className="space-y-2 px-4 pb-4 pt-0 sm:px-5 sm:pb-5">

@@ -66,7 +66,7 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="app-bottom-nav fixed bottom-0 left-0 right-0 z-50 lg:hidden"
+        className="app-bottom-nav fixed bottom-0 left-0 right-0 z-50"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex h-16">
@@ -109,7 +109,7 @@ export function BottomNav() {
       </nav>
 
       {moreOpen ? (
-        <div className="fixed inset-0 z-[70] lg:hidden">
+        <div className="fixed inset-0 z-[70]">
           <button
             type="button"
             aria-label="Close menu"

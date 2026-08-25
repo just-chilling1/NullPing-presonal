@@ -621,7 +621,7 @@ export default function AdminPromoLinksPage() {
           </div>
         </section>
 
-        <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] z-30 border-t border-border-dim bg-[color-mix(in_srgb,var(--np-surface)_92%,transparent)] px-4 py-3 backdrop-blur-md sm:px-6 lg:bottom-0 lg:left-[var(--sidebar-w)]">
+        <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom,0px))] z-30 border-t border-border-dim bg-[color-mix(in_srgb,var(--np-surface)_92%,transparent)] px-4 py-3 backdrop-blur-md sm:px-6 lg:bottom-0">
           <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-text-muted">
               {success ? "All changes saved." : "Unsaved edits apply after you save."}

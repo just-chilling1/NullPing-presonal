@@ -12,7 +12,6 @@ export interface PremiumTrainingConfig {
   title: string;
   description: string;
   iframeTitle?: string;
-  thumbnailSrc?: string;
 }
 
 interface PremiumWorkflowShellProps {

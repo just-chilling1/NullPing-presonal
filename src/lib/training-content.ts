@@ -10,7 +10,7 @@ import {
 } from "@/config/training-content.config";
 import { isFeatureEnabled } from "@/config/features.config";
 import { faqSections } from "@/config/faq.config";
-import { resolveVideoThumbnail, toEmbedUrl } from "@/lib/video-thumbnails";
+import { toEmbedUrl } from "@/lib/video-thumbnails";
 
 export type AcademyVideo = {
   id: string;
@@ -18,24 +18,16 @@ export type AcademyVideo = {
   description: string;
   duration?: string;
   badge?: string;
-  thumbnailSrc: string | null;
 };
 
-function withThumbnail<T extends { id: string }>(video: T): T & { thumbnailSrc: string | null } {
-  return {
-    ...video,
-    thumbnailSrc: resolveVideoThumbnail(video.id),
-  };
-}
-
 export function getPlatformTutorialVideos(): AcademyVideo[] {
-  return trainingContent.videos.map(withThumbnail);
+  return trainingContent.videos;
 }
 
 export function getPremiumTutorialVideos(): AcademyVideo[] {
   return trainingPremiumVideos
     .filter((video) => isFeatureEnabled(video.feature))
-    .map(({ feature: _feature, ...video }) => withThumbnail(video));
+    .map(({ feature: _feature, ...video }) => video);
 }
 
 export function getTrainingStartCta(): {
