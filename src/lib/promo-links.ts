@@ -60,11 +60,14 @@ export function rowToPromoLinks(row: PromoLinksRow | null | undefined): PromoLin
 
   return {
     exclusiveOffersEnabled: row.exclusive_offers_enabled ?? defaults.exclusiveOffersEnabled,
-    exclusiveOffers: offersList.map((o) => ({
-      title: typeof o.title === "string" ? o.title : "",
-      href: typeof o.href === "string" ? o.href : "",
-      subtitle: typeof o.subtitle === "string" ? o.subtitle : undefined,
-    })),
+    exclusiveOffers: offersList.map((o) => {
+      const subtitleRaw = typeof o.subtitle === "string" ? o.subtitle.trim() : "";
+      return {
+        title: typeof o.title === "string" ? o.title : "",
+        href: typeof o.href === "string" ? o.href : "",
+        subtitle: subtitleRaw || undefined,
+      };
+    }),
     externalTrainingUrl: row.external_training_url?.trim() || defaults.externalTrainingUrl,
     videoWithdrawUrl: row.video_withdraw_url?.trim() || defaults.videoWithdrawUrl,
     scaleTrainingUrl: row.scale_training_url?.trim() || defaults.scaleTrainingUrl,

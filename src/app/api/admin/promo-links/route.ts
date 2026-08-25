@@ -18,10 +18,11 @@ function parseBody(body: unknown): PromoLinksSettings | null {
   const exclusiveOffers = Array.isArray(raw.exclusiveOffers)
     ? raw.exclusiveOffers.map((item) => {
         const o = item as Record<string, unknown>;
+        const subtitleRaw = typeof o.subtitle === "string" ? o.subtitle.trim() : "";
         return {
           title: typeof o.title === "string" ? o.title : "",
           href: typeof o.href === "string" ? o.href : "",
-          subtitle: typeof o.subtitle === "string" ? o.subtitle : undefined,
+          subtitle: subtitleRaw || undefined,
         };
       })
     : [];

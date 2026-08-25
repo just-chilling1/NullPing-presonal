@@ -1621,6 +1621,32 @@ html[data-sidebar="collapsed"] {
       color var(--np-dur) var(--np-ease);
   }
 
+  .exclusive-offers-nav-copy {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.125rem;
+    line-height: 1.35;
+  }
+
+  .exclusive-offers-nav-title {
+    display: block;
+  }
+
+  .exclusive-offers-nav-subtitle {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: rgba(196, 181, 253, 0.78);
+    transition: color var(--np-dur) var(--np-ease);
+  }
+
+  .exclusive-offers-nav-item:hover .exclusive-offers-nav-subtitle {
+    color: rgba(233, 213, 255, 0.92);
+  }
+
   .exclusive-offers-nav-item:hover {
     background: color-mix(in srgb, var(--np-signal-purple) 16%, #141424);
     border-color: rgba(168, 85, 247, 0.45);
