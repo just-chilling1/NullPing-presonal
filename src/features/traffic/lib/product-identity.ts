@@ -76,7 +76,8 @@ const WEAK_TOKENS = new Set([
 const CATEGORY_HINTS: Array<{ type: ProductType; pattern: RegExp; categories: string[] }> = [
   {
     type: "supplement",
-    pattern: /\b(melatonin|gummies?|supplement|vitamin|capsule|softgel|magnesium|glycinate|serum|collagen|probiotic|omega)\b/i,
+    pattern:
+      /\b(melatonin|gummies?|supplement|multi[- ]?vitamin|vitamin|capsule|softgel|magnesium|glycinate|serum|collagen|probiotic|omega|blend|digestive|relief|formula|gummy|nootropic|adaptogen|sleep support)\b/i,
     categories: ["supplement", "bottle", "gummies"],
   },
   {

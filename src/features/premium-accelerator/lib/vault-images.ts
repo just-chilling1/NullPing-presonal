@@ -19,6 +19,9 @@ import { buildVaultPinDrafts, type VaultPinDraft } from "./vault-pins";
 /** Hero + 10 pins per vault page. */
 export const VAULT_IMAGE_SLOT_COUNT = 11;
 
+/** Stricter than default commerce pins — empty is better than fruit/lifestyle fillers. */
+export const VAULT_MIN_STOCK_RELEVANCE = 78;
+
 function isGenericFallbackUrl(url: string): boolean {
   return /picsum\.photos|loremflickr\.com/i.test(url);
 }
@@ -54,12 +57,12 @@ export async function resolveUniqueVaultImage(params: {
       productTokens: identity.productTokens,
       strongTokens: identity.strongTokens,
       categoryTokens: identity.categoryTokens,
-      minRelevance: MIN_STOCK_PRODUCT_RELEVANCE,
+      minRelevance: VAULT_MIN_STOCK_RELEVANCE,
       limit: 12,
     });
     for (const hit of hits) {
       if (!hit?.url || isGenericFallbackUrl(hit.url)) continue;
-      if ((hit.relevanceScore ?? 0) < MIN_STOCK_PRODUCT_RELEVANCE) continue;
+      if ((hit.relevanceScore ?? 0) < VAULT_MIN_STOCK_RELEVANCE) continue;
       const tryUrl = hit.url;
       if (used.has(normalizeImageUrl(tryUrl))) continue;
       markUsed(used, tryUrl);
@@ -220,6 +223,7 @@ export async function resolveVaultPinDrafts(params: {
           params.heroImage,
           ...pending.map((p) => p.imageUrl),
         ]),
+        minStockRelevance: VAULT_MIN_STOCK_RELEVANCE,
         userId: params.userId,
         supabase: params.supabase,
       });
@@ -276,6 +280,7 @@ export async function resolveVaultPinDrafts(params: {
         ...(params.heroImage ? [params.heroImage] : []),
       ],
       usedIdentities: recordsFromUrls([...(params.excludeImages ?? []), params.heroImage]),
+      minStockRelevance: VAULT_MIN_STOCK_RELEVANCE,
       userId: params.userId,
       supabase: params.supabase,
     });

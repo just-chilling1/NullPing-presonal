@@ -60,7 +60,7 @@ export async function seedAcceleratorTemplate(params: {
   entry: VaultCatalogEntry;
   usedImages: Set<string>;
   force?: boolean;
-}): Promise<"created" | "skipped" | "updated"> {
+}): Promise<"created" | "skipped" | "updated" | { status: "created" | "updated"; pinPhotos: number }> {
   const existing = await loadTemplateSite(params.admin, params.entry.id);
   if (!params.force && isTemplateComplete(existing)) {
     return "skipped";
@@ -131,13 +131,15 @@ export async function seedAcceleratorTemplate(params: {
     sales_page_json: salesPageJson,
   };
 
+  const pinPhotos = pinImages.filter((u) => Boolean(u?.trim())).length;
+
   if (existing?.id) {
     const { error } = await params.admin
       .from("sites")
       .update(row)
       .eq("id", existing.id as string);
     if (error) throw new Error(error.message);
-    return "updated";
+    return { status: "updated", pinPhotos };
   }
 
   const { error } = await params.admin.from("sites").insert({ id: siteId, ...row });
@@ -145,7 +147,7 @@ export async function seedAcceleratorTemplate(params: {
     const { error: retryErr } = await params.admin.from("sites").insert(row);
     if (retryErr) throw new Error(retryErr.message);
   }
-  return "created";
+  return { status: "created", pinPhotos };
 }
 
 /**
@@ -186,8 +188,10 @@ export async function seedAcceleratorTemplates(params: {
         params.onProgress?.(`[${entry.id}/${ACCELERATOR_TARGET_COUNT}] skip ${entry.productName}`);
       } else {
         seeded++;
+        const status = typeof result === "string" ? result : result.status;
+        const pinPhotos = typeof result === "string" ? "?" : result.pinPhotos;
         params.onProgress?.(
-          `[${entry.id}/${ACCELERATOR_TARGET_COUNT}] ${result} ${entry.productName} (unique images: ${usedImages.size})`
+          `[${entry.id}/${ACCELERATOR_TARGET_COUNT}] ${status} ${entry.productName} (pins with photos: ${pinPhotos}/10, unique images: ${usedImages.size})`
         );
       }
     } catch (e) {

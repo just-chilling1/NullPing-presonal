@@ -90,7 +90,7 @@ async function main() {
     `Unlimited vault seed — target ${ACCELERATOR_TARGET_COUNT}, already complete: ${already}, offset=${offset}, limit=${limit}${force ? " (force)" : ""}`
   );
   console.log(
-    "Rules: no sales-page hero photo; pin images via pin-generator logic (product-page → Pixabay)."
+    "Rules: no sales-page hero; stricter product-matched pin photos (Pixabay relevance ≥ 78)."
   );
   console.log(`Template owner: ${ownerUser.user.email ?? ownerId}`);
 

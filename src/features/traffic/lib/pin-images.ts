@@ -235,6 +235,8 @@ export async function resolvePinBackgroundImages(params: {
   excludeImages?: (string | null | undefined)[];
   /** Durable used-image registry from sales_page_json. */
   usedIdentities?: UsedImageRecord[];
+  /** Override stock relevance floor (vault seed uses a stricter bar). */
+  minStockRelevance?: number;
   userId: string;
   supabase: SupabaseClient;
 }): Promise<{
@@ -242,6 +244,7 @@ export async function resolvePinBackgroundImages(params: {
   usedIdentities: UsedImageRecord[];
   identity: ProductIdentity;
 }> {
+  const minStock = params.minStockRelevance ?? MIN_STOCK_PRODUCT_RELEVANCE;
   const registry: UsedImageRecord[] = mergeUsedImageRecords(
     [...(params.usedIdentities ?? []), ...recordsFromUrls(params.excludeImages ?? [])],
     []
@@ -375,14 +378,14 @@ export async function resolvePinBackgroundImages(params: {
             productTokens: identity.productTokens,
             strongTokens: identity.strongTokens,
             categoryTokens: identity.categoryTokens,
-            minRelevance: MIN_STOCK_PRODUCT_RELEVANCE,
+            minRelevance: minStock,
             limit: 16,
           }
         );
 
         for (const hit of hits) {
           if (!hit?.url) continue;
-          if ((hit.relevanceScore ?? 0) < MIN_STOCK_PRODUCT_RELEVANCE) {
+          if ((hit.relevanceScore ?? 0) < minStock) {
             rejectedUnrelated++;
             continue;
           }
@@ -397,7 +400,7 @@ export async function resolvePinBackgroundImages(params: {
           assigned = await claimCandidate({
             url: hit.url,
             alternateUrl: hit.alternateUrl,
-            score: hit.relevanceScore ?? MIN_STOCK_PRODUCT_RELEVANCE,
+            score: hit.relevanceScore ?? minStock,
             reason: hit.matchReason || `pixabay query: ${queries[q]}`,
             imageSource: "pixabay",
             registry,
