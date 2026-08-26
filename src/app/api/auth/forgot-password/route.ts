@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceRoleClient } from "@/lib/api-auth";
 import { sendPasswordResetEmail } from "@/lib/send-reset-email";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { clientIpFromRequest } from "@/lib/specialist-popup-eligibility";
 
 export const runtime = "nodejs";
 
@@ -62,6 +64,14 @@ async function sendResetViaResend(
 
 export async function POST(request: Request) {
   try {
+    const ip = clientIpFromRequest(request) || "unknown";
+    if (!consumeRateLimit(`forgot-password:${ip}`, { limit: 5, windowMs: 15 * 60_000 })) {
+      return NextResponse.json(
+        { error: "Too many reset attempts. Please try again later." },
+        { status: 429 },
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const email = typeof body.email === "string" ? body.email.trim() : "";
 

@@ -5,6 +5,9 @@ import { normalizeAffiliateUrl } from "@/features/blog-builder/lib/affiliate-url
 import type { ArmedLink } from "@/features/blog-builder/types";
 import { getServiceRoleClient } from "@/lib/api-auth";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase-env";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { visitorHash } from "@/lib/visitor-hash";
+import { clientIpFromRequest } from "@/lib/specialist-popup-eligibility";
 
 export const dynamic = "force-dynamic";
 
@@ -69,11 +72,25 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Destination not allowed for this site" }, { status: 400 });
   }
 
-  await getAnonClient().from("affiliate_clicks").insert({
-    post_id: postId || null,
-    site_id: siteId || null,
-    link_url: target.toString(),
-  });
+  const ip = clientIpFromRequest(request) || "0.0.0.0";
+  if (!consumeRateLimit(`click-ip:${ip}`, { limit: 20, windowMs: 60_000 })) {
+    return NextResponse.redirect(target.toString(), 302);
+  }
+  const ua = request.headers.get("user-agent") || "";
+  const hash = visitorHash({ ip, userAgent: ua, siteId });
+  const clickKey = `click-hash:${hash}:${normalizeDest(target.toString())}`;
+  const shouldRecord = consumeRateLimit(clickKey, { limit: 1, windowMs: 15 * 60_000 });
+
+  if (shouldRecord) {
+    const safePostId =
+      postId && /^[0-9a-f-]{36}$/i.test(postId) ? postId : null;
+    await getAnonClient().rpc("record_affiliate_click", {
+      p_site_id: siteId,
+      p_post_id: safePostId,
+      p_link_url: target.toString(),
+      p_visitor_hash: hash,
+    });
+  }
 
   return NextResponse.redirect(target.toString(), 302);
 }

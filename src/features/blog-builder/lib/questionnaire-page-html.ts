@@ -430,6 +430,7 @@ export function buildThemedQuestionnairePage(input: ThemedQuestionnaireInput): s
     </div>
   </div>
 
+  <script type="application/json" id="questionnaire-data">${questionsJson}</script>
   <script>
   (function() {
     var questions = ${questionsJson};

@@ -1,6 +1,9 @@
 import { getAppUrl } from "@/lib/brand-vars";
 
-function stripTrailingSlash(url: string): string {  return url.replace(/\/$/, "");
+const PRODUCTION_HOSTS = ["nullpingmembersarea.com", "www.nullpingmembersarea.com"];
+
+function stripTrailingSlash(url: string): string {
+  return url.replace(/\/$/, "");
 }
 
 function isLocalhostUrl(url: string): boolean {
@@ -12,19 +15,76 @@ function isLocalhostUrl(url: string): boolean {
   }
 }
 
+function hostnameFromUrlOrHost(raw: string): string | null {
+  try {
+    const value = raw.includes("://") ? raw : `https://${raw}`;
+    const { hostname } = new URL(value);
+    return hostname.replace(/\.$/, "").toLowerCase() || null;
+  } catch {
+    return null;
+  }
+}
+
+export function collectAllowedAppHosts(
+  env: {
+    NEXT_PUBLIC_APP_URL?: string;
+    VERCEL_URL?: string;
+    NODE_ENV?: string;
+  } = process.env
+): Set<string> {
+  const hosts = new Set<string>(PRODUCTION_HOSTS);
+  const add = (raw?: string) => {
+    if (!raw?.trim()) return;
+    const hostname = hostnameFromUrlOrHost(raw.trim());
+    if (hostname) hosts.add(hostname);
+  };
+  add(env.NEXT_PUBLIC_APP_URL);
+  add(env.VERCEL_URL);
+  if (env.NODE_ENV !== "production") {
+    hosts.add("localhost");
+    hosts.add("127.0.0.1");
+  }
+  return hosts;
+}
+
+export function originFromForwardedHeaders(
+  headers: {
+    host?: string | null;
+    forwardedHost?: string | null;
+    forwardedProto?: string | null;
+  },
+  allowedHosts: Set<string>
+): string | null {
+  const candidates = [
+    headers.forwardedHost?.split(",")[0]?.trim(),
+    headers.host?.trim(),
+  ].filter((value): value is string => Boolean(value));
+
+  const protocol = headers.forwardedProto?.split(",")[0]?.trim() || "https";
+
+  for (const host of candidates) {
+    const hostname = host.split(":")[0]?.replace(/\.$/, "").toLowerCase();
+    if (hostname && allowedHosts.has(hostname)) {
+      return stripTrailingSlash(`${protocol}://${host}`);
+    }
+  }
+  return null;
+}
+
 function getOriginFromRequest(request: Request): string | null {
   try {
     const url = new URL(request.url);
-    const host =
-      request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
-      request.headers.get("host")?.trim();
-    if (!host) return null;
-
     const protocol =
       request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
       url.protocol.replace(":", "");
-
-    return stripTrailingSlash(`${protocol}://${host}`);
+    return originFromForwardedHeaders(
+      {
+        host: request.headers.get("host"),
+        forwardedHost: request.headers.get("x-forwarded-host"),
+        forwardedProto: protocol,
+      },
+      collectAllowedAppHosts(process.env)
+    );
   } catch {
     return null;
   }

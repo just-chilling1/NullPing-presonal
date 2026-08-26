@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getServiceRoleClient } from "@/lib/api-auth";
+import { resolvePublicImageSourceUrl } from "@/lib/safe-url";
 import { readFile } from "fs/promises";
 import path from "path";
 import { pinOverlayHeadline } from "@/features/traffic/lib/pin-rules";
@@ -56,12 +57,35 @@ function sniffMime(bytes: Uint8Array): string {
   return "image/jpeg";
 }
 
+async function fetchPublicImageBytes(startUrl: string, headers: Record<string, string>): Promise<Buffer | null> {
+  let current = startUrl;
+  for (let hop = 0; hop < 3; hop++) {
+    const safe = await resolvePublicImageSourceUrl(current);
+    if (!safe || safe.startsWith("data:")) return null;
+    const res = await fetch(safe, {
+      signal: AbortSignal.timeout(15_000),
+      headers,
+      redirect: "manual",
+    });
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get("location");
+      if (!location) return null;
+      current = new URL(location, safe).toString();
+      continue;
+    }
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.byteLength < 64) return null;
+    return buf;
+  }
+  return null;
+}
+
 /** Fetch photo server-side and embed as data URI so Satori always has pixels. */
 async function toDataImageUrl(url: string): Promise<string | null> {
-  if (!url || !/^https?:\/\//i.test(url)) return null;
-  if (url.startsWith("data:image/")) return url;
-  // Never load unrelated stock fallbacks in the renderer.
-  if (/picsum\.photos|loremflickr\.com/i.test(url)) return null;
+  const safe = await resolvePublicImageSourceUrl(url);
+  if (!safe) return null;
+  if (safe.startsWith("data:image/")) return safe;
 
   const attempts: Record<string, string>[] = [
     {
@@ -78,14 +102,8 @@ async function toDataImageUrl(url: string): Promise<string | null> {
 
   for (const headers of attempts) {
     try {
-      const res = await fetch(url, {
-        signal: AbortSignal.timeout(15_000),
-        headers,
-        redirect: "follow",
-      });
-      if (!res.ok) continue;
-      const buf = Buffer.from(await res.arrayBuffer());
-      if (buf.byteLength < 64) continue;
+      const buf = await fetchPublicImageBytes(safe, headers);
+      if (!buf) continue;
       const mime = sniffMime(buf);
       return `data:${mime};base64,${buf.toString("base64")}`;
     } catch {

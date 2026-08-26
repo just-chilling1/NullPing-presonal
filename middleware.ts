@@ -6,6 +6,8 @@ import { ONBOARDING_COMPLETE_COOKIE, setOnboardingCompleteCookie } from '@/lib/o
 import { getSupabaseAnonKey, getSupabaseUrl } from '@/lib/supabase-env'
 import { ensureAdminUser } from '@/lib/admin-server'
 import { isAdminClaims } from '@/lib/admin'
+import { collectAllowedAppHosts } from '@/lib/app-url'
+import { allowMutatingApiRequest, requestHasAuthCookie } from '@/lib/csrf'
 
 /** Public route prefixes that bypass auth (extend per product — e.g. hosted sites, sales pages). */
 const PUBLIC_ROUTE_PREFIXES = [
@@ -132,6 +134,14 @@ export async function middleware(request: NextRequest) {
     const postLoginPath = isAdmin ? '/admin' : '/dashboard'
 
     if (pathname.startsWith('/api')) {
+        if (
+            !allowMutatingApiRequest(request, {
+                hasAuthCookie: requestHasAuthCookie(request),
+                allowedHosts: collectAllowedAppHosts(process.env),
+            })
+        ) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
         return response
     }
 

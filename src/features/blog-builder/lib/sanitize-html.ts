@@ -57,3 +57,28 @@ export function sanitizePostHtml(html: string): string {
 export function safeJsonLdScript(data: unknown): string {
   return JSON.stringify(data).replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
 }
+
+const GOOGLE_FONT_HOSTS = new Set(["fonts.googleapis.com", "fonts.gstatic.com"]);
+
+export function isAllowedStylesheetUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && GOOGLE_FONT_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+/** Strip CSS constructs that can execute code or pull in attacker-controlled sheets. */
+export function sanitizeCss(css: string): string {
+  let out = css.replace(/<\/style/gi, "");
+  out = out.replace(/@import\b[^;]*;?/gi, "");
+  out = out.replace(/expression\s*\(/gi, "(");
+  out = out.replace(/-moz-binding/gi, "");
+  out = out.replace(/behavior\s*:/gi, "prop:");
+  out = out.replace(/url\s*\(\s*(['"]?)\s*javascript:[^)]*\)/gi, "url()");
+  out = out.replace(/url\s*\(\s*(['"]?)\s*data:\s*text\/html[^)]*\)/gi, "url()");
+  out = out.replace(/javascript\s*:/gi, "");
+  out = out.replace(/vbscript\s*:/gi, "");
+  return out;
+}

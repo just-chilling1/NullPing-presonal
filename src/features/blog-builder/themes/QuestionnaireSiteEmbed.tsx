@@ -2,51 +2,51 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { parseSalesPageDocument } from "../lib/product-sales-page-html";
+import {
+  extractQuestionnaireQuestions,
+  mountQuestionnaireQuiz,
+} from "../lib/questionnaire-runtime";
+import { isAllowedStylesheetUrl, sanitizeCss, sanitizePostHtml } from "../lib/sanitize-html";
 
 interface QuestionnaireSiteEmbedProps {
   html: string;
 }
 
-/** Client-only mount avoids hydration mismatch from inline scripts in stored HTML. */
+/** Client-only mount. Stored scripts are parsed as JSON, never executed. */
 export function QuestionnaireSiteEmbed({ html }: QuestionnaireSiteEmbedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { styles, bodyHtml, scripts, googleFontsUrl } = useMemo(
     () => parseSalesPageDocument(html),
     [html]
   );
+  const safeBody = useMemo(() => sanitizePostHtml(bodyHtml), [bodyHtml]);
+  const safeStyles = useMemo(() => sanitizeCss(styles), [styles]);
+  const questions = useMemo(() => extractQuestionnaireQuestions(scripts), [scripts]);
+  const fontHref = googleFontsUrl && isAllowedStylesheetUrl(googleFontsUrl) ? googleFontsUrl : null;
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    container.innerHTML = bodyHtml;
-
-    const injectedScripts: HTMLScriptElement[] = [];
-    for (const content of scripts) {
-      const script = document.createElement("script");
-      script.textContent = content;
-      container.appendChild(script);
-      injectedScripts.push(script);
-    }
+    container.innerHTML = safeBody;
+    const unmount = mountQuestionnaireQuiz(container, questions);
 
     return () => {
-      for (const script of injectedScripts) {
-        script.remove();
-      }
+      unmount();
       container.innerHTML = "";
     };
-  }, [bodyHtml, scripts]);
+  }, [safeBody, questions]);
 
   return (
     <>
-      {googleFontsUrl ? (
+      {fontHref ? (
         <link rel="preconnect" href="https://fonts.googleapis.com" />
       ) : null}
-      {googleFontsUrl ? (
+      {fontHref ? (
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       ) : null}
-      {googleFontsUrl ? <link rel="stylesheet" href={googleFontsUrl} /> : null}
-      {styles ? <style dangerouslySetInnerHTML={{ __html: styles }} /> : null}
+      {fontHref ? <link rel="stylesheet" href={fontHref} /> : null}
+      {safeStyles ? <style dangerouslySetInnerHTML={{ __html: safeStyles }} /> : null}
       <div ref={containerRef} className="min-h-screen isolate" />
     </>
   );

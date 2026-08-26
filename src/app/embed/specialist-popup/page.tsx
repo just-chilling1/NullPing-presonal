@@ -7,10 +7,7 @@ import { SpecialistWelcomePopup } from "@/components/ui/specialist-welcome-popup
 function EmbedInner() {
   const searchParams = useSearchParams();
   const previewParam = searchParams.get("preview");
-  const previewSecret = process.env.NEXT_PUBLIC_SPECIALIST_POPUP_PREVIEW_SECRET;
-  const preview =
-    (process.env.NODE_ENV === "development" && previewParam === "1") ||
-    (!!previewSecret && previewParam === previewSecret);
+  const preview = process.env.NODE_ENV === "development" && previewParam === "1";
 
   useEffect(() => {
     document.documentElement.style.background = "transparent";
@@ -27,7 +24,7 @@ function EmbedInner() {
 
   // Production embed: no forceOpen — popup calls /api/eligibility/specialist-popup
   // (US/CA GeoIP + Mon–Fri 08:30–17:30 PT) before posting open:true to the parent.
-  // Preview (?preview=1 in dev, or ?preview=SECRET in prod) skips the gate for QA only.
+  // Local QA: /embed/specialist-popup?preview=1 or /dev/specialist-popup.
   if (preview) {
     return <SpecialistWelcomePopup forceOpen onOpenChange={notifyParent} />;
   }

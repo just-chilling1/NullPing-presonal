@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
 import { getApiUserFromRequest } from "@/lib/api-auth";
 import { sendSupportMessage } from "@/lib/send-support-message";
+import { consumeRateLimit } from "@/lib/rate-limit";
+import { clientIpFromRequest } from "@/lib/specialist-popup-eligibility";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const ip = clientIpFromRequest(request) || "unknown";
+    if (!consumeRateLimit(`support:${ip}`, { limit: 5, windowMs: 15 * 60_000 })) {
+      return NextResponse.json(
+        { error: "Too many messages. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { user } = await getApiUserFromRequest(request);
 
     // Visitors on login / signup / password pages can contact support without a session.

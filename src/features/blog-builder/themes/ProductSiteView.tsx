@@ -1,5 +1,5 @@
 import { parseSalesPageDocument } from "../lib/product-sales-page-html";
-import { sanitizePostHtml } from "../lib/sanitize-html";
+import { isAllowedStylesheetUrl, sanitizeCss, sanitizePostHtml } from "../lib/sanitize-html";
 import { QuestionnaireSiteEmbed } from "./QuestionnaireSiteEmbed";
 
 interface ProductSiteViewProps {
@@ -100,6 +100,8 @@ const LEGACY_CONTRAST_FIXES = `
 export function ProductSiteView({ html }: ProductSiteViewProps) {
   const { styles, bodyHtml, googleFontsUrl } = parseSalesPageDocument(html);
   const safeBody = sanitizePostHtml(bodyHtml);
+  const safeStyles = sanitizeCss(styles);
+  const fontHref = googleFontsUrl && isAllowedStylesheetUrl(googleFontsUrl) ? googleFontsUrl : null;
   const isQuestionnaire = safeBody.includes("questionnaire-root");
 
   if (isQuestionnaire) {
@@ -108,15 +110,15 @@ export function ProductSiteView({ html }: ProductSiteViewProps) {
 
   return (
     <>
-      {googleFontsUrl ? (
+      {fontHref ? (
         <link rel="preconnect" href="https://fonts.googleapis.com" />
       ) : null}
-      {googleFontsUrl ? (
+      {fontHref ? (
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       ) : null}
-      {googleFontsUrl ? <link rel="stylesheet" href={googleFontsUrl} /> : null}
+      {fontHref ? <link rel="stylesheet" href={fontHref} /> : null}
       <div className="product-sales-page-root min-h-screen isolate">
-        {styles ? <style dangerouslySetInnerHTML={{ __html: styles }} /> : null}
+        {safeStyles ? <style dangerouslySetInnerHTML={{ __html: safeStyles }} /> : null}
         <style dangerouslySetInnerHTML={{ __html: LEGACY_CONTRAST_FIXES }} />
         <div dangerouslySetInnerHTML={{ __html: safeBody }} />
       </div>

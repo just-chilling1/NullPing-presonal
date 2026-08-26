@@ -133,3 +133,21 @@ export async function assertPublicHttpUrlResolved(raw: string): Promise<URL> {
 
   return url;
 }
+
+const BLOCKED_IMAGE_HOSTS = /picsum\.photos|loremflickr\.com/i;
+
+/**
+ * Pin/hero image sources must be public http(s) after DNS resolution,
+ * or an already-inlined data:image URL. Private/metadata hosts are rejected.
+ */
+export async function resolvePublicImageSourceUrl(url: string): Promise<string | null> {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("data:image/")) return trimmed;
+  if (BLOCKED_IMAGE_HOSTS.test(trimmed)) return null;
+  try {
+    return (await assertPublicHttpUrlResolved(trimmed)).toString();
+  } catch {
+    return null;
+  }
+}
