@@ -179,14 +179,18 @@ export async function activateAsset(params: {
 
   const { data: site, error } = await params.supabase.from("sites").insert(baseRow).select().single();
   if (error || !site) {
+    // Only strip columns that may be missing on older schemas (42703 = undefined_column).
+    // Other failures (unique collision, RLS, etc.) keep full row data and retry with a fresh slug.
     const retry: Record<string, unknown> = {
       ...baseRow,
       slug: `${baseSlug}-${crypto.randomUUID().slice(0, 8)}`,
     };
-    delete retry.owner_handle;
-    delete retry.product_name;
-    delete retry.product_url;
-    delete retry.asset_source;
+    if (error?.code === "42703") {
+      delete retry.owner_handle;
+      delete retry.product_name;
+      delete retry.product_url;
+      delete retry.asset_source;
+    }
     const second = await params.supabase.from("sites").insert(retry).select().single();
     if (second.error || !second.data) {
       throw new Error(error?.message || second.error?.message || "Could not create asset");

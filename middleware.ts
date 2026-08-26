@@ -16,6 +16,20 @@ const PUBLIC_ROUTE_PREFIXES = [
   '/review/',
 ]
 
+/** Clean member URLs: /{handle}/sites/{slug} — public hosted money pages. */
+function isMemberPublicSitePath(pathname: string): boolean {
+  return /^\/[^/]+\/sites(\/|$)/.test(pathname)
+}
+
+function withRobotsHeader(response: NextResponse, indexable: boolean): NextResponse {
+  if (indexable) {
+    response.headers.delete('X-Robots-Tag')
+  } else {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow')
+  }
+  return response
+}
+
 export async function middleware(request: NextRequest) {
     let response = NextResponse.next({
         request: {
@@ -23,9 +37,11 @@ export async function middleware(request: NextRequest) {
         },
     })
 
-    response.headers.set('X-Robots-Tag', 'noindex, nofollow')
-
     const { pathname } = request.nextUrl
+    const isPublicHostedRoute =
+      PUBLIC_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix)) ||
+      isMemberPublicSitePath(pathname)
+    withRobotsHeader(response, isPublicHostedRoute)
 
     // Supabase may redirect to Site URL root (?code=...) instead of /auth/callback.
     if (pathname === "/") {
@@ -58,7 +74,6 @@ export async function middleware(request: NextRequest) {
     const isAuthCallbackRoute = pathname.startsWith('/auth/callback')
     const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/signup') || pathname.startsWith('/forgot-password') || isResetPasswordRoute || isAuthCallbackRoute
     const isStaticAsset = /\.(?:png|jpe?g|gif|svg|webp|ico|woff2?|ttf|otf|mp4|txt|xml)$/i.test(pathname)
-    const isPublicHostedRoute = PUBLIC_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
     const isPublicEmbedRoute = pathname === '/embed' || pathname.startsWith('/embed/')
     const isPublicRoute =
         pathname.startsWith('/_next') ||
@@ -96,11 +111,13 @@ export async function middleware(request: NextRequest) {
                 set(name: string, value: string, options: CookieOptions) {
                     request.cookies.set({ name, value, ...options })
                     response = NextResponse.next({ request: { headers: request.headers } })
+                    withRobotsHeader(response, isPublicHostedRoute)
                     response.cookies.set({ name, value, ...options })
                 },
                 remove(name: string, options: CookieOptions) {
                     request.cookies.set({ name, value: '', ...options })
                     response = NextResponse.next({ request: { headers: request.headers } })
+                    withRobotsHeader(response, isPublicHostedRoute)
                     response.cookies.set({ name, value: '', ...options })
                 },
             },

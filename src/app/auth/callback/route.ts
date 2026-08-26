@@ -11,7 +11,8 @@ function safeNextPath(next: string | null, fallback: string): string {
 
 function defaultNextPath(type: EmailOtpType | null): string {
     if (type === "recovery") return "/reset-password";
-    if (type === "signup" || type === "email") return "/protector?email_confirmed=1";
+    // Dashboard (middleware routes incomplete profiles to /onboarding).
+    if (type === "signup" || type === "email") return "/dashboard?email_confirmed=1";
     return "/dashboard";
 }
 

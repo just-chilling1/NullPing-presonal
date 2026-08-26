@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { WorkflowPage } from "@/components/ui/workflow-page";
 import { AiLoadingBar } from "@/components/ui/AiLoadingBar";
+import { AffiliateLinkField } from "@/components/premium/AffiliateLinkField";
 
 const STAGES = [
   "Analyzing product",
@@ -370,20 +371,21 @@ export default function ActivateAssetPage() {
                     Affiliate link <span className="activate-optional-badge">Optional</span>
                   </h2>
                   <p className="activate-field-hint">
-                    We’ll wire this into the money page CTA when you have one.
+                    Pick a saved link from Links Library or paste a new one — we’ll wire it into the
+                    money page CTA.
                   </p>
                 </div>
               </div>
 
               <label className="activate-field">
                 <span className="sr-only">Affiliate link</span>
-                <input
-                  className="input-base w-full"
+                <AffiliateLinkField
                   value={affiliateUrl}
-                  onChange={(e) => setAffiliateUrl(e.target.value)}
+                  onChange={setAffiliateUrl}
+                  inputId="activate-affiliate-link"
                   placeholder="https://your-affiliate-link.com"
-                  autoComplete="url"
-                  inputMode="url"
+                  actionMode="apply"
+                  appliedMessage="This link will be wired into the money page CTA."
                 />
               </label>
             </section>

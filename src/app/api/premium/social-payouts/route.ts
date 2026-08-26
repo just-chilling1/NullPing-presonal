@@ -45,10 +45,14 @@ export async function POST(request: Request) {
     .select("*")
     .eq("id", siteId)
     .eq("user_id", user.id)
+    .eq("status", "live")
     .maybeSingle();
 
   if (!siteRow) {
-    return NextResponse.json({ error: "Money page not found" }, { status: 404, headers: NO_STORE_HEADERS });
+    return NextResponse.json(
+      { error: "Live money page not found. Publish the page before generating Instant Income posts." },
+      { status: 404, headers: NO_STORE_HEADERS }
+    );
   }
 
   const site = siteRow as BlogSite;

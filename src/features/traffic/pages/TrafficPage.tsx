@@ -48,6 +48,8 @@ export default function TrafficPage() {
   const router = useRouter();
   const [pins, setPins] = useState<PinRow[]>([]);
   const [slug, setSlug] = useState("");
+  const [ownerHandle, setOwnerHandle] = useState<string | null>(null);
+  const [siteStatus, setSiteStatus] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -68,6 +70,10 @@ export default function TrafficPage() {
       setPins(loadedPins);
       if (pinData.quota) setQuota(pinData.quota as ThreadGenerationQuota);
       if (siteData.site?.slug) setSlug(siteData.site.slug);
+      setOwnerHandle(
+        typeof siteData.site?.owner_handle === "string" ? siteData.site.owner_handle : null
+      );
+      setSiteStatus(typeof siteData.site?.status === "string" ? siteData.site.status : "");
 
       if (loadedPins.length > 0) {
         setError("");
@@ -134,8 +140,10 @@ export default function TrafficPage() {
 
   function destination(pinId: string) {
     if (!slug || typeof window === "undefined") return "";
-    return `${window.location.origin}${sitePublicPath({ slug })}?pin=${pinId}&src=pinterest`;
+    return `${window.location.origin}${sitePublicPath({ slug, owner_handle: ownerHandle })}?pin=${pinId}&src=pinterest`;
   }
+
+  const isDraft = siteStatus !== "" && siteStatus !== "live";
 
   async function copy(label: string, value: string) {
     await navigator.clipboard.writeText(value);
@@ -158,6 +166,13 @@ export default function TrafficPage() {
       />
 
       <TrafficGenerationQuota quota={quota} loading={loading && !quota} />
+
+      {isDraft ? (
+        <div className="alert-banner" role="status">
+          This money page is still a draft. Pin destination links will 404 until you publish it
+          live. Publish from Results or the money page editor before posting these pins.
+        </div>
+      ) : null}
 
       {error && pins.length === 0 ? <div className="alert-banner">{error}</div> : null}
 

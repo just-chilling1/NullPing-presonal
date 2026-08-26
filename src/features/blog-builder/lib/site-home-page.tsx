@@ -7,7 +7,7 @@ export const SITE_HOME_META_COLUMNS =
   "title, tagline, hobby, territory, sales_page_html, sales_page_json, site_type";
 
 export const SITE_HOME_COLUMNS =
-  "id, title, tagline, slug, hobby, territory, theme, theme_config, template_key, site_type, sales_page_html";
+  "id, title, tagline, slug, owner_handle, hobby, territory, theme, theme_config, template_key, site_type, sales_page_html";
 
 export interface SiteHomeMetaRow {
   title: string;
@@ -24,6 +24,7 @@ export interface SiteHomeRow {
   title: string;
   tagline: string | null;
   slug: string;
+  owner_handle?: string | null;
   hobby: string;
   territory: string | null;
   theme: string;

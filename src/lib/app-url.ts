@@ -66,8 +66,10 @@ export function resolvePublicUrl(pathOrUrl: string, origin?: string): string {
 
   return `${stripTrailingSlash(base)}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
 }
-/** Path a site is served at — member-handle URLs for new sites, /sites/{slug} for legacy ones. */
+/** Path a site is served at — member-handle URLs for new sites, /m/{slug} for legacy ones. */
 export function sitePublicPath(site: { slug: string; owner_handle?: string | null }): string {
+  const handle = site.owner_handle?.trim();
+  if (handle) return `/${handle}/sites/${site.slug}`;
   return `/m/${site.slug}`;
 }
 
@@ -84,6 +86,10 @@ export function resolveOfferPageLinksInText(text: string, offerPageUrl: string, 
   const escapedSlug = slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const query = "(?:\\?[^\\s]*)?";
   return text
+    .replace(
+      new RegExp(`https?:\\/\\/[^\\s]+\\/[^\\s/]+\\/sites\\/${escapedSlug}${query}`, "gi"),
+      offerPageUrl
+    )
     .replace(
       new RegExp(`https?:\\/\\/[^\\s]+\\/sites\\/${escapedSlug}${query}`, "gi"),
       offerPageUrl

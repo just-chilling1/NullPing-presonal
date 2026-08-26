@@ -18,6 +18,7 @@ import {
   type DfySalesResult,
 } from "@/features/dfy-profit/components/DfyResultPanel";
 import { PREMIUM_NICHE_OPTIONS } from "@/lib/premium-niches";
+import { sitePublicPath } from "@/lib/app-url";
 
 type Stage = "idle" | "sales" | "pins" | "article" | "posts" | "done";
 
@@ -129,7 +130,9 @@ export default function DfyProfitPage() {
       setSales({
         siteId,
         offerUrl: startData.offerUrl as string,
-        offerPath: (startData.offerPath as string | undefined) ?? `/m/${startData.slug as string}`,
+        offerPath:
+          (startData.offerPath as string | undefined) ??
+          sitePublicPath({ slug: startData.slug as string }),
         templateName: startData.templateName as string,
         templateId: startData.templateId as string,
         productName: (startData.productName as string) || "",

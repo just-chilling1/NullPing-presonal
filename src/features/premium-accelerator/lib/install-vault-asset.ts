@@ -94,17 +94,20 @@ export async function installVaultAsset(params: {
 
   let created = site as InstallVaultAssetResult["site"] | null;
   if (error || !created) {
+    // Only strip columns that may be missing on older schemas (42703 = undefined_column).
     const retry: Record<string, unknown> = {
       ...baseRow,
       slug: `${baseSlug}-${crypto.randomUUID().slice(0, 8)}`,
     };
-    delete retry.owner_handle;
-    delete retry.product_name;
-    delete retry.product_url;
-    delete retry.asset_source;
-    delete retry.template_key;
-    delete retry.is_template;
-    delete retry.sales_page_json;
+    if (error?.code === "42703") {
+      delete retry.owner_handle;
+      delete retry.product_name;
+      delete retry.product_url;
+      delete retry.asset_source;
+      delete retry.template_key;
+      delete retry.is_template;
+      delete retry.sales_page_json;
+    }
 
     const second = await params.supabase.from("sites").insert(retry).select().single();
     if (second.error || !second.data) {
