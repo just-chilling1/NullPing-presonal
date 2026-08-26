@@ -12,21 +12,21 @@ export const dashboardContent = {
   /** Dashboard video track — set Vimeo ids here or in training.config.ts videos[] */
   videos: [
     {
-      id: "1214915118",
+      id: "",
       title: "Watch This First",
       description:
         "Before you touch a single tool — watch this. It clears the night-one doubt and shows you exactly what you bought.",
       duration: "",
     },
     {
-      id: "1214915117",
+      id: "",
       title: "How The Money Flows",
       description:
         "Where the money comes from, who pays you, and what every tool inside the app actually means — in plain language.",
       duration: "",
     },
     {
-      id: "1215368033",
+      id: "",
       title: "Your 5-Minute Tour",
       description:
         "A quick walkthrough of where everything lives — so you never feel lost when you start working.",

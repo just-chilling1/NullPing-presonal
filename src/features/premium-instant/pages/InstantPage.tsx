@@ -149,7 +149,7 @@ export default function InstantIncomePage() {
             footer={<PremiumFooter />}
         >
             <PremiumVideoTutorial
-                vimeoId="1171721099"
+                vimeoId=""
                 iframeTitle="Instant Access Tutorial"
                 title="How to Use Instant Income"
                 description="Watch this quick tutorial to learn how to copy these Facebook posts and start making money instantly. Simple and easy!"

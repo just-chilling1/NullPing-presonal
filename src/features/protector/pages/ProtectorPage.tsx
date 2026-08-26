@@ -236,7 +236,7 @@ export default function ProtectorPage() {
       title="Cyber Protection"
       subtitle="Real account and activity status for your NullPing membership — no fake security scores."
       training={{
-        vimeoId: "1215579801",
+        vimeoId: "",
         title: "Cyber Protection Training",
         description:
           "See what is real on this page: email confirmation, session, HTTPS, and recent money-page activity.",

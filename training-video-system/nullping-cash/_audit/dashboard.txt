@@ -1,0 +1,187 @@
+NullPing Cash
+
+HOME
+
+Dashboard
+
+GENERATE
+
+Activate Asset
+Generate Traffic
+Results
+
+LIBRARIES
+
+Links Library
+
+TRAINING
+
+Academy
+
+Premium Features
+
+Unlimited
+Done-For-You Profit
+Instant Income
+Automated Profits
+Guaranteed High-Ticket Payouts
+Cyber Protection
+Reseller & License Rights
+
+Exclusive Offers
+
+Earn $400/Day Testing New AppsClaim Now
+Get Paid To Copy & PasteClaim Now
+Fast Cash TrainingClaim Now
+Support
+NP
+Member
+Active Member
+HOME
+Welcome to NullPing Cash
+
+Watch the three videos below — then activate your first asset. NullPing builds the money page. You just pick the product.
+
+Start Here
+Watch This First
+
+▶ Click to Play Video
+
+Before you touch a single tool — watch this. It clears the night-one doubt and shows you exactly what you bought.
+
+FREE MEMBER TRAINING
+
+Imagine rolling out of bed, checking your phone, and seeing an extra $1,000, $3,000, or even $5,000 deposited into your account — without grinding away at a 9-to-5 job, begging for overtime, or stressing over side hustles that barely pay the bills.
+
+This isn't some wild fantasy — it's a real, proven system that countless everyday people are using to generate consistent, life-changing income on autopilot. No experience? No problem. No tech skills? Doesn't matter. This works for anyone willing to follow a simple, step-by-step process.
+
+The best part? It runs 24/7, even while you sleep.
+
+Ready to break free from financial stress and start living life on your terms?
+
+Click the button below and discover how you can wake up to an extra $1,000–$5,000 in your bank account every single day!
+
+Click Here To Learn How
+
+Limited access — register while it's still available
+
+How The Money Flows
+
+▶ Click to Play Video
+
+Where the money comes from, who pays you, and what every tool inside the app actually means — in plain language.
+
+FREE MEMBER TRAINING
+
+Imagine rolling out of bed, checking your phone, and seeing an extra $1,000, $3,000, or even $5,000 deposited into your account — without grinding away at a 9-to-5 job, begging for overtime, or stressing over side hustles that barely pay the bills.
+
+This isn't some wild fantasy — it's a real, proven system that countless everyday people are using to generate consistent, life-changing income on autopilot. No experience? No problem. No tech skills? Doesn't matter. This works for anyone willing to follow a simple, step-by-step process.
+
+The best part? It runs 24/7, even while you sleep.
+
+Ready to break free from financial stress and start living life on your terms?
+
+Click the button below and discover how you can wake up to an extra $1,000–$5,000 in your bank account every single day!
+
+Click Here To Learn How
+
+Limited access — register while it's still available
+
+Your 5-Minute Tour
+
+▶ Click to Play Video
+
+A quick walkthrough of where everything lives — so you never feel lost when you start working.
+
+Activate your first asset
+Know More from the Academy
+Contact Support
+
+We usually reply within about 2 hours — allow 24–48 hours during busy periods.
+
+YOUR EMAIL
+YOUR MESSAGE
+
+Please note: We reply to the email above. Check spam or junk if you don't hear back within 48 hours.
+
+Send message
+
+Form not working? Copy our support email:
+
+NullPingProfit@neoai.freshdesk.com
+
+Tip
+
+Complete onboarding and add your real support email before launch.
+
+Individual results vary.
+
+Premium Features
+
+Unlock the tools that drive the biggest results.
+
+Unlimited
+
+200 pre-made money pages — clone one, then generate pins.
+
+Done-For-You Profit
+
+Done-For-You Profit: live sales page, 3 pins, authority article, and 3 Facebook posts.
+
+Instant Income
+
+Bulk Facebook posts from a live money page — copy and paste.
+
+Automated Profits
+
+Curated traffic sources checklist with promotion URL tracking for your live money page.
+
+Guaranteed High-Ticket Payouts
+
+Authority article sections that strengthen a money page.
+
+Cyber Protection
+
+Real account status — email, session, and recent activity.
+
+Reseller & License Rights
+
+Request reseller license rights — our team activates the edition.
+
+Developer setup checklist
+
+Connect Supabase
+
+Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local, then run the auth setup script (see DEVELOPER-SETUP.md).
+
+Customize branding
+
+Edit brand.config.ts, promos.config.ts, offers.config.ts, support.config.ts, and training.config.ts.
+
+Add client links
+
+Replace example URLs for ads, support, training videos, and partner offers — full table in DEVELOPER-SETUP.md.
+
+Enable product workflow
+
+Add your feature ids to enabledFeatures in features.config.ts (e.g. core-workflow, blog-builder, product-wizard).
+
+Review Training page
+
+Add Vimeo video IDs and copy in training.config.ts. Always visible when training is enabled.
+
+Open page →
+
+Review Support page
+
+Set support email, contact URL, and stats in support.config.ts.
+
+Open page →
+
+Full handoff guide: DEVELOPER-SETUP.md in the project root.
+
+Need help with your account?
+
+Our support team is here if something looks off.
+
+Contact Support

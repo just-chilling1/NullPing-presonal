@@ -225,7 +225,7 @@ export default function DfyProfitPage() {
         </>
       }
       training={{
-        vimeoId: "1215530104",
+        vimeoId: "",
         title: "Done-For-You Profit Training",
         description:
           "Apply your affiliate link, pick a niche, and generate a live sales page with 3 pins, an authority article, and 3 Facebook posts in one run.",

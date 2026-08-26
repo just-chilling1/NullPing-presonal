@@ -281,7 +281,7 @@ export default function AcceleratorPage() {
       }
     >
       <PremiumVideoTutorial
-        vimeoId="1215530104"
+        vimeoId=""
         title="Unlimited Training"
         description="Browse ready-made money pages, apply your affiliate link, install one page, and get 10 Pinterest pins ready to post."
         iframeTitle="Unlimited training video"

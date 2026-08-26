@@ -12,21 +12,21 @@ export const trainingContent = {
   /** Academy platform tutorials — core NullPing workflow */
   videos: [
     {
-      id: "1215373563",
+      id: "",
       title: "Activate Your First Asset",
       description:
         "Paste a product URL or name, optionally add your affiliate link, and let NullPing build a full money page ready to publish.",
       duration: "5+ min",
     },
     {
-      id: "1215508183",
+      id: "",
       title: "Publish Your Money Page",
       description:
         "Preview the review page, pick a color theme, edit copy if you want, then publish your live affiliate money page.",
       duration: "5+ min",
     },
     {
-      id: "1215513309",
+      id: "",
       title: "Pinterest Traffic & Results",
       description:
         "Generate Pinterest pin assets that send visitors to your money page, then track real visits and clicks in Results.",

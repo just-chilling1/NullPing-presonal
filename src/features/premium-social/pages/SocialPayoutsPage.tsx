@@ -303,7 +303,7 @@ export default function SocialPayoutsPage() {
       title="Instant Income"
       subtitle="Bulk Facebook posts — pick a live money page, generate 10 scroll-stopping variants with different hooks and angles, then copy and paste."
       training={{
-        vimeoId: "1215574185",
+        vimeoId: "",
         title: "Instant Income Training",
         description:
           "Watch how to turn one money page into 10+ scroll-stopping Facebook posts with different hooks and angles — then copy, paste, and post.",

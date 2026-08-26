@@ -205,7 +205,7 @@ export default function AutomatedProfitsPage() {
       title="Automated Profits"
       subtitle="180 practical traffic sources across 9 niches — choose the market your money page was built for and share it where it is genuinely useful."
       training={{
-        vimeoId: "1215530104",
+        vimeoId: "",
         title: "How to Use Automated Profits",
         description:
           "Pick a live money page, filter by niche, follow each source’s steps, and copy the ready-made description with your tracking link.",

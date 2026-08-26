@@ -287,7 +287,7 @@ export default function RecurringStreamPage() {
       title="Guaranteed High-Ticket Payouts"
       subtitle={`${seededCount || 100} authority articles — add a section to your money page, or copy for external posts with tracking links.`}
       training={{
-        vimeoId: "1215568587",
+        vimeoId: "",
         title: "Guaranteed High-Ticket Payouts Training",
         description:
           "Pick a live money page, preview an authority article with your tracking link, then add it as a section on the money page.",

@@ -168,7 +168,7 @@ export default function DfyPage() {
             footer={<PremiumFooter />}
         >
             <PremiumVideoTutorial
-                vimeoId="1171728175"
+                vimeoId=""
                 iframeTitle="Done-For-You Tutorial"
                 title="How to Use Done-For-You"
                 description="Watch this quick tutorial to learn how to pick a keyword, add your link, and get ready-made replies you can post in minutes."

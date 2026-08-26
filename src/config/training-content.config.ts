@@ -73,7 +73,7 @@ export const trainingPremiumVideos: ReadonlyArray<{
   feature: FeatureId;
 }> = [
   {
-    id: "1215530104",
+    id: "",
     badge: "Unlimited",
     title: "Unlimited",
     description:
@@ -82,7 +82,7 @@ export const trainingPremiumVideos: ReadonlyArray<{
     feature: "premium-accelerator",
   },
   {
-    id: "1215568587",
+    id: "",
     badge: "Guaranteed High-Ticket Payouts",
     title: "Guaranteed High-Ticket Payouts",
     description:
@@ -91,7 +91,7 @@ export const trainingPremiumVideos: ReadonlyArray<{
     feature: "premium-recurring",
   },
   {
-    id: "1215574185",
+    id: "",
     badge: "Instant Income",
     title: "Instant Income",
     description:
@@ -100,7 +100,7 @@ export const trainingPremiumVideos: ReadonlyArray<{
     feature: "premium-social",
   },
   {
-    id: "1215579801",
+    id: "",
     badge: "Cyber Protection",
     title: "Cyber Protection",
     description:
