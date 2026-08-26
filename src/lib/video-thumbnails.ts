@@ -1,24 +1,24 @@
 export const VIDEO_THUMBNAILS: Record<string, string> = {};
 
 export const DASHBOARD_VIDEO_THUMBNAILS = [
-  "/video-thumbnails/dashboard-01-watch-this-first.png",
-  "/video-thumbnails/dashboard-02-how-the-money-flows.png",
-  "/video-thumbnails/dashboard-03-your-5-minute-tour.png",
+  "/thumbnails/dashboard-01-watch-this-first.png",
+  "/thumbnails/dashboard-02-how-the-money-flows.png",
+  "/thumbnails/dashboard-03-your-5-minute-tour.png",
 ] as const;
 export const ACADEMY_PLATFORM_THUMBNAILS = [
-  "/video-thumbnails/academy-04-activate-first-asset.png",
-  "/video-thumbnails/academy-05-publish-money-page.png",
-  "/video-thumbnails/academy-06-pinterest-traffic-results.png",
+  "/thumbnails/academy-04-activate-first-asset.png",
+  "/thumbnails/academy-05-publish-money-page.png",
+  "/thumbnails/academy-06-pinterest-traffic-results.png",
 ] as const;
 
 export const ACADEMY_PREMIUM_THUMBNAILS = [
-  "/video-thumbnails/academy-07-unlimited.png",
-  "/video-thumbnails/academy-08-done-for-you-profit.png",
-  "/video-thumbnails/academy-09-instant-income.png",
-  "/video-thumbnails/academy-10-automated-profits.png",
-  "/video-thumbnails/academy-11-guaranteed-high-ticket-payouts.png",
-  "/video-thumbnails/academy-12-cyber-protection.png",
-  "/video-thumbnails/academy-13-reseller-license-rights.png",
+  "/thumbnails/academy-07-unlimited.png",
+  "/thumbnails/academy-08-done-for-you-profit.png",
+  "/thumbnails/academy-09-instant-income.png",
+  "/thumbnails/academy-10-automated-profits.png",
+  "/thumbnails/academy-11-guaranteed-high-ticket-payouts.png",
+  "/thumbnails/academy-12-cyber-protection.png",
+  "/thumbnails/academy-13-reseller-license-rights.png",
 ] as const;
 
 /** Premium feature pages — maps feature id to academy thumbnail (07–13). */
