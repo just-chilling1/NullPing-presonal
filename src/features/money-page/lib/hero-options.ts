@@ -17,6 +17,8 @@ export type HeroCandidateFetcher = (params: {
   productTokens: string[];
   strongTokens: string[];
   categoryTokens: string[];
+  headNoun?: string;
+  negativeTags?: string[];
   pickOffset: number;
   seedBoost: number;
 }) => Promise<Array<{ url: string; relevanceScore?: number }>>;
@@ -27,16 +29,9 @@ function isGenericFallbackUrl(url: string): boolean {
   return /picsum\.photos|loremflickr\.com/i.test(url);
 }
 
-async function defaultFetchCandidates(params: {
-  query: string;
-  productName: string;
-  excludeUrls: string[];
-  productTokens: string[];
-  strongTokens: string[];
-  categoryTokens: string[];
-  pickOffset: number;
-  seedBoost: number;
-}): Promise<Array<{ url: string; relevanceScore?: number }>> {
+async function defaultFetchCandidates(
+  params: Parameters<HeroCandidateFetcher>[0]
+): Promise<Array<{ url: string; relevanceScore?: number }>> {
   return fetchPixabayImageCandidates(params.productName, params.productName, {
     customQuery: params.query,
     orientation: "horizontal",
@@ -46,6 +41,8 @@ async function defaultFetchCandidates(params: {
     productTokens: params.productTokens,
     strongTokens: params.strongTokens,
     categoryTokens: params.categoryTokens,
+    headNoun: params.headNoun,
+    negativeTags: params.negativeTags,
     minRelevance: MIN_STOCK_PRODUCT_RELEVANCE,
     limit: 12,
   });
@@ -123,6 +120,8 @@ export async function fetchMoneyPageHeroOptions(params: {
       productTokens: identity.productTokens,
       strongTokens: identity.strongTokens,
       categoryTokens: identity.categoryTokens,
+      headNoun: identity.headNoun,
+      negativeTags: identity.negativeTags,
       pickOffset: q * 5 + out.length,
       seedBoost: q * 31 + out.length * 17,
     });

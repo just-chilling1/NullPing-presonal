@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  CheckCircle2,
   Clock,
   KeyRound,
   Mail,
   ShieldCheck,
   User,
 } from "lucide-react";
+import { NULLPING_PASSWORD_RESET_REDIRECT } from "@/lib/auth-redirect";
+import { supabase } from "@/lib/supabase";
 import { PageHeader } from "@/components/ui/page-header";
 import { WorkflowPage } from "@/components/ui/workflow-page";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -36,8 +39,47 @@ export default function AccountPage() {
   const [displayName, setDisplayName] = useState("Member");
   const [lastSignIn, setLastSignIn] = useState<string | undefined>();
   const [emailConfirmed, setEmailConfirmed] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
   const licenseEnabled = isFeatureEnabled("premium-license-rights");
   const protectorEnabled = isFeatureEnabled("protector");
+
+  const handleResetPassword = async () => {
+    if (!email || resetLoading) return;
+
+    setResetLoading(true);
+    setResetError(null);
+    setResetSent(false);
+
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = (await res.json().catch(() => null)) as { error?: string } | null;
+
+      if (res.ok) {
+        setResetSent(true);
+        return;
+      }
+
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: NULLPING_PASSWORD_RESET_REDIRECT,
+      });
+
+      if (resetError) {
+        setResetError(data?.error || resetError.message);
+      } else {
+        setResetSent(true);
+      }
+    } catch {
+      setResetError("Could not send the reset email. Please try again.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   useEffect(() => {
     void getCachedClientUser().then((user) => {
@@ -107,16 +149,32 @@ export default function AccountPage() {
           </div>
         </dl>
 
-        <div className="flex flex-wrap gap-2">
-          <Link href="/forgot-password" className="btn-secondary inline-flex items-center gap-2 text-sm">
-            <KeyRound size={14} />
-            Reset password
-          </Link>
-          {protectorEnabled ? (
-            <Link href="/protector" className="btn-secondary inline-flex items-center gap-2 text-sm">
-              <ShieldCheck size={14} />
-              Cyber Protection
-            </Link>
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void handleResetPassword()}
+              disabled={!email || resetLoading}
+              className="btn-secondary inline-flex items-center gap-2 text-sm disabled:opacity-60"
+            >
+              <KeyRound size={14} />
+              {resetLoading ? "Sending reset link..." : "Reset password"}
+            </button>
+            {protectorEnabled ? (
+              <Link href="/protector" className="btn-secondary inline-flex items-center gap-2 text-sm">
+                <ShieldCheck size={14} />
+                Cyber Protection
+              </Link>
+            ) : null}
+          </div>
+          {resetSent ? (
+            <p className="flex items-center gap-2 text-sm text-success">
+              <CheckCircle2 size={14} aria-hidden />
+              We sent a password reset link to {email}.
+            </p>
+          ) : null}
+          {resetError ? (
+            <p className="text-sm text-[var(--np-danger)]">{resetError}</p>
           ) : null}
         </div>
       </GlassPanel>

@@ -139,7 +139,9 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    if (userId && isAuthRoute && !isResetPasswordRoute && !isAuthCallbackRoute) {
+    const isForgotPasswordRoute = pathname.startsWith('/forgot-password')
+
+    if (userId && isAuthRoute && !isResetPasswordRoute && !isAuthCallbackRoute && !isForgotPasswordRoute) {
         return NextResponse.redirect(new URL(postLoginPath, request.url))
     }
 

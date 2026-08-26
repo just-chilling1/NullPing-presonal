@@ -212,6 +212,8 @@ export async function generateStructuredJSON<T>(params: {
   systemPrompt: string;
   userPrompt: string;
   validate: (raw: unknown) => T | null;
+  /** Schema reminder sent when the first response fails validation. */
+  repairHint?: string;
   options?: GptCallOptions;
 }): Promise<T> {
   const opts: GptCallOptions = {
@@ -226,12 +228,16 @@ export async function generateStructuredJSON<T>(params: {
   if (parsed) return parsed;
 
   const repairAttempts = opts.maxRepairAttempts ?? 2;
+  const repairHint =
+    params.repairHint?.trim() ||
+    "Return ONLY valid JSON matching the exact schema described in the system prompt. No markdown fences, no commentary.";
+
   for (let repair = 0; repair < repairAttempts; repair++) {
     const repairRaw = await generateWithGPT(
       params.systemPrompt,
       `${params.userPrompt}
 
-Your previous response was invalid or incomplete JSON. Return ONLY valid JSON with keys title, excerpt, metaDescription, html. The html must include at least three <h2> sections and several <p> paragraphs. No markdown fences.`,
+Your previous response was invalid or incomplete JSON. ${repairHint}`,
       { ...opts, maxRetries: 3, temperature: 0.2 }
     );
 

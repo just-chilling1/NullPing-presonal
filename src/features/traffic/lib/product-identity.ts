@@ -3,10 +3,15 @@
  * Preserves brand/product terms while stripping review fluff.
  */
 
-import { cleanProductLabel, productSearchTokens } from "@/features/traffic/lib/product-label";
+import {
+  cleanProductLabel,
+  productDisplayName,
+  productSearchTokens,
+} from "@/features/traffic/lib/product-label";
 
 export type ProductType =
   | "supplement"
+  | "apparel"
   | "physical"
   | "software"
   | "course"
@@ -20,6 +25,14 @@ export type ProductType =
 export interface ProductIdentity {
   rawProductName: string;
   normalizedProductName: string;
+  /** Title-cased name for pin copy ("Polo Shirt"). */
+  displayName: string;
+  /** Head noun of the product phrase — "polo shirt" → "shirt". */
+  headNoun: string;
+  /** True when the name is a plain category noun rather than a brand. */
+  isGenericNoun: boolean;
+  /** Stock-photo tags that prove the image is a different subject entirely. */
+  negativeTags: string[];
   brand?: string;
   productTokens: string[];
   strongTokens: string[];
@@ -79,6 +92,18 @@ const CATEGORY_HINTS: Array<{ type: ProductType; pattern: RegExp; categories: st
     pattern:
       /\b(melatonin|gummies?|supplement|multi[- ]?vitamin|vitamin|capsule|softgel|magnesium|glycinate|serum|collagen|probiotic|omega|blend|digestive|relief|formula|gummy|nootropic|adaptogen|sleep support)\b/i,
     categories: ["supplement", "bottle", "gummies"],
+  },
+  {
+    type: "apparel",
+    pattern:
+      /\b(t[- ]?shirts?|tees?|polos?|shirts?|hoodies?|sweatshirts?|sweaters?|jumpers?|cardigans?|jackets?|coats?|blazers?|trousers?|jeans|joggers|leggings|skirts?|dress(?:es)?|blouses?|suits?|uniforms?|socks?|underwear|briefs|boxers|swimsuits?|swimwear|bikinis?|activewear|sportswear|loungewear|pyjamas?|pajamas?|robes?|sneakers?|trainers?|shoes?|boots?|sandals?|slippers?|heels?|loafers?|hats?|caps?|beanies?|scarves|scarf|belts?|apparel|clothing|garments?|outfits?)\b/i,
+    categories: ["clothing", "apparel", "fashion", "textile"],
+  },
+  {
+    type: "physical",
+    pattern:
+      /\b(football|soccer|basketball|volleyball|tennis|golf|racket|racquet|dumbbells?|kettlebells?|treadmill|yoga mat|helmet|skateboard|bicycle|bike|surfboard)\b/i,
+    categories: ["sport", "equipment", "fitness"],
   },
   {
     type: "software",
@@ -157,6 +182,97 @@ function detectProductType(haystack: string): { type: ProductType; categories: s
   return { type: "other", categories: ["product"] };
 }
 
+/** Plain category nouns — a name ending in one of these is a generic item, not a brand. */
+const GENERIC_HEAD_NOUNS = new Set([
+  "shirt", "tshirt", "tee", "polo", "hoodie", "sweater", "sweatshirt", "jacket", "coat",
+  "blazer", "pants", "trousers", "jeans", "shorts", "joggers", "leggings", "skirt", "dress",
+  "blouse", "suit", "uniform", "socks", "underwear", "swimsuit", "pajamas", "robe",
+  "sneakers", "trainers", "shoes", "boots", "sandals", "slippers", "hat", "cap", "beanie",
+  "scarf", "belt", "gloves", "watch", "bag", "backpack", "wallet", "luggage", "suitcase",
+  "cubes", "organizer", "mug", "bottle", "pillow", "blanket", "lamp", "chair", "desk",
+  "mattress", "sheets", "towel", "brush", "kit", "cream", "serum", "lotion", "shampoo",
+  "soap", "perfume", "supplement", "supplements", "gummies", "vitamins", "capsules",
+  "tablets", "powder", "tea", "coffee", "course", "ebook", "book", "guide", "planner",
+  "template", "app", "software", "tracker", "subscription", "membership", "charger",
+  "earbuds", "headphones", "speaker", "camera", "monitor", "keyboard", "toy", "collar",
+  "leash", "treats",
+]);
+
+/**
+ * Words that mean something entirely different in stock-photo tags.
+ * A guard only fires when the product itself is not about that other subject
+ * (so "polo horse mallet" keeps equestrian imagery, "polo shirt" does not).
+ */
+const HOMONYM_GUARDS: Array<{ token: string; avoid: string[] }> = [
+  {
+    token: "polo",
+    avoid: ["horse", "horses", "equestrian", "pony", "rider", "riding", "saddle", "jockey", "mallet", "stallion"],
+  },
+  { token: "boxer", avoid: ["dog", "puppy", "canine"] },
+  { token: "boxers", avoid: ["dog", "puppy", "canine"] },
+  { token: "mouse", avoid: ["rodent", "rat", "mammal", "wildlife"] },
+  { token: "apple", avoid: ["fruit", "orchard", "harvest"] },
+  { token: "bass", avoid: ["fish", "fishing", "angler"] },
+  { token: "crane", avoid: ["bird", "stork", "heron"] },
+  { token: "jaguar", avoid: ["wildlife", "jungle", "predator"] },
+  { token: "puma", avoid: ["wildlife", "cougar", "predator"] },
+  { token: "tank", avoid: ["military", "army", "war", "soldier"] },
+  { token: "mint", avoid: ["herb", "leaves", "plant"] },
+  { token: "palm", avoid: ["tree", "beach", "tropical"] },
+  { token: "rocket", avoid: ["space", "launch", "nasa", "spacecraft"] },
+  { token: "bolt", avoid: ["lightning", "thunder", "storm"] },
+];
+
+/** Subjects that are never the product, per category. */
+const CATEGORY_NEGATIVE_TAGS: Partial<Record<ProductType, string[]>> = {
+  apparel: ["horse", "equestrian", "fruit", "vegetable", "landscape", "architecture", "real estate"],
+  supplement: ["horse", "landscape", "architecture", "real estate"],
+  software: ["fruit", "vegetable", "landscape", "livestock"],
+};
+
+function buildNegativeTags(params: {
+  tokens: string[];
+  productType: ProductType;
+  haystack: string;
+}): string[] {
+  const haystack = params.haystack.toLowerCase();
+  const mentionsInProduct = (term: string) =>
+    new RegExp(`(?:^|[^a-z0-9])${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:[^a-z0-9]|$)`, "i").test(
+      haystack
+    );
+
+  const out = new Set<string>();
+
+  for (const guard of HOMONYM_GUARDS) {
+    if (!params.tokens.includes(guard.token)) continue;
+    // The product genuinely belongs to the other subject — leave its imagery alone.
+    if (guard.avoid.some(mentionsInProduct)) continue;
+    for (const term of guard.avoid) out.add(term);
+  }
+
+  for (const term of CATEGORY_NEGATIVE_TAGS[params.productType] ?? []) {
+    if (mentionsInProduct(term)) continue;
+    out.add(term);
+  }
+
+  return [...out];
+}
+
+/**
+ * Grammatical noun phrase for mid-sentence copy:
+ * generic singular → "a polo shirt", plural → "packing cubes", brand → "SleepWell Melatonin Gummies".
+ */
+export function productSubjectPhrase(identity: ProductIdentity): string {
+  const display = identity.displayName || identity.normalizedProductName;
+  if (!identity.isGenericNoun) return display;
+
+  const lower = display.toLowerCase();
+  const head = identity.headNoun;
+  const isPlural = head.endsWith("s") && !head.endsWith("ss");
+  if (isPlural) return lower;
+  return `${/^[aeiou]/i.test(lower) ? "an" : "a"} ${lower}`;
+}
+
 function guessBrand(tokens: string[]): string | undefined {
   if (tokens.length === 0) return undefined;
   // First capitalized-looking multi-char token from original is hard; use first strong token.
@@ -203,9 +319,19 @@ export function buildProductIdentity(params: {
       ? strongTokens.slice(0, 5).join(" ")
       : fromClean || raw;
 
+  // Head noun comes from the product name alone — page tokens must not hijack it.
+  const nameTokens = preserved.length > 0 ? preserved : productSearchTokens(fromClean);
+  const headNoun = nameTokens[nameTokens.length - 1] ?? "";
+  const hasBrandCasing = raw.split(/[^A-Za-z0-9]+/).some((w) => w.length > 1 && /[A-Z]/.test(w.slice(1)));
+  const isGenericNoun = GENERIC_HEAD_NOUNS.has(headNoun) && !hasBrandCasing;
+
   return {
     rawProductName: raw,
     normalizedProductName: normalized,
+    displayName: productDisplayName(raw),
+    headNoun,
+    isGenericNoun,
+    negativeTags: buildNegativeTags({ tokens: nameTokens, productType: type, haystack }),
     brand: params.brand?.trim() || guessBrand(strongTokens),
     productTokens,
     strongTokens,
@@ -265,6 +391,20 @@ export function productOnlyStockQueries(identity: ProductIdentity): string[] {
     case "ebook":
       if (core) queries.push(`${core} ebook`, `${core} book cover`);
       break;
+    case "apparel": {
+      // Always pair with a clothing word — bare "polo shirt" returns equestrian photos.
+      const head = identity.headNoun || "clothing";
+      if (core) {
+        queries.push(
+          `${core} clothing`,
+          `${core} apparel`,
+          `${core} fashion`,
+          `${core} textile`
+        );
+      }
+      queries.push(`${head} clothing`, `${head} apparel`, `folded ${head}`);
+      break;
+    }
     case "physical":
       if (core) {
         queries.push(
@@ -289,10 +429,8 @@ export function productOnlyStockQueries(identity: ProductIdentity): string[] {
       }
       break;
     default:
-      if (strong.length === 1) {
-        queries.push(core, `${core} ball`, `${core} sport`, `${core} equipment`, `${core} product`);
-      } else if (core) {
-        queries.push(core, `${core} product`, `${core} gear`);
+      if (core) {
+        queries.push(core, `${core} product`, `${core} closeup`, `${core} isolated`);
       }
   }
 

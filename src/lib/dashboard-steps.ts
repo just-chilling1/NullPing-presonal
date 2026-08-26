@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Link2, Megaphone, Rocket, Search, Brain, Radar, MessageSquare } from "lucide-react";
+import { Link2, Megaphone, Rocket, Search, Brain, Radar, MessageSquare, Image } from "lucide-react";
 import { isFeatureEnabled } from "@/config/features.config";
 import type { HowItWorksStep } from "@/components/ui/how-it-works";
 
@@ -133,9 +133,9 @@ function nullPingSteps(): HowItWorksStep[] {
       title: "Generate Pinterest pins",
       description: "Download 10 ready-to-post pins that send visitors to your page.",
       minutes: "~3 min",
-      href: "/results",
-      icon: Megaphone,
-      cta: "See results",
+      href: "/traffic",
+      icon: Image,
+      cta: "Generate traffic",
     },
   ];
 }
@@ -196,6 +196,17 @@ export function getDashboardQuickActions(): QuickAction[] {
         description: "Save affiliate URLs once and reuse them across assets",
         icon: Link2,
         buttonText: "Open library",
+        accent: "pulse",
+      });
+    }
+
+    if (isFeatureEnabled("traffic-pins")) {
+      actions.push({
+        href: "/traffic",
+        title: "Generate Traffic",
+        description: "Create Pinterest pins that send visitors to your money page",
+        icon: Image,
+        buttonText: "Generate pins",
         accent: "pulse",
       });
     }

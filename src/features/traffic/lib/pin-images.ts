@@ -378,6 +378,8 @@ export async function resolvePinBackgroundImages(params: {
             productTokens: identity.productTokens,
             strongTokens: identity.strongTokens,
             categoryTokens: identity.categoryTokens,
+            headNoun: identity.headNoun,
+            negativeTags: identity.negativeTags,
             minRelevance: minStock,
             limit: 16,
           }

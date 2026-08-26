@@ -175,10 +175,10 @@ export function OnboardingFlow() {
               {cfg.infoSteps.map((step, i) => (
                 <li
                   key={step}
-                  className={`flex items-start gap-3 text-sm transition-all duration-500 ${ activationStep > i ? "text-ink-2 opacity-100" : "text-ink-6 opacity-50" }`}
+                  className={`flex items-start gap-3 text-sm transition-all duration-500 ${ activationStep > i ? "text-ink-2" : "text-ink-4" }`}
                 >
                   <span
-                    className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[13px] font-medium ${ activationStep > i ? "bg-success text-white" : "bg-pulse-100 text-ink-5" }`}
+                    className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[13px] font-medium ${ activationStep > i ? "bg-success text-white" : "bg-pulse-100 text-ink-3" }`}
                   >
                     {activationStep > i ? "✓" : i + 1}
                   </span>

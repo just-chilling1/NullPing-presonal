@@ -57,7 +57,7 @@ export function SourceCard({
               "flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition-colors",
               isDone
                 ? "border-[var(--np-line-pulse)] bg-grad-pulse text-pulse-900"
-                : "border-border-dim text-transparent hover:border-[var(--np-line-pulse)] hover:text-pulse-700"
+                : "border-border-dim bg-surface-field text-ink-4 hover:border-[var(--np-line-pulse)] hover:text-pulse-700"
             )}
           >
             <Check size={13} strokeWidth={2.6} />

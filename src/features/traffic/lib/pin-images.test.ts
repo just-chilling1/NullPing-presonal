@@ -12,7 +12,9 @@ import {
   buildProductIdentity,
   preserveProductTokens,
   productOnlyStockQueries,
+  productSubjectPhrase,
 } from "./product-identity";
+import { productDisplayName } from "./product-label";
 import {
   ensureUniquePinBackgrounds,
   pinRenderBackgroundCandidates,
@@ -92,6 +94,63 @@ describe("product identity", () => {
     for (const q of queries) {
       assert.doesNotMatch(q, /^(wellness|sleep bedroom|healthy lifestyle)$/i);
     }
+  });
+
+  it("classifies clothing as apparel and picks the head noun", () => {
+    const identity = buildProductIdentity({ productName: "polo shirt" });
+    assert.equal(identity.productType, "apparel");
+    assert.equal(identity.headNoun, "shirt");
+    assert.ok(identity.categoryTokens.includes("clothing"));
+  });
+
+  it("guards ambiguous apparel words against their homonym subject", () => {
+    const identity = buildProductIdentity({ productName: "polo shirt" });
+    assert.ok(identity.negativeTags.includes("horse"));
+    assert.ok(identity.negativeTags.includes("equestrian"));
+  });
+
+  it("keeps the homonym guard off when the product really is about that subject", () => {
+    const identity = buildProductIdentity({ productName: "polo horse mallet" });
+    assert.ok(!identity.negativeTags.includes("horse"));
+  });
+
+  it("frames apparel stock queries as clothing, never as sport", () => {
+    const identity = buildProductIdentity({ productName: "polo shirt" });
+    const queries = productOnlyStockQueries(identity);
+    assert.ok(queries.some((q) => /clothing|apparel|fashion/i.test(q)));
+    for (const q of queries) {
+      assert.doesNotMatch(q, /\b(sport|ball|equestrian|horse)\b/i);
+    }
+  });
+
+  it("does not bolt sports words onto unknown single-token products", () => {
+    const identity = buildProductIdentity({ productName: "zentrix" });
+    const queries = productOnlyStockQueries(identity);
+    for (const q of queries) {
+      assert.doesNotMatch(q, /\b(ball|sport)\b/i);
+    }
+  });
+});
+
+describe("product display naming", () => {
+  it("title-cases generic product names", () => {
+    assert.equal(productDisplayName("polo shirt"), "Polo Shirt");
+  });
+
+  it("preserves deliberate brand casing", () => {
+    assert.equal(productDisplayName("SleepWell Melatonin Gummies"), "SleepWell Melatonin Gummies");
+  });
+
+  it("adds an article for generic singular nouns so copy is grammatical", () => {
+    const identity = buildProductIdentity({ productName: "polo shirt" });
+    assert.equal(productSubjectPhrase(identity), "a polo shirt");
+  });
+
+  it("uses no article for plural generics or branded products", () => {
+    const plural = buildProductIdentity({ productName: "packing cubes" });
+    assert.equal(productSubjectPhrase(plural), "packing cubes");
+    const brand = buildProductIdentity({ productName: "SleepWell Melatonin Gummies" });
+    assert.equal(productSubjectPhrase(brand), "SleepWell Melatonin Gummies");
   });
 });
 
@@ -203,6 +262,44 @@ describe("stock relevance", () => {
       categoryTokens: ["app", "software"],
     });
     assert.ok(rel.score < 70, `expected < 70, got ${rel.score}`);
+  });
+
+  it("rejects equestrian photos for a polo shirt via the negative tag guard", () => {
+    const rel = scoreStockProductRelevance({
+      query: "polo shirt clothing",
+      tags: "polo, horse, sport, rider, competition",
+      productTokens: ["polo", "shirt"],
+      strongTokens: ["polo", "shirt"],
+      categoryTokens: ["clothing", "apparel"],
+      headNoun: "shirt",
+      negativeTags: ["horse", "equestrian", "rider"],
+    });
+    assert.equal(rel.score, 0);
+  });
+
+  it("rejects a partial token match when the head noun is missing", () => {
+    const rel = scoreStockProductRelevance({
+      query: "polo shirt clothing",
+      tags: "polo, competition, outdoor, grass",
+      productTokens: ["polo", "shirt"],
+      strongTokens: ["polo", "shirt"],
+      categoryTokens: ["clothing", "apparel"],
+      headNoun: "shirt",
+    });
+    assert.ok(rel.score < 70, `expected < 70, got ${rel.score}`);
+  });
+
+  it("accepts real apparel photos for a polo shirt", () => {
+    const rel = scoreStockProductRelevance({
+      query: "polo shirt clothing",
+      tags: "polo shirt, clothing, fashion, textile, apparel",
+      productTokens: ["polo", "shirt"],
+      strongTokens: ["polo", "shirt"],
+      categoryTokens: ["clothing", "apparel"],
+      headNoun: "shirt",
+      negativeTags: ["horse", "equestrian"],
+    });
+    assert.ok(rel.score >= 70, `expected >= 70, got ${rel.score}`);
   });
 });
 

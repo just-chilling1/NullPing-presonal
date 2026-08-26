@@ -161,11 +161,22 @@ export function scoreStockProductRelevance(params: {
   productTokens: string[];
   strongTokens: string[];
   categoryTokens?: string[];
+  /** Head noun of the product phrase — required for multi-word products. */
+  headNoun?: string;
+  /** Tags proving the photo is a different subject (homonyms like polo → equestrian). */
+  negativeTags?: string[];
 }): ImageRelevance {
   // Pixabay often omits ingredient/brand words from tags even when the query
   // was product-specific (e.g. "melatonin supplement" → tags "pills, vitamin").
   const haystack = `${params.tags ?? ""} ${params.pageURL ?? ""}`.toLowerCase();
   const queryLower = (params.query || "").toLowerCase();
+
+  // A homonym subject in the tags means this is the wrong product entirely.
+  const negativeHit = (params.negativeTags ?? []).find((tag) => tokenInHaystack(haystack, tag));
+  if (negativeHit) {
+    return { score: 0, matchedTokens: [], reason: `unrelated subject: ${negativeHit}` };
+  }
+
   const matched: string[] = [];
   let score = 20;
 
@@ -244,8 +255,23 @@ export function scoreStockProductRelevance(params: {
   if (matched.length >= 2) score += 8;
   if (matched.length === 0) score -= 30;
 
-  const reason =
-    matched.length > 0
+  // Multi-word products must match their head noun. Otherwise "polo shirt" accepts
+  // any equestrian "polo" photo on the strength of a single modifier token.
+  const headNoun = params.headNoun?.trim().toLowerCase() ?? "";
+  const isMultiWordProduct = params.strongTokens.filter((t) => t.length >= 3).length >= 2;
+  let headNounMissing = false;
+  if (headNoun && isMultiWordProduct) {
+    if (tokenInHaystack(haystack, headNoun)) {
+      score += 6;
+    } else if (!categoryHit) {
+      headNounMissing = true;
+      score = Math.min(score, 55);
+    }
+  }
+
+  const reason = headNounMissing
+    ? `missing head noun: ${headNoun}`
+    : matched.length > 0
       ? `stock tokens: ${matched.slice(0, 5).join(", ")}`
       : "weak stock token match";
 
@@ -287,6 +313,8 @@ export async function fetchPixabayImage(
     productTokens?: string[];
     strongTokens?: string[];
     categoryTokens?: string[];
+    headNoun?: string;
+    negativeTags?: string[];
     minRelevance?: number;
   }
 ): Promise<StockImageResult | null> {
@@ -362,6 +390,8 @@ export async function fetchPixabayImage(
           productTokens,
           strongTokens,
           categoryTokens: options?.categoryTokens,
+          headNoun: options?.headNoun,
+          negativeTags: options?.negativeTags,
         });
         if (relevance.score < minRelevance) continue;
       }
@@ -392,6 +422,8 @@ export async function fetchPixabayImageCandidates(
     productTokens?: string[];
     strongTokens?: string[];
     categoryTokens?: string[];
+    headNoun?: string;
+    negativeTags?: string[];
     minRelevance?: number;
     limit?: number;
   }
@@ -453,6 +485,8 @@ export async function fetchPixabayImageCandidates(
           productTokens,
           strongTokens,
           categoryTokens: options?.categoryTokens,
+          headNoun: options?.headNoun,
+          negativeTags: options?.negativeTags,
         });
         if (relevance.score < minRelevance) continue;
       }

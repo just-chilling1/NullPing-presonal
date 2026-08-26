@@ -1,4 +1,9 @@
 import { generateStructuredJSON } from "@/features/blog-builder/lib/ai";
+import {
+  buildProductIdentity,
+  productSubjectPhrase,
+  type ProductType,
+} from "@/features/traffic/lib/product-identity";
 import { cleanProductLabel } from "@/features/traffic/lib/product-label";
 
 export interface PinCopy {
@@ -21,91 +26,224 @@ function normalizeCopyKey(value: string): string {
   return value.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-function systemPrompt(count: number): string {
-  return `You write Pinterest pins for a beginner affiliate marketer.
-Return ONLY JSON: { "pins": [ { "headline", "title", "description", "keywords" } ] }
-Write exactly ${count} pins. Every field must be unique across pins.
-
-headline: 4-7 words, punchy overlay text for a pin image. No emojis. Use the short product name only.
-title: Pinterest title, max 100 characters. Must expand the headline with a fresh angle — never copy the headline verbatim.
-description: Pinterest description, max 500 characters. Each pin needs a different hook (curiosity, social proof, checklist, who-it-is-for, before-you-buy, etc.).
-keywords: 3-8 short search phrases. Do not repeat the same keyword set on another pin.
-Angles to rotate: worth it?, honest review, before you buy, who it helps, pros and cons, what to check, first impressions, compare options.
-Do not mention AI, SEO settings, or affiliate commissions.`;
+/**
+ * Category-specific vocabulary so copy talks about the things this product
+ * actually has — sizing for clothing, dosage for supplements, pricing for software.
+ */
+interface CopyProfile {
+  categoryLabel: string;
+  /** Long form used inside descriptions. */
+  checks: string;
+  /** Short form used inside titles. */
+  checksShort: string;
+  benefit: string;
+  audience: string;
+  keywords: string[];
 }
 
-/** Short overlay-safe headlines — each pin gets a distinct angle and copy set. */
+const COPY_PROFILES: Record<ProductType, CopyProfile> = {
+  apparel: {
+    categoryLabel: "clothing",
+    checks: "sizing, fabric weight, and the return window",
+    checksShort: "sizing and fabric",
+    benefit: "how it fits and holds up after a few washes",
+    audience: "shoppers",
+    keywords: ["size guide", "fabric", "outfit ideas", "everyday wear"],
+  },
+  supplement: {
+    categoryLabel: "a supplement",
+    checks: "ingredients, dosage, and the refund window",
+    checksShort: "ingredients and dosage",
+    benefit: "what is inside and how people actually take it",
+    audience: "buyers",
+    keywords: ["ingredients", "dosage", "supplement review", "daily routine"],
+  },
+  software: {
+    categoryLabel: "software",
+    checks: "pricing tiers, real usage limits, and how easy it is to cancel",
+    checksShort: "pricing and limits",
+    benefit: "which features matter day to day and where it falls short",
+    audience: "beginners",
+    keywords: ["features", "pricing", "free trial", "setup"],
+  },
+  app: {
+    categoryLabel: "a mobile app",
+    checks: "pricing, permissions, and how easy it is to cancel",
+    checksShort: "pricing and features",
+    benefit: "which features matter day to day and where it falls short",
+    audience: "beginners",
+    keywords: ["features", "pricing", "free plan", "app review"],
+  },
+  course: {
+    categoryLabel: "an online course",
+    checks: "the curriculum, time commitment, and refund terms",
+    checksShort: "curriculum and time needed",
+    benefit: "what you actually learn and how long it takes",
+    audience: "beginners",
+    keywords: ["curriculum", "who it suits", "time needed", "course review"],
+  },
+  ebook: {
+    categoryLabel: "an ebook",
+    checks: "the chapter list, length, and file format",
+    checksShort: "length and chapters",
+    benefit: "what it covers and how quickly you can read it",
+    audience: "readers",
+    keywords: ["chapters", "length", "format", "ebook review"],
+  },
+  subscription: {
+    categoryLabel: "a subscription",
+    checks: "the billing cycle, plan limits, and cancellation terms",
+    checksShort: "billing and limits",
+    benefit: "what each plan includes and when it stops being worth it",
+    audience: "subscribers",
+    keywords: ["plans", "billing", "cancel anytime", "membership"],
+  },
+  service: {
+    categoryLabel: "a service",
+    checks: "the scope, turnaround time, and pricing",
+    checksShort: "scope and turnaround",
+    benefit: "what is delivered and how long it takes",
+    audience: "buyers",
+    keywords: ["scope", "turnaround", "pricing", "service review"],
+  },
+  financial: {
+    categoryLabel: "a financial product",
+    checks: "fees, risk, and withdrawal terms",
+    checksShort: "fees and risk",
+    benefit: "how it works and where the real risk sits",
+    audience: "beginners",
+    keywords: ["fees", "risk", "withdrawals", "how it works"],
+  },
+  physical: {
+    categoryLabel: "a physical product",
+    checks: "build quality, size, and warranty",
+    checksShort: "build and size",
+    benefit: "how well it is built and how it performs in real use",
+    audience: "shoppers",
+    keywords: ["build quality", "size", "warranty", "real use"],
+  },
+  other: {
+    categoryLabel: "a product",
+    checks: "pricing, what is included, and the refund policy",
+    checksShort: "pricing and what's included",
+    benefit: "what you get and who it really helps",
+    audience: "shoppers",
+    keywords: ["what you get", "pricing", "who it suits", "real review"],
+  },
+};
+
+interface PinTemplate {
+  headline: (name: string) => string;
+  title: (name: string, profile: CopyProfile) => string;
+  description: (subject: string, profile: CopyProfile) => string;
+  keywords: string[];
+}
+
+/** Ten distinct angles, phrased so they stay grammatical for any product name. */
+const PIN_TEMPLATES: PinTemplate[] = [
+  {
+    headline: (n) => `${n}: honest review`,
+    title: (n, p) => `${n} review — ${p.benefit}`,
+    description: (s, p) =>
+      `An honest look at ${s}: ${p.benefit}. Here is what stands out, what does not, and which details to confirm before you buy — ${p.checks}.`,
+    keywords: ["honest review", "real review"],
+  },
+  {
+    headline: (n) => `Is ${n} worth it?`,
+    title: (n, p) => `Is ${n} worth it? A quick look at ${p.checksShort}`,
+    description: (s, p) =>
+      `Trying to decide whether ${s} earns its price? Weigh ${p.checks} against what you actually need, and see who usually regrets the purchase.`,
+    keywords: ["worth it", "value for money"],
+  },
+  {
+    headline: (n) => `Before you buy ${n}`,
+    title: (n, p) => `Before you buy ${n}: check ${p.checksShort} first`,
+    description: (s, p) =>
+      `Save yourself the hassle of a return. Before you order ${s}, run through this short checklist covering ${p.checks}.`,
+    keywords: ["before you buy", "buying tips"],
+  },
+  {
+    headline: (n) => `${n}: what to check`,
+    title: (n) => `${n}: the details most listings bury`,
+    description: (s, p) =>
+      `Product pages rarely lead with the details that matter. For ${s}, look closely at ${p.checks} — that is where the surprises hide.`,
+    keywords: ["what to check", "buyer checklist"],
+  },
+  {
+    headline: (n) => `Who should buy ${n}`,
+    title: (n, p) => `Who should buy ${n} — and which ${p.audience} should skip`,
+    description: (s, p) =>
+      `${s.charAt(0).toUpperCase()}${s.slice(1)} is not right for everyone. This breaks down the ${p.audience} it genuinely suits, who should pass, and the fastest way to tell which group you are in.`,
+    keywords: ["who it's for", "best for"],
+  },
+  {
+    headline: (n) => `${n}: pros and cons`,
+    title: (n) => `${n} pros and cons, minus the hype`,
+    description: (s, p) =>
+      `A balanced pros-and-cons rundown for ${s}. The upsides worth paying for, the trade-offs people complain about, and how ${p.checksShort} affect the decision.`,
+    keywords: ["pros and cons", "upsides and trade-offs"],
+  },
+  {
+    headline: (n) => `${n}: first impressions`,
+    title: (n, p) => `${n} first impressions — ${p.benefit}`,
+    description: (s, p) =>
+      `Early notes on ${s}: what the first week feels like, where it beat expectations, and which details mattered most — ${p.checks}.`,
+    keywords: ["first impressions", "early thoughts"],
+  },
+  {
+    headline: (n) => `${n}: buy or skip?`,
+    title: (n) => `${n}: buy it or skip it? A simple decision guide`,
+    description: (s, p) =>
+      `Still on the fence about ${s}? Use three green flags and three red flags, plus a simple rule based on ${p.checksShort}, to decide without second-guessing.`,
+    keywords: ["buy or skip", "decision guide"],
+  },
+  {
+    headline: (n) => `${n} explained simply`,
+    title: (n, p) => `${n} explained simply for busy ${p.audience}`,
+    description: (s, p) =>
+      `No jargon and no filler. Here is ${s} in plain language: ${p.benefit}, plus the one thing to read on the official page before you commit.`,
+    keywords: ["explained simply", "beginner guide"],
+  },
+  {
+    headline: (n) => `${n}: buyer's guide`,
+    title: (n, p) => `${n}: a quick buyer's guide to ${p.checksShort}`,
+    description: (s, p) =>
+      `A short buyer's guide for ${s}. Compare ${p.checks}, learn which claims hold up, and walk into checkout knowing exactly what you are getting.`,
+    keywords: ["buyer's guide", "shopping guide"],
+  },
+];
+
+function copyContext(productName: string, context = "") {
+  // The name decides the category. Page context is only consulted when the
+  // name alone is inconclusive, so stray words there cannot hijack the vocabulary.
+  let identity = buildProductIdentity({ productName });
+  if (identity.productType === "other" && context.trim()) {
+    const withContext = buildProductIdentity({ productName, hobby: context });
+    if (withContext.productType !== "other") identity = withContext;
+  }
+  const profile = COPY_PROFILES[identity.productType] ?? COPY_PROFILES.other;
+  const displayName =
+    identity.displayName || cleanProductLabel(productName) || productName || "this product";
+  const subject = productSubjectPhrase(identity) || displayName;
+  return { identity, profile, displayName, subject };
+}
+
+/** Short overlay-safe headlines — each pin gets a distinct, category-appropriate angle. */
 export function fallbackPins(productName: string, count = DEFAULT_PIN_COUNT): PinCopy[] {
-  const name = cleanProductLabel(productName) || productName || "this product";
+  const { profile, displayName, subject } = copyContext(productName);
   const pinCount = clampPinCount(count);
-  const templates = [
-    {
-      headline: `What ${name} really does`,
-      title: `${name}: what it actually does (honest review)`,
-      description: `Curious what ${name} actually delivers? This breakdown covers the main promise, who it fits, and the first things to verify on the official page before you spend a dime.`,
-      keywords: [name, "what does it do", "honest review", "product breakdown", "worth a look"],
-    },
-    {
-      headline: `Is ${name} worth buying?`,
-      title: `Is ${name} worth it? Pros, cons, and who should skip`,
-      description: `Not sure if ${name} is worth your money? Here is a calm pros-and-cons style look at who it helps, common complaints, and what to check on the sales page before checkout.`,
-      keywords: [name, "is it worth it", "pros and cons", "buyer's guide", "review 2026"],
-    },
-    {
-      headline: `Before you buy ${name}`,
-      title: `Before you buy ${name}: 5 things to check first`,
-      description: `Save yourself buyer's remorse. Before you buy ${name}, read this quick checklist on pricing, refunds, ingredients or features, and whether the offer matches what you actually need.`,
-      keywords: [name, "before you buy", "checklist", "what to know", "smart shopper"],
-    },
-    {
-      headline: `${name}: honest take`,
-      title: `${name} review — an honest take for beginners`,
-      description: `A straight, beginner-friendly review of ${name} without hype. Learn what it is, who it is for, and the one question to answer before you click through to the official offer.`,
-      keywords: [name, "honest take", "beginner review", "no hype", "full review"],
-    },
-    {
-      headline: `Who ${name} is for`,
-      title: `Who should use ${name}? (and who shouldn't)`,
-      description: `${name} is not for everyone. This pin spells out the ideal customer, who should pass, and the fastest way to decide if it matches your goals before you commit.`,
-      keywords: [name, "who is it for", "ideal customer", "fit check", "should you try it"],
-    },
-    {
-      headline: `The truth about ${name}`,
-      title: `The truth about ${name} — what the page won't say`,
-      description: `Cut through the marketing noise. Here is the truth about ${name}: what it claims, what buyers should verify, and how to read the official page with clear eyes.`,
-      keywords: [name, "truth about", "marketing vs reality", "verify claims", "deep dive"],
-    },
-    {
-      headline: `${name}: first-week notes`,
-      title: `${name} first-week notes — early impressions`,
-      description: `Thinking about trying ${name}? These first-week style notes cover setup expectations, early wins, friction points, and what to watch during days 1–7.`,
-      keywords: [name, "first week", "early impressions", "getting started", "real experience"],
-    },
-    {
-      headline: `Try ${name} or pass?`,
-      title: `Try ${name} or pass? A quick decision guide`,
-      description: `Still on the fence? Use this quick decision guide for ${name} — three green flags, three red flags, and a simple rule for knowing when to buy or walk away.`,
-      keywords: [name, "try or pass", "decision guide", "green flags", "red flags"],
-    },
-    {
-      headline: `${name} explained simply`,
-      title: `${name} explained simply for busy shoppers`,
-      description: `No jargon, no fluff. ${name} explained in plain language: what you get, how it works at a high level, and the one link to read before you purchase.`,
-      keywords: [name, "explained simply", "plain english", "quick summary", "easy review"],
-    },
-    {
-      headline: `${name}: calm review`,
-      title: `${name} calm review — facts before feelings`,
-      description: `A calm, fact-first review of ${name} for shoppers who hate pressure tactics. Compare claims vs. reality and decide with a clear head.`,
-      keywords: [name, "calm review", "fact check", "no pressure", "smart buy"],
-    },
-  ];
-  return templates.slice(0, pinCount).map((template, i) => ({
-    headline: template.headline,
-    title: template.title.slice(0, 100),
-    description: template.description.slice(0, 500),
-    keywords: [...template.keywords, `pin ${i + 1}`].slice(0, 8),
-  }));
+  const nameKeyword = displayName.toLowerCase();
+
+  return PIN_TEMPLATES.slice(0, pinCount).map((template, i) => {
+    // Rotate the category keyword so pins do not all carry the same tail.
+    const categoryKeyword = profile.keywords[i % profile.keywords.length];
+    return {
+      headline: template.headline(displayName),
+      title: template.title(displayName, profile).slice(0, 100),
+      description: template.description(subject, profile).slice(0, 500),
+      keywords: [...new Set([nameKeyword, ...template.keywords, categoryKeyword])].slice(0, 8),
+    };
+  });
 }
 
 /** Cap overlay text so Satori does not clip mid-word on the pin image. */
@@ -118,25 +256,69 @@ export function pinOverlayHeadline(headline: string, maxChars = 36): string {
   return truncated.trim();
 }
 
-function keywordSignature(keywords: string[]): string {
-  return keywords
-    .map((k) => normalizeCopyKey(k))
-    .filter(Boolean)
-    .sort()
-    .join("|");
+/**
+ * Keep every usable AI pin and top the batch up from fallbacks.
+ * One repeated angle must never cost the whole generated batch.
+ */
+export function mergePinCopy(primary: PinCopy[], fallback: PinCopy[], count: number): PinCopy[] {
+  const out: PinCopy[] = [];
+  const seenHeadlines = new Set<string>();
+  const seenTitles = new Set<string>();
+  const seenDescriptions = new Set<string>();
+
+  const add = (pin: PinCopy | undefined): void => {
+    if (out.length >= count || !pin) return;
+    const headline = pin.headline?.replace(/\s+/g, " ").trim() ?? "";
+    const title = pin.title?.replace(/\s+/g, " ").trim() ?? "";
+    const description = pin.description?.replace(/\s+/g, " ").trim() ?? "";
+    if (!headline || !title) return;
+
+    const headlineKey = normalizeCopyKey(headline);
+    const titleKey = normalizeCopyKey(title);
+    const descriptionKey = normalizeCopyKey(description.slice(0, 120));
+    if (seenHeadlines.has(headlineKey) || seenTitles.has(titleKey)) return;
+    if (descriptionKey && seenDescriptions.has(descriptionKey)) return;
+
+    seenHeadlines.add(headlineKey);
+    seenTitles.add(titleKey);
+    if (descriptionKey) seenDescriptions.add(descriptionKey);
+    out.push({ headline, title, description, keywords: pin.keywords ?? [] });
+  };
+
+  for (const pin of primary) add(pin);
+  for (const pin of fallback) add(pin);
+  return out.slice(0, count);
+}
+
+function systemPrompt(count: number, profile: CopyProfile): string {
+  return `You write Pinterest pins for a beginner affiliate marketer promoting a product review page.
+Return ONLY JSON: { "pins": [ { "headline", "title", "description", "keywords" } ] }
+Write exactly ${count} pins. Every field must be unique across pins.
+
+headline: 4-7 words of punchy overlay text for the pin image, max 36 characters. No emojis.
+title: Pinterest title, max 100 characters. Must expand the headline with a fresh angle — never copy it verbatim.
+description: Pinterest description, max 500 characters. Each pin needs a different hook.
+keywords: 3-8 short phrases a real shopper would search. Never output filler such as "pin 1" or "product".
+
+This product is ${profile.categoryLabel}. Only use angles that apply to ${profile.categoryLabel},
+and keep the specifics on ${profile.checks}. Never reference attributes this category does not have.
+Rotate angles across pins: honest review, worth it, before you buy, what to check, who it suits,
+pros and cons, first impressions, buy or skip, explained simply, buyer's guide.
+Grammar: treat the product name as a proper noun, or pair it with an article ("a", "the") when the
+sentence needs one. Never write it as a verb.
+Never invent prices, discounts, ratings, medical claims, or fake personal results.
+Do not mention AI, SEO settings, or affiliate commissions.`;
 }
 
 function makeValidate(count: number) {
-  const minAccept = count <= 4 ? count : Math.max(Math.ceil(count * 0.8), 1);
   return (raw: unknown): PinCopy[] | null => {
     if (!raw || typeof raw !== "object") return null;
     const pins = (raw as { pins?: unknown }).pins;
-    if (!Array.isArray(pins) || pins.length < minAccept) return null;
+    if (!Array.isArray(pins) || pins.length === 0) return null;
 
     const seenHeadlines = new Set<string>();
     const seenTitles = new Set<string>();
     const seenDescriptions = new Set<string>();
-    const seenKeywordSets = new Set<string>();
 
     const mapped = pins
       .slice(0, count)
@@ -154,12 +336,17 @@ function makeValidate(count: number) {
           .replace(/\s+/g, " ")
           .trim()
           .slice(0, 500);
-        const keywords = Array.isArray(p.keywords) ? p.keywords.map(String).slice(0, 8) : [];
+        const keywords = Array.isArray(p.keywords)
+          ? p.keywords
+              .map(String)
+              .map((k) => k.trim())
+              .filter((k) => k.length > 1 && !/^pin\s*\d+$/i.test(k))
+              .slice(0, 8)
+          : [];
 
         const headlineKey = normalizeCopyKey(headline);
         const titleKey = normalizeCopyKey(title);
         const descriptionKey = normalizeCopyKey(description.slice(0, 120));
-        const keywordsKey = keywordSignature(keywords);
 
         if (
           !headline ||
@@ -169,8 +356,7 @@ function makeValidate(count: number) {
           seenHeadlines.has(headlineKey) ||
           seenTitles.has(titleKey) ||
           titleKey === headlineKey ||
-          seenDescriptions.has(descriptionKey) ||
-          seenKeywordSets.has(keywordsKey)
+          seenDescriptions.has(descriptionKey)
         ) {
           return null;
         }
@@ -178,13 +364,13 @@ function makeValidate(count: number) {
         seenHeadlines.add(headlineKey);
         seenTitles.add(titleKey);
         seenDescriptions.add(descriptionKey);
-        seenKeywordSets.add(keywordsKey);
 
         return { headline, title, description, keywords };
       })
       .filter((p): p is PinCopy => Boolean(p?.headline && p?.title));
 
-    return mapped.length >= minAccept ? mapped.slice(0, count) : null;
+    // Keep any usable pin — the caller tops the batch up from category fallbacks.
+    return mapped.length > 0 ? mapped.slice(0, count) : null;
   };
 }
 
@@ -193,25 +379,24 @@ export async function generatePinCopy(
   context = "",
   count = DEFAULT_PIN_COUNT
 ): Promise<PinCopy[]> {
-  const name = cleanProductLabel(productName) || productName;
   const pinCount = clampPinCount(count);
+  const { profile, displayName, subject } = copyContext(productName, context);
+  const fallbacks = fallbackPins(productName, pinCount);
+
   try {
     const pins = await generateStructuredJSON<PinCopy[]>({
-      systemPrompt: systemPrompt(pinCount),
-      userPrompt: `Create ${pinCount} Pinterest pins promoting a review page for the product "${name}".
-Use the short product name "${name}" in headlines — do not use a long review title.
-Each pin must use a different angle, title, description, and keyword set.
-${context ? `Context:\n${context}` : ""}`,
+      systemPrompt: systemPrompt(pinCount, profile),
+      userPrompt: `Create ${pinCount} Pinterest pins for a review page about ${subject}.
+Display the product as "${displayName}" in headlines — never a long review title.
+Product category: ${profile.categoryLabel}.
+Keep the concrete details on ${profile.checks}.
+${context ? `Page context:\n${context}` : ""}`,
+      repairHint: `Return ONLY valid JSON shaped { "pins": [ { "headline": string, "title": string, "description": string, "keywords": string[] } ] } with ${pinCount} unique pins.`,
       validate: makeValidate(pinCount),
       options: { temperature: 0.75, timeoutMs: 90_000 },
     });
-    const result = pins.slice(0, pinCount);
-    if (result.length < pinCount) {
-      const fallbacks = fallbackPins(name, pinCount);
-      return fallbacks.map((fallback, idx) => result[idx] ?? fallback);
-    }
-    return result;
+    return mergePinCopy(pins, fallbacks, pinCount);
   } catch {
-    return fallbackPins(name, pinCount);
+    return fallbacks;
   }
 }

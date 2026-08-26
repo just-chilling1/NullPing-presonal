@@ -57,6 +57,8 @@ export async function resolveUniqueVaultImage(params: {
       productTokens: identity.productTokens,
       strongTokens: identity.strongTokens,
       categoryTokens: identity.categoryTokens,
+      headNoun: identity.headNoun,
+      negativeTags: identity.negativeTags,
       minRelevance: VAULT_MIN_STOCK_RELEVANCE,
       limit: 12,
     });
@@ -142,6 +144,8 @@ export async function resolveVaultHeroImage(params: {
       productTokens: identity.productTokens,
       strongTokens: identity.strongTokens,
       categoryTokens: identity.categoryTokens,
+      headNoun: identity.headNoun,
+      negativeTags: identity.negativeTags,
       minRelevance: MIN_STOCK_PRODUCT_RELEVANCE,
       limit: 8,
     });

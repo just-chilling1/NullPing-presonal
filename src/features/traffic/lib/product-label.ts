@@ -64,6 +64,37 @@ function tidyLabel(value: string): string {
   return pick.join(" ");
 }
 
+/** Kept lowercase inside a title-cased name (never in first position). */
+const MINOR_WORDS = new Set(["and", "or", "for", "the", "a", "an", "of", "in", "on", "with", "to"]);
+
+/**
+ * Human-facing product name for pin copy: "polo shirt" → "Polo Shirt",
+ * while deliberate brand casing survives ("SleepWell" stays "SleepWell").
+ */
+export function productDisplayName(raw: string): string {
+  const input = (raw || "").trim();
+  if (!input) return "";
+  const cleaned = cleanProductLabel(input) || input;
+
+  const originalByLower = new Map<string, string>();
+  for (const word of input.split(/[^A-Za-z0-9]+/)) {
+    if (!word) continue;
+    const key = word.toLowerCase();
+    if (!originalByLower.has(key)) originalByLower.set(key, word);
+  }
+
+  return cleaned
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((token, index) => {
+      const original = originalByLower.get(token.toLowerCase());
+      if (original && /[A-Z]/.test(original.slice(1))) return original;
+      if (index > 0 && MINOR_WORDS.has(token.toLowerCase())) return token.toLowerCase();
+      return token.charAt(0).toUpperCase() + token.slice(1);
+    })
+    .join(" ");
+}
+
 export function cleanProductLabel(raw: string): string {
   const input = (raw || "").trim();
   if (!input) return "";

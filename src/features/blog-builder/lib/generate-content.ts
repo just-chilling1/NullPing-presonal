@@ -49,6 +49,8 @@ export async function generateBlogPostContent(params: {
     return await generateStructuredJSON<GeneratedPostContent>({
       systemPrompt: ARTICLE_SYSTEM_PROMPT,
       userPrompt,
+      repairHint:
+        "Return ONLY valid JSON with keys title, excerpt, metaDescription, html. The html must include at least three <h2> sections and several <p> paragraphs. No markdown fences.",
       validate: (raw) => {
         if (!raw || typeof raw !== "object") return null;
         return normalizeArticleContent(
