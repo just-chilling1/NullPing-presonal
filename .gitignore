@@ -59,4 +59,5 @@ training-video-system/**/screenshots
 training-video-system/**/Audio
 training-video-system/**/audio
 training-video-system/**/remotion/out
+training-video-system/**/remotion/public/*.mp3
 training-video-system/**/*.mp4
