@@ -56,3 +56,7 @@ training-video-system/**/node_modules
 training-video-system/**/videos
 training-video-system/**/voiceovers
 training-video-system/**/screenshots
+training-video-system/**/Audio
+training-video-system/**/audio
+training-video-system/**/remotion/out
+training-video-system/**/*.mp4
