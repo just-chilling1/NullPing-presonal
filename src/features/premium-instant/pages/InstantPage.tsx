@@ -15,6 +15,7 @@ import { PremiumPageLayout } from "@/components/premium/PremiumPageLayout";
 import { PremiumVideoTutorial } from "@/components/premium/PremiumVideoTutorial";
 import { PremiumStepsSection } from "@/components/premium/PremiumStepsSection";
 import { PremiumFooter } from "@/components/premium/PremiumFooter";
+import { getPremiumFeatureThumbnail } from "@/lib/video-thumbnails";
 
 const NICHES = PREMIUM_NICHE_FILTER_LABELS;
 
@@ -153,6 +154,7 @@ export default function InstantIncomePage() {
                 iframeTitle="Instant Access Tutorial"
                 title="How to Use Instant Income"
                 description="Watch this quick tutorial to learn how to copy these Facebook posts and start making money instantly. Simple and easy!"
+                thumbnailSrc={getPremiumFeatureThumbnail("premium-social")}
             />
 
             <PremiumStepsSection

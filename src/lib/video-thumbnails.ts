@@ -1,9 +1,37 @@
 export const VIDEO_THUMBNAILS: Record<string, string> = {};
 
-export const DASHBOARD_VIDEO_THUMBNAILS = [] as const;
-export const ACADEMY_PLATFORM_THUMBNAILS = [] as const;
-export const ACADEMY_PREMIUM_THUMBNAILS = [] as const;
+export const DASHBOARD_VIDEO_THUMBNAILS = [
+  "/video-thumbnails/dashboard-01-watch-this-first.png",
+  "/video-thumbnails/dashboard-02-how-the-money-flows.png",
+  "/video-thumbnails/dashboard-03-your-5-minute-tour.png",
+] as const;
+export const ACADEMY_PLATFORM_THUMBNAILS = [
+  "/video-thumbnails/academy-04-activate-first-asset.png",
+  "/video-thumbnails/academy-05-publish-money-page.png",
+  "/video-thumbnails/academy-06-pinterest-traffic-results.png",
+] as const;
 
+export const ACADEMY_PREMIUM_THUMBNAILS = [
+  "/video-thumbnails/academy-07-unlimited.png",
+  "/video-thumbnails/academy-08-done-for-you-profit.png",
+  "/video-thumbnails/academy-09-instant-income.png",
+  "/video-thumbnails/academy-10-automated-profits.png",
+  "/video-thumbnails/academy-11-guaranteed-high-ticket-payouts.png",
+  "/video-thumbnails/academy-12-cyber-protection.png",
+  "/video-thumbnails/academy-13-reseller-license-rights.png",
+] as const;
+
+/** Premium feature pages — maps feature id to academy thumbnail (07–13). */
+export const PREMIUM_FEATURE_THUMBNAILS: Record<string, string> = {
+  "premium-accelerator": ACADEMY_PREMIUM_THUMBNAILS[0],
+  "premium-dfy-profit": ACADEMY_PREMIUM_THUMBNAILS[1],
+  "premium-social": ACADEMY_PREMIUM_THUMBNAILS[2],
+  "premium-10x": ACADEMY_PREMIUM_THUMBNAILS[2],
+  "premium-autopilot": ACADEMY_PREMIUM_THUMBNAILS[3],
+  "premium-recurring": ACADEMY_PREMIUM_THUMBNAILS[4],
+  "protector": ACADEMY_PREMIUM_THUMBNAILS[5],
+  "premium-license-rights": ACADEMY_PREMIUM_THUMBNAILS[6],
+};
 const VIMEO_ID_REGEX = /vimeo\.com\/(?:video\/)?(\d+)/;
 
 function normalizeVimeoId(videoId: string): string | null {
@@ -37,6 +65,10 @@ export function getAcademyPlatformThumbnail(index: number): string | null {
 export function getAcademyPremiumThumbnail(index: number): string | null {
   const src = ACADEMY_PREMIUM_THUMBNAILS[index];
   return src ?? null;
+}
+
+export function getPremiumFeatureThumbnail(featureId: string): string | null {
+  return PREMIUM_FEATURE_THUMBNAILS[featureId] ?? null;
 }
 
 export function resolveVideoThumbnail(

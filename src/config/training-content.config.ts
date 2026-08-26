@@ -63,7 +63,7 @@ export const trainingQuickStartChecklist = [
   "Open Results to confirm real visits and affiliate clicks",
 ] as const;
 
-/** Premium walkthrough slots — titles match NullPing Cash premium nav labels */
+/** Premium walkthrough slots — titles match NullPing Cash premium nav labels (roster 07–13) */
 export const trainingPremiumVideos: ReadonlyArray<{
   id: string;
   badge: string;
@@ -83,12 +83,12 @@ export const trainingPremiumVideos: ReadonlyArray<{
   },
   {
     id: "",
-    badge: "Guaranteed High-Ticket Payouts",
-    title: "Guaranteed High-Ticket Payouts",
+    badge: "Done-For-You Profit",
+    title: "Done-For-You Profit",
     description:
-      "Add authority article sections to your money page — CTAs use your /m tracking URL. Copy for external posts is optional.",
+      "Apply your affiliate link, pick a niche, and generate a live sales page with 3 pins, an authority article, and 3 Facebook posts.",
     duration: "5+ min",
-    feature: "premium-recurring",
+    feature: "premium-dfy-profit",
   },
   {
     id: "",
@@ -101,12 +101,39 @@ export const trainingPremiumVideos: ReadonlyArray<{
   },
   {
     id: "",
+    badge: "Automated Profits",
+    title: "Automated Profits",
+    description:
+      "Pick a live money page, filter by niche, and work through ~180 practical traffic sources with ready-made copy and tracking links.",
+    duration: "5+ min",
+    feature: "premium-autopilot",
+  },
+  {
+    id: "",
+    badge: "Guaranteed High-Ticket Payouts",
+    title: "Guaranteed High-Ticket Payouts",
+    description:
+      "Add authority article sections to your money page — CTAs use your /m tracking URL. Copy for external posts is optional.",
+    duration: "5+ min",
+    feature: "premium-recurring",
+  },
+  {
+    id: "",
     badge: "Cyber Protection",
     title: "Cyber Protection",
     description:
       "Real account status — email confirmation, session, HTTPS, and recent money-page activity. Manage license on Account.",
     duration: "2+ min",
     feature: "protector",
+  },
+  {
+    id: "",
+    badge: "Reseller & License Rights",
+    title: "Reseller & License Rights",
+    description:
+      "Request reseller activation from support — your ticket is filed as License Rights and managed from Account.",
+    duration: "5+ min",
+    feature: "premium-license-rights",
   },
 ];
 

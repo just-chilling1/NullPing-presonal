@@ -29,6 +29,7 @@ import { PremiumWorkflowShell } from "@/components/premium/PremiumWorkflowShell"
 import { LiveAssetPicker, type LiveAssetSummary } from "@/components/premium/LiveAssetPicker";
 import { GenerationProgress, GENERATION_RESULTS_ID } from "@/components/ui/generation-progress";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { getPremiumFeatureThumbnail } from "@/lib/video-thumbnails";
 import { PREMIUM_NICHE_FILTER_LABELS } from "@/lib/premium-niches";
 import { CrossPlatformGuide } from "@/features/premium-recurring/components/CrossPlatformGuide";
 import { wrapArticleWithTitle } from "@/features/blog-builder/lib/authority-article-content";
@@ -292,6 +293,7 @@ export default function RecurringStreamPage() {
         description:
           "Pick a live money page, preview an authority article with your tracking link, then add it as a section on the money page.",
         iframeTitle: "Guaranteed High-Ticket Payouts training video",
+        thumbnailSrc: getPremiumFeatureThumbnail("premium-recurring"),
       }}
       tip={
         <>

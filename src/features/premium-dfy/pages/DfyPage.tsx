@@ -12,6 +12,7 @@ import { GenerationProgress, GENERATION_RESULTS_ID } from "@/components/ui/gener
 import { PremiumPageLayout } from "@/components/premium/PremiumPageLayout";
 import { PremiumVideoTutorial } from "@/components/premium/PremiumVideoTutorial";
 import { PremiumFooter } from "@/components/premium/PremiumFooter";
+import { getPremiumFeatureThumbnail } from "@/lib/video-thumbnails";
 
 interface Post {
     id: string;
@@ -172,6 +173,7 @@ export default function DfyPage() {
                 iframeTitle="Done-For-You Tutorial"
                 title="How to Use Done-For-You"
                 description="Watch this quick tutorial to learn how to pick a keyword, add your link, and get ready-made replies you can post in minutes."
+                thumbnailSrc={getPremiumFeatureThumbnail("premium-dfy-profit")}
             />
 
             {/* Progress Steps */}

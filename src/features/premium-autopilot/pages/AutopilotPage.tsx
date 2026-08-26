@@ -10,6 +10,7 @@ import { PremiumWorkflowShell } from "@/components/premium/PremiumWorkflowShell"
 import { PremiumStepsSection } from "@/components/premium/PremiumStepsSection";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { LiveAssetPicker, type LiveAssetSummary } from "@/components/premium/LiveAssetPicker";
+import { getPremiumFeatureThumbnail } from "@/lib/video-thumbnails";
 import { SourceCard } from "@/features/premium-autopilot/components/SourceCard";
 import { SourceInstructionsOverlay } from "@/features/premium-autopilot/components/SourceInstructionsOverlay";
 import {
@@ -210,6 +211,7 @@ export default function AutomatedProfitsPage() {
         description:
           "Pick a live money page, filter by niche, follow each source’s steps, and copy the ready-made description with your tracking link.",
         iframeTitle: "Automated Profits training video",
+        thumbnailSrc: getPremiumFeatureThumbnail("premium-autopilot"),
       }}
       tip={
         <>

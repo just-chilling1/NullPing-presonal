@@ -15,6 +15,7 @@ import { PremiumVideoTutorial } from "@/components/premium/PremiumVideoTutorial"
 import { PremiumStepsSection } from "@/components/premium/PremiumStepsSection";
 import { PREMIUM_NICHE_FILTER_LABELS } from "@/lib/premium-niches";
 import { normalizeAffiliateUrl, isValidAffiliateUrl } from "@/features/blog-builder/lib/affiliate-url";
+import { getPremiumFeatureThumbnail } from "@/lib/video-thumbnails";
 import {
   TemplatePreviewOverlay,
   type VaultTemplatePreview,
@@ -285,6 +286,7 @@ export default function AcceleratorPage() {
         title="Unlimited Training"
         description="Browse ready-made money pages, apply your affiliate link, install one page, and get 10 Pinterest pins ready to post."
         iframeTitle="Unlimited training video"
+        thumbnailSrc={getPremiumFeatureThumbnail("premium-accelerator")}
       />
 
       <PremiumStepsSection

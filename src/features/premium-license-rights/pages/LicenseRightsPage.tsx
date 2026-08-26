@@ -3,6 +3,7 @@
 import { LicenseRightsPanel } from "@/features/premium-license-rights/components/LicenseRightsPanel";
 import { PremiumWorkflowShell } from "@/components/premium/PremiumWorkflowShell";
 import { brand } from "@/config/brand.config";
+import { getPremiumFeatureThumbnail } from "@/lib/video-thumbnails";
 
 /** Standalone page kept for bookmarks; Account is the primary home. */
 export default function LicenseRightsPage() {
@@ -16,6 +17,14 @@ export default function LicenseRightsPage() {
           below.
         </>
       }
+      training={{
+        vimeoId: "",
+        title: "Reseller & License Rights Training",
+        description:
+          "Learn how to request reseller activation, what support needs from you, and how to manage your license from Account.",
+        iframeTitle: "Reseller & License Rights training video",
+        thumbnailSrc: getPremiumFeatureThumbnail("premium-license-rights"),
+      }}
     >
       <LicenseRightsPanel />
     </PremiumWorkflowShell>

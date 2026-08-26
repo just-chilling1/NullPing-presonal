@@ -23,6 +23,7 @@ import { PremiumWorkflowShell } from "@/components/premium/PremiumWorkflowShell"
 import { PremiumControlCard } from "@/components/premium/PremiumControlCard";
 import { PremiumErrorAlert } from "@/components/premium/PremiumErrorAlert";
 import { PremiumStepsSection } from "@/components/premium/PremiumStepsSection";
+import { getPremiumFeatureThumbnail } from "@/lib/video-thumbnails";
 import { PremiumBestPracticesSection } from "@/components/premium/PremiumBestPracticesSection";
 import { LiveAssetPicker, type LiveAssetSummary } from "@/components/premium/LiveAssetPicker";
 import { GenerationProgress, GENERATION_RESULTS_ID } from "@/components/ui/generation-progress";
@@ -308,6 +309,7 @@ export default function SocialPayoutsPage() {
         description:
           "Watch how to turn one money page into 10+ scroll-stopping Facebook posts with different hooks and angles — then copy, paste, and post.",
         iframeTitle: "Instant Income training video",
+        thumbnailSrc: getPremiumFeatureThumbnail("premium-social"),
       }}
       tip={
         <>

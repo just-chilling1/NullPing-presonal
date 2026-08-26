@@ -8,9 +8,14 @@ import {
   trainingQuickStartChecklist,
   trainingWorkflowSteps,
 } from "@/config/training-content.config";
-import { isFeatureEnabled } from "@/config/features.config";
+import { isFeatureEnabled, type FeatureId } from "@/config/features.config";
 import { faqSections } from "@/config/faq.config";
-import { resolveVideoThumbnail, toEmbedUrl } from "@/lib/video-thumbnails";
+import {
+  getAcademyPlatformThumbnail,
+  getPremiumFeatureThumbnail,
+  resolveVideoThumbnail,
+  toEmbedUrl,
+} from "@/lib/video-thumbnails";
 import { academyCompletionKey } from "@/features/training/lib/training-completions";
 
 export type AcademyVideo = {
@@ -24,25 +29,38 @@ export type AcademyVideo = {
   completionKey: string;
 };
 
-function withThumbnailAndKey<T extends { id: string; title: string; badge?: string }>(
-  video: T,
-  kind: "platform" | "premium"
-): T & { thumbnailSrc: string | null; completionKey: string } {
+function withThumbnailAndKey<
+  T extends { id: string; title: string; badge?: string; feature?: FeatureId },
+>(video: T, kind: "platform" | "premium", index: number): T & {
+  thumbnailSrc: string | null;
+  completionKey: string;
+} {
+  const fallbackSrc =
+    kind === "platform"
+      ? getAcademyPlatformThumbnail(index)
+      : video.feature
+        ? getPremiumFeatureThumbnail(video.feature)
+        : null;
+
   return {
     ...video,
-    thumbnailSrc: resolveVideoThumbnail(video.id),
+    thumbnailSrc: resolveVideoThumbnail(video.id, fallbackSrc),
     completionKey: academyCompletionKey(kind, video),
   };
 }
 
 export function getPlatformTutorialVideos(): AcademyVideo[] {
-  return trainingContent.videos.map((video) => withThumbnailAndKey(video, "platform"));
+  return trainingContent.videos.map((video, index) =>
+    withThumbnailAndKey(video, "platform", index)
+  );
 }
 
 export function getPremiumTutorialVideos(): AcademyVideo[] {
   return trainingPremiumVideos
     .filter((video) => isFeatureEnabled(video.feature))
-    .map(({ feature: _feature, ...video }) => withThumbnailAndKey(video, "premium"));
+    .map(({ feature: _feature, ...video }, index) =>
+      withThumbnailAndKey({ ...video, feature: _feature }, "premium", index)
+    );
 }
 
 export function getTrainingStartCta(): {

@@ -4,13 +4,18 @@ import { dashboardContent } from "@/config/dashboard.config";
 import { trainingContent } from "@/config/training.config";
 import { isFeatureEnabled } from "@/config/features.config";
 import { getDashboardHowItWorksSteps } from "@/lib/dashboard-steps";
-import { toEmbedUrl } from "@/lib/video-thumbnails";
+import {
+  getDashboardVideoThumbnail,
+  resolveVideoThumbnail,
+  toEmbedUrl,
+} from "@/lib/video-thumbnails";
 
 export type DashboardVideo = {
   id: string;
   title: string;
   description: string;
   duration?: string;
+  thumbnailSrc: string | null;
 };
 
 export function getDashboardVideos(): DashboardVideo[] {
@@ -19,6 +24,7 @@ export function getDashboardVideos(): DashboardVideo[] {
     return {
       ...video,
       id,
+      thumbnailSrc: resolveVideoThumbnail(id, getDashboardVideoThumbnail(index)),
     };
   });
 }

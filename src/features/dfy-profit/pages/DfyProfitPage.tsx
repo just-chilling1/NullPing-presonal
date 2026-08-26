@@ -9,6 +9,7 @@ import { PremiumStepsSection } from "@/components/premium/PremiumStepsSection";
 import { PremiumWorkflowShell } from "@/components/premium/PremiumWorkflowShell";
 import { GenerationProgress } from "@/components/ui/generation-progress";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { getPremiumFeatureThumbnail } from "@/lib/video-thumbnails";
 import { isValidAffiliateUrl } from "@/features/blog-builder/lib/affiliate-url";
 import type { SavedFacebookPost } from "@/features/blog-builder/lib/facebook-posts-vault";
 import {
@@ -233,6 +234,7 @@ export default function DfyProfitPage() {
         description:
           "Apply your affiliate link, pick a niche, and generate a live sales page with 3 pins, an authority article, and 3 Facebook posts in one run.",
         iframeTitle: "Done-For-You Profit training video",
+        thumbnailSrc: getPremiumFeatureThumbnail("premium-dfy-profit"),
       }}
     >
       <PremiumStepsSection

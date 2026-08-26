@@ -22,6 +22,7 @@ import { PremiumWorkflowShell } from "@/components/premium/PremiumWorkflowShell"
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import { buildAuthCallbackUrl } from "@/lib/auth-redirect";
+import { getPremiumFeatureThumbnail } from "@/lib/video-thumbnails";
 import { clearCachedClientUser } from "@/lib/auth-client-cache";
 import { brand } from "@/config/brand.config";
 
@@ -241,6 +242,7 @@ export default function ProtectorPage() {
         description:
           "See what is real on this page: email confirmation, session, HTTPS, and recent money-page activity.",
         iframeTitle: "Cyber Protection training video",
+        thumbnailSrc: getPremiumFeatureThumbnail("protector"),
       }}
       tip={
         <>

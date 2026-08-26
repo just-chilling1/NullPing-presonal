@@ -12,6 +12,7 @@ export interface PremiumTrainingConfig {
   title: string;
   description: string;
   iframeTitle?: string;
+  thumbnailSrc?: string | null;
 }
 
 interface PremiumWorkflowShellProps {
@@ -44,6 +45,7 @@ export function PremiumWorkflowShell({
           title={training.title}
           description={training.description}
           iframeTitle={training.iframeTitle ?? training.title}
+          thumbnailSrc={training.thumbnailSrc}
         />
       ) : null}
 
