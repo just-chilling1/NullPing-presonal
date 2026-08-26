@@ -114,7 +114,7 @@ export async function submitLicenseRightsRequest({
       headers.Authorization = `Bearer ${session.access_token}`;
     }
 
-    // Persist server-side first
+    // Persist server-side first — pending state must survive browser clears.
     const persistRes = await fetch("/api/premium/license-rights", {
       method: "POST",
       headers,
@@ -122,6 +122,7 @@ export async function submitLicenseRightsRequest({
       body: JSON.stringify({ email, message }),
     });
     const persistData = await parseJsonResponse(persistRes);
+    const persisted = persistRes.ok && Boolean(persistData?.success);
 
     const supportRes = await fetch("/api/support", {
       method: "POST",
@@ -130,12 +131,11 @@ export async function submitLicenseRightsRequest({
       body: JSON.stringify({ email, message, subject: REQUEST_SUBJECT }),
     });
     const supportData = await parseJsonResponse(supportRes);
+    const supportSent = supportRes.ok && Boolean(supportData?.success);
 
-    if ((persistRes.ok && persistData?.success) || (supportRes.ok && supportData?.success)) {
-      return { ok: true };
-    }
-
-    if (persistRes.ok) {
+    // Prefer DB persistence. Allow support-only success only when the DB
+    // migration is not applied yet (API returns 503 setup incomplete).
+    if (persisted || (supportSent && persistRes.status === 503)) {
       return { ok: true };
     }
 

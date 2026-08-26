@@ -1,0 +1,2082 @@
+{
+ "durationSec": 722.12,
+ "slides": [
+  {
+   "type": "intro",
+   "num": "2",
+   "title": [
+    "HOW THE",
+    "MONEY FLOWS"
+   ],
+   "sub": "Where it comes from \u00b7 how you get paid",
+   "start": 0.0,
+   "end": 3.84
+  },
+  {
+   "type": "title",
+   "kicker": "BEFORE YOU TOUCH A TOOL",
+   "headline": "The Map.",
+   "sub": "How money moves \u2014 assuming you know nothing.",
+   "start": 3.84,
+   "end": 36.3
+  },
+  {
+   "type": "title",
+   "kicker": "TEN MINUTES NOW",
+   "headline": "\u201cOh \u2014 obviously.\u201d\nvs \u201cWait \u2014 what?\u201d",
+   "sub": "Ten minutes now saves ten hours of confusion later.",
+   "start": 36.3,
+   "end": 40.72
+  },
+  {
+   "type": "title",
+   "kicker": "THE WHOLE BUSINESS",
+   "headline": "One sentence.",
+   "sub": "",
+   "start": 40.72,
+   "end": 43.18
+  },
+  {
+   "type": "title",
+   "kicker": "",
+   "headline": "Send a customer.\nGet paid a cut.",
+   "sub": "That's the machine. Everything else is detail.",
+   "start": 43.18,
+   "end": 59.16
+  },
+  {
+   "type": "title",
+   "kicker": "THE MASTER ANALOGY",
+   "headline": "Board. Room.\nDoor. Fee.",
+   "sub": "Pinterest is the noticeboard. Your money page is the room.",
+   "start": 59.16,
+   "end": 133.74
+  },
+  {
+   "type": "title",
+   "kicker": "WHO PAYS & WHY",
+   "headline": "They pay for customers.\nShoppers want real pages.",
+   "sub": "You're holding the door open when they decide.",
+   "start": 133.74,
+   "end": 173.44
+  },
+  {
+   "type": "title",
+   "kicker": "WHERE NULLPING SITS",
+   "headline": "Building the room\nis where people quit.",
+   "sub": "NullPing replaces that link.",
+   "start": 173.44,
+   "end": 218.34
+  },
+  {
+   "type": "shot",
+   "img": "activate.png",
+   "caption": "Activate Asset \u2192 money page built in minutes.",
+   "start": 218.34,
+   "end": 222.7
+  },
+  {
+   "type": "shot",
+   "img": "traffic.png",
+   "caption": "Ten pins per run. Copy, download, post.",
+   "start": 222.7,
+   "end": 238.52
+  },
+  {
+   "type": "title",
+   "kicker": "JARGON SCHOOL",
+   "headline": "10 words.\n30 seconds each.",
+   "sub": "No jargon left behind.",
+   "start": 238.52,
+   "end": 250.14
+  },
+  {
+   "type": "term",
+   "n": 1,
+   "term": "Affiliate",
+   "def": "A company pays outsiders for customers \u2014 with a link that has your name in it.",
+   "analogy": "A name-tag on a customer walking into the store.",
+   "start": 250.14,
+   "end": 265.06
+  },
+  {
+   "type": "term",
+   "n": 2,
+   "term": "Money Page",
+   "def": "The review page NullPing builds, with a button to buy.",
+   "analogy": "Your little room down the corridor.",
+   "start": 265.06,
+   "end": 279.02
+  },
+  {
+   "type": "term",
+   "n": 3,
+   "term": "Activate Asset",
+   "def": "Builds your money page from a product address or name.",
+   "analogy": "Ordering a shop from a blueprint.",
+   "start": 279.02,
+   "end": 291.64
+  },
+  {
+   "type": "term",
+   "n": 4,
+   "term": "Publish",
+   "def": "Puts your page live at its own web address.",
+   "analogy": "Flipping the sign from closed to open.",
+   "start": 291.64,
+   "end": 307.34
+  },
+  {
+   "type": "term",
+   "n": 5,
+   "term": "Pin",
+   "def": "An image with title, description, and link on Pinterest.",
+   "analogy": "The flyer on the noticeboard.",
+   "start": 307.34,
+   "end": 323.64
+  },
+  {
+   "type": "term",
+   "n": 6,
+   "term": "Tracking Link",
+   "def": "Goes to your money page and records the visit.",
+   "analogy": "A stamped ticket at the door.",
+   "start": 323.64,
+   "end": 338.38
+  },
+  {
+   "type": "term",
+   "n": 7,
+   "term": "Results",
+   "def": "Visitors to your pages and clicks to the product.",
+   "analogy": "Your foot-traffic counter.",
+   "start": 338.38,
+   "end": 355.0
+  },
+  {
+   "type": "term",
+   "n": 8,
+   "term": "Niche",
+   "def": "The category you focus on \u2014 kitchen gadgets, fitness, dog stuff.",
+   "analogy": "One aisle of the supermarket you decide to own.",
+   "start": 355.0,
+   "end": 370.18
+  },
+  {
+   "type": "term",
+   "n": 9,
+   "term": "Commission",
+   "def": "The finder's fee after someone buys through your link.",
+   "analogy": "This is the actual money.",
+   "start": 370.18,
+   "end": 387.42
+  },
+  {
+   "type": "term",
+   "n": 10,
+   "term": "Premium Features",
+   "def": "Paid upgrades in the sidebar \u2014 for later.",
+   "analogy": "The back room with the power tools.",
+   "start": 387.42,
+   "end": 404.66
+  },
+  {
+   "type": "title",
+   "kicker": "THE STORY PASS",
+   "headline": "Meet Dana.",
+   "sub": "Tuesday night. Kitchen gadgets. One full loop.",
+   "start": 404.66,
+   "end": 424.18
+  },
+  {
+   "type": "shot",
+   "img": "activate.png",
+   "caption": "Activate Asset \u2192 money page ready.",
+   "start": 424.18,
+   "end": 446.8
+  },
+  {
+   "type": "shot",
+   "img": "traffic.png",
+   "caption": "Ten pins. Every one pointing back at her page.",
+   "start": 446.8,
+   "end": 470.32
+  },
+  {
+   "type": "shot",
+   "img": "results.png",
+   "caption": "Visitors. Clicks. Commission on the company side.",
+   "start": 470.32,
+   "end": 498.7
+  },
+  {
+   "type": "steps",
+   "kicker": "THE 3 DOUBTS",
+   "items": [
+    "Does this actually work?",
+    "Can I do it?",
+    "Do my circumstances allow it?"
+   ],
+   "sub": "",
+   "start": 498.7,
+   "end": 511.02
+  },
+  {
+   "type": "title",
+   "kicker": "DOES IT WORK?",
+   "headline": "NullPing didn't invent\nthis game.",
+   "sub": "It automated the part everyone quits over.",
+   "start": 511.02,
+   "end": 542.84
+  },
+  {
+   "type": "title",
+   "kicker": "CAN I DO IT?",
+   "headline": "Pick. Press.\nPublish. Post.",
+   "sub": "If you can shop online, you can do this.",
+   "start": 542.84,
+   "end": 555.18
+  },
+  {
+   "type": "title",
+   "kicker": "MY CIRCUMSTANCES?",
+   "headline": "~30 min first win.\nA few minutes after.",
+   "sub": "Five generation runs a day. Built for life alongside a job.",
+   "start": 555.18,
+   "end": 572.38
+  },
+  {
+   "type": "title",
+   "kicker": "HONEST MATH",
+   "headline": "One page.\nTen pins.",
+   "sub": "Small numbers stacked, over and over.",
+   "start": 572.38,
+   "end": 617.56
+  },
+  {
+   "type": "banner",
+   "headline": "FREE MEMBER TRAINING",
+   "sub": "Scale to $1,000 \u2013 $5,000 per day",
+   "note": "Click Here To Learn How \u2014 thirty seconds.",
+   "start": 617.56,
+   "end": 642.02
+  },
+  {
+   "type": "steps",
+   "kicker": "YOUR ORDER",
+   "items": [
+    "Your 5-Minute Tour",
+    "Activate Your First Asset",
+    "Publish Your Money Page",
+    "Pinterest Traffic & Results"
+   ],
+   "sub": "One video. Do the thing. Then the next.",
+   "start": 642.02,
+   "end": 687.14
+  },
+  {
+   "type": "shot",
+   "img": "activate.png",
+   "caption": "Tonight: Activate \u2192 Publish. One live page.",
+   "start": 687.14,
+   "end": 707.12
+  },
+  {
+   "type": "title",
+   "kicker": "YOU'RE AN OPERATOR NOW",
+   "headline": "You're not a buyer.\nYou're an operator.",
+   "sub": "You know who pays. You know what every word means.",
+   "start": 707.12,
+   "end": 717.24
+  },
+  {
+   "type": "end",
+   "headline": "Let's get that door open.",
+   "sub": "I'll see you in the tour.",
+   "start": 717.24,
+   "end": 721.62
+  }
+ ],
+ "captions": [
+  {
+   "s": 0.0,
+   "e": 0.68,
+   "text": "Welcome back."
+  },
+  {
+   "s": 1.1,
+   "e": 4.32,
+   "text": "Before you touch a single button in here, I want"
+  },
+  {
+   "s": 4.32,
+   "e": 7.08,
+   "text": "to hand you one thing, the thing the training assumes"
+  },
+  {
+   "s": 7.08,
+   "e": 8.92,
+   "text": "you already have, the map."
+  },
+  {
+   "s": 9.24,
+   "e": 11.4,
+   "text": "Over the next 10 minutes, I'm going to show you"
+  },
+  {
+   "s": 11.4,
+   "e": 14.0,
+   "text": "three things, where the money in this business"
+  },
+  {
+   "s": 14.0,
+   "e": 17.44,
+   "text": "actually comes from, where null ping cash sits"
+  },
+  {
+   "s": 17.44,
+   "e": 20.44,
+   "text": "inside that, and what every strange word you're"
+  },
+  {
+   "s": 20.44,
+   "e": 23.86,
+   "text": "about to bump into actually means in plain English,"
+  },
+  {
+   "s": 24.34,
+   "e": 25.62,
+   "text": "assuming you know nothing."
+  },
+  {
+   "s": 25.88,
+   "e": 27.64,
+   "text": "That's the only fair way to do this."
+  },
+  {
+   "s": 27.9,
+   "e": 30.18,
+   "text": "People who watch this open the training and go,"
+  },
+  {
+   "s": 30.78,
+   "e": 31.72,
+   "text": "oh, obviously."
+  },
+  {
+   "s": 32.1,
+   "e": 35.22,
+   "text": "People who skip it open the training and go, wait,"
+  },
+  {
+   "s": 35.4,
+   "e": 35.78,
+   "text": "what?"
+  },
+  {
+   "s": 36.3,
+   "e": 39.12,
+   "text": "10 minutes now saves you about 10 hours of confusion"
+  },
+  {
+   "s": 39.12,
+   "e": 39.48,
+   "text": "later."
+  },
+  {
+   "s": 39.76,
+   "e": 40.36,
+   "text": "Let's go."
+  },
+  {
+   "s": 40.72,
+   "e": 42.94,
+   "text": "Here's the whole business in one sentence."
+  },
+  {
+   "s": 43.18,
+   "e": 45.6,
+   "text": "Companies will pay you a cut of the sale every"
+  },
+  {
+   "s": 45.6,
+   "e": 47.5,
+   "text": "time you send them a customer who buys."
+  },
+  {
+   "s": 47.78,
+   "e": 50.36,
+   "text": "Your job is to put something in front of shoppers"
+  },
+  {
+   "s": 50.36,
+   "e": 51.28,
+   "text": "that sends them over."
+  },
+  {
+   "s": 51.56,
+   "e": 52.1,
+   "text": "That's it."
+  },
+  {
+   "s": 52.28,
+   "e": 53.12,
+   "text": "That's the machine."
+  },
+  {
+   "s": 53.58,
+   "e": 56.92,
+   "text": "Every word, every button, just detail hanging off"
+  },
+  {
+   "s": 56.92,
+   "e": 57.58,
+   "text": "that sentence."
+  },
+  {
+   "s": 57.8,
+   "e": 59.4,
+   "text": "Here's a picture to hang that on."
+  },
+  {
+   "s": 59.96,
+   "e": 62.32,
+   "text": "Imagine a massive shopping center."
+  },
+  {
+   "s": 62.58,
+   "e": 65.16,
+   "text": "Right by the doors, a giant notice board."
+  },
+  {
+   "s": 65.6,
+   "e": 67.48,
+   "text": "Thousands of people browse it every hour."
+  },
+  {
+   "s": 67.94,
+   "e": 69.22,
+   "text": "Anybody can pin a flyer."
+  },
+  {
+   "s": 69.62,
+   "e": 71.22,
+   "text": "Your flyer doesn't sell anything."
+  },
+  {
+   "s": 71.5,
+   "e": 73.98,
+   "text": "It points down the corridor to a little room you've"
+  },
+  {
+   "s": 73.98,
+   "e": 74.38,
+   "text": "set up."
+  },
+  {
+   "s": 74.72,
+   "e": 75.54,
+   "text": "One product."
+  },
+  {
+   "s": 75.82,
+   "e": 77.7,
+   "text": "A card explaining why it's good."
+  },
+  {
+   "s": 78.08,
+   "e": 80.44,
+   "text": "A door at the back into the actual store."
+  },
+  {
+   "s": 80.92,
+   "e": 82.94,
+   "text": "Everybody who walks through your door has your"
+  },
+  {
+   "s": 82.94,
+   "e": 83.6,
+   "text": "name on them."
+  },
+  {
+   "s": 83.82,
+   "e": 86.36,
+   "text": "When they buy, the store pays you a finder's fee."
+  },
+  {
+   "s": 87.88,
+   "e": 90.38,
+   "text": "Board, room, door, fee."
+  },
+  {
+   "s": 90.84,
+   "e": 91.8,
+   "text": "Hold on to that."
+  },
+  {
+   "s": 92.26,
+   "e": 94.82,
+   "text": "Everything from here is one of those four things."
+  },
+  {
+   "s": 95.02,
+   "e": 97.08,
+   "text": "Let's put real names on that picture."
+  },
+  {
+   "s": 97.4,
+   "e": 99.9,
+   "text": "I don't want this to feel like magic."
+  },
+  {
+   "s": 100.06,
+   "e": 103.78,
+   "text": "Magic makes people nervous and nervous people quit."
+  },
+  {
+   "s": 104.22,
+   "e": 105.64,
+   "text": "Start with who's paying."
+  },
+  {
+   "s": 106.14,
+   "e": 109.2,
+   "text": "Almost every company selling anything online will"
+  },
+  {
+   "s": 109.2,
+   "e": 111.76,
+   "text": "pay outsiders a cut for bringing them customers."
+  },
+  {
+   "s": 112.12,
+   "e": 115.02,
+   "text": "They do it because it's the safest money they spend"
+  },
+  {
+   "s": 115.02,
+   "e": 115.58,
+   "text": "all year."
+  },
+  {
+   "s": 115.96,
+   "e": 119.96,
+   "text": "A company can pour $10 ,000 into advertising and"
+  },
+  {
+   "s": 119.96,
+   "e": 121.0,
+   "text": "get nothing back."
+  },
+  {
+   "s": 121.22,
+   "e": 124.22,
+   "text": "But paying you a slice of a sale that already happened?"
+  },
+  {
+   "s": 124.44,
+   "e": 127.0,
+   "text": "That costs them nothing until they've already been"
+  },
+  {
+   "s": 127.0,
+   "e": 127.36,
+   "text": "paid."
+  },
+  {
+   "s": 127.9,
+   "e": 129.52,
+   "text": "Nobody's doing you a favor here."
+  },
+  {
+   "s": 129.7,
+   "e": 131.36,
+   "text": "This is their favorite kind of deal."
+  },
+  {
+   "s": 132.6,
+   "e": 133.56,
+   "text": "Next question."
+  },
+  {
+   "s": 133.74,
+   "e": 135.8,
+   "text": "Why would a shopper listen to a stranger?"
+  },
+  {
+   "s": 136.04,
+   "e": 138.02,
+   "text": "Because that's already how people shop?"
+  },
+  {
+   "s": 138.36,
+   "e": 141.04,
+   "text": "Nobody buys a gadget straight off the advert anymore."
+  },
+  {
+   "s": 141.34,
+   "e": 143.64,
+   "text": "They go looking for a real page where somebody"
+  },
+  {
+   "s": 143.64,
+   "e": 145.64,
+   "text": "talks about the thing like a human being."
+  },
+  {
+   "s": 146.04,
+   "e": 146.92,
+   "text": "What it does."
+  },
+  {
+   "s": 147.14,
+   "e": 148.0,
+   "text": "Who it's for."
+  },
+  {
+   "s": 148.22,
+   "e": 149.54,
+   "text": "What's annoying about it."
+  },
+  {
+   "s": 149.88,
+   "e": 151.36,
+   "text": "That page you're about to build?"
+  },
+  {
+   "s": 151.54,
+   "e": 153.94,
+   "text": "That's the page they were already searching for."
+  },
+  {
+   "s": 154.26,
+   "e": 155.7,
+   "text": "And then the quiet one."
+  },
+  {
+   "s": 156.02,
+   "e": 157.44,
+   "text": "Why would anybody pick me?"
+  },
+  {
+   "s": 158.06,
+   "e": 158.94,
+   "text": "Honest answer."
+  },
+  {
+   "s": 159.12,
+   "e": 160.38,
+   "text": "They're not picking you."
+  },
+  {
+   "s": 160.56,
+   "e": 161.7,
+   "text": "They're picking the product."
+  },
+  {
+   "s": 162.0,
+   "e": 164.26,
+   "text": "You just have to be the one holding the door open"
+  },
+  {
+   "s": 164.26,
+   "e": 164.98,
+   "text": "when they decide."
+  },
+  {
+   "s": 165.46,
+   "e": 166.7,
+   "text": "That's the whole competition."
+  },
+  {
+   "s": 167.04,
+   "e": 168.54,
+   "text": "The demand is already there."
+  },
+  {
+   "s": 169.04,
+   "e": 171.0,
+   "text": "Thousands of people are standing at that notice"
+  },
+  {
+   "s": 171.0,
+   "e": 173.24,
+   "text": "board right now whether you show up or not."
+  },
+  {
+   "s": 173.44,
+   "e": 176.54,
+   "text": "So where does null ping cash actually sit in all"
+  },
+  {
+   "s": 176.54,
+   "e": 176.8,
+   "text": "that?"
+  },
+  {
+   "s": 177.04,
+   "e": 179.1,
+   "text": "It automates stuff is not an answer."
+  },
+  {
+   "s": 179.28,
+   "e": 180.5,
+   "text": "You deserve a real one."
+  },
+  {
+   "s": 180.82,
+   "e": 182.42,
+   "text": "Go back to the room down the corridor."
+  },
+  {
+   "s": 182.82,
+   "e": 185.16,
+   "text": "Building that room by hand is where almost everybody"
+  },
+  {
+   "s": 185.16,
+   "e": 185.7,
+   "text": "quits."
+  },
+  {
+   "s": 185.9,
+   "e": 186.82,
+   "text": "You need a website."
+  },
+  {
+   "s": 187.16,
+   "e": 187.98,
+   "text": "You need to write it."
+  },
+  {
+   "s": 187.98,
+   "e": 190.66,
+   "text": "Convincingly in a voice strangers trust."
+  },
+  {
+   "s": 190.98,
+   "e": 193.3,
+   "text": "You need it to look like a real business made it."
+  },
+  {
+   "s": 193.58,
+   "e": 196.0,
+   "text": "Not somebody with a free template and a bad afternoon."
+  },
+  {
+   "s": 196.66,
+   "e": 198.22,
+   "text": "Then you need flyers for the board."
+  },
+  {
+   "s": 198.54,
+   "e": 199.14,
+   "text": "Good ones."
+  },
+  {
+   "s": 199.48,
+   "e": 199.98,
+   "text": "Ten of them."
+  },
+  {
+   "s": 200.32,
+   "e": 202.44,
+   "text": "With headlines that make somebody stop scrolling."
+  },
+  {
+   "s": 202.72,
+   "e": 203.72,
+   "text": "Done by hand."
+  },
+  {
+   "s": 204.16,
+   "e": 205.36,
+   "text": "All of that is a weekend."
+  },
+  {
+   "s": 205.68,
+   "e": 206.4,
+   "text": "Per product."
+  },
+  {
+   "s": 206.72,
+   "e": 208.32,
+   "text": "I have lost those weekends."
+  },
+  {
+   "s": 208.88,
+   "e": 210.86,
+   "text": "Most people lose exactly one."
+  },
+  {
+   "s": 211.04,
+   "e": 212.68,
+   "text": "Then they never do it a second time."
+  },
+  {
+   "s": 213.18,
+   "e": 216.2,
+   "text": "That is the exact link null ping cash replaces."
+  },
+  {
+   "s": 216.54,
+   "e": 217.64,
+   "text": "You give it a product."
+  },
+  {
+   "s": 217.64,
+   "e": 219.54,
+   "text": "A web address or just the name."
+  },
+  {
+   "s": 219.88,
+   "e": 222.28,
+   "text": "It writes and builds the room for you."
+  },
+  {
+   "s": 222.7,
+   "e": 223.98,
+   "text": "Then it makes your flyers."
+  },
+  {
+   "s": 224.16,
+   "e": 224.94,
+   "text": "Ten at a time."
+  },
+  {
+   "s": 225.22,
+   "e": 227.12,
+   "text": "Titles and descriptions already done."
+  },
+  {
+   "s": 227.38,
+   "e": 228.86,
+   "text": "You didn't buy a money machine."
+  },
+  {
+   "s": 229.04,
+   "e": 231.42,
+   "text": "You bought the part of the job everybody quits"
+  },
+  {
+   "s": 231.42,
+   "e": 231.72,
+   "text": "over."
+  },
+  {
+   "s": 232.08,
+   "e": 234.56,
+   "text": "What's left for you is picking a product, putting"
+  },
+  {
+   "s": 234.56,
+   "e": 236.42,
+   "text": "the page live, and posting the pictures."
+  },
+  {
+   "s": 236.8,
+   "e": 238.3,
+   "text": "Those three you can do tonight."
+  },
+  {
+   "s": 238.52,
+   "e": 238.88,
+   "text": "Right."
+  },
+  {
+   "s": 239.14,
+   "e": 240.84,
+   "text": "Let's learn the local language."
+  },
+  {
+   "s": 241.0,
+   "e": 243.64,
+   "text": "The app and the training use about ten words that"
+  },
+  {
+   "s": 243.64,
+   "e": 246.46,
+   "text": "sound intimidating and mean very simple things."
+  },
+  {
+   "s": 246.62,
+   "e": 247.8,
+   "text": "A few seconds each."
+  },
+  {
+   "s": 248.04,
+   "e": 249.62,
+   "text": "No jargon left behind."
+  },
+  {
+   "s": 250.14,
+   "e": 250.64,
+   "text": "First one."
+  },
+  {
+   "s": 251.0,
+   "e": 251.56,
+   "text": "Affiliate."
+  },
+  {
+   "s": 251.9,
+   "e": 254.74,
+   "text": "A company agrees to pay outsiders for customers"
+  },
+  {
+   "s": 254.74,
+   "e": 256.94,
+   "text": "and hands you a link with your name in it."
+  },
+  {
+   "s": 257.06,
+   "e": 259.44,
+   "text": "Like a name tag on a customer walking into the"
+  },
+  {
+   "s": 259.44,
+   "e": 259.74,
+   "text": "store."
+  },
+  {
+   "s": 259.74,
+   "e": 261.02,
+   "text": "Why you care?"
+  },
+  {
+   "s": 261.24,
+   "e": 262.52,
+   "text": "No affiliate link."
+  },
+  {
+   "s": 262.68,
+   "e": 264.5,
+   "text": "No way for anybody to pay you."
+  },
+  {
+   "s": 265.06,
+   "e": 266.78,
+   "text": "Next, your money page."
+  },
+  {
+   "s": 267.06,
+   "e": 270.1,
+   "text": "That's the review page null ping builds you with"
+  },
+  {
+   "s": 270.1,
+   "e": 271.94,
+   "text": "a button that sends people over to buy."
+  },
+  {
+   "s": 272.16,
+   "e": 273.94,
+   "text": "Your little room down the corridor."
+  },
+  {
+   "s": 274.4,
+   "e": 275.22,
+   "text": "Why you care?"
+  },
+  {
+   "s": 275.56,
+   "e": 278.02,
+   "text": "This is the page that sends shoppers through the"
+  },
+  {
+   "s": 278.02,
+   "e": 278.28,
+   "text": "door."
+  },
+  {
+   "s": 279.02,
+   "e": 280.84,
+   "text": "Next, activate asset."
+  },
+  {
+   "s": 281.26,
+   "e": 283.64,
+   "text": "That's the button that builds your money page from"
+  },
+  {
+   "s": 283.64,
+   "e": 285.2,
+   "text": "a product address or a name."
+  },
+  {
+   "s": 285.44,
+   "e": 287.28,
+   "text": "Like ordering a shop from a blueprint."
+  },
+  {
+   "s": 287.6,
+   "e": 288.68,
+   "text": "Why you care?"
+  },
+  {
+   "s": 288.9,
+   "e": 291.06,
+   "text": "It turns an idea into a page."
+  },
+  {
+   "s": 291.64,
+   "e": 292.72,
+   "text": "Next, publish."
+  },
+  {
+   "s": 293.24,
+   "e": 295.7,
+   "text": "Publishing puts that page live on the internet"
+  },
+  {
+   "s": 295.7,
+   "e": 297.02,
+   "text": "at its own web address."
+  },
+  {
+   "s": 297.48,
+   "e": 299.84,
+   "text": "It's flipping the sign on the door from closed"
+  },
+  {
+   "s": 299.84,
+   "e": 300.54,
+   "text": "to open."
+  },
+  {
+   "s": 300.76,
+   "e": 301.9,
+   "text": "Why you care?"
+  },
+  {
+   "s": 302.22,
+   "e": 303.32,
+   "text": "Really hear this one."
+  },
+  {
+   "s": 303.52,
+   "e": 306.1,
+   "text": "An unpublished page gets zero visitors."
+  },
+  {
+   "s": 306.44,
+   "e": 306.82,
+   "text": "Ever."
+  },
+  {
+   "s": 307.34,
+   "e": 308.86,
+   "text": "Next, a pin."
+  },
+  {
+   "s": 309.32,
+   "e": 312.34,
+   "text": "On Pinterest, a pin is an image with a title, a"
+  },
+  {
+   "s": 312.34,
+   "e": 313.86,
+   "text": "description, and a link attached."
+  },
+  {
+   "s": 314.3,
+   "e": 316.14,
+   "text": "It's the flyer on the notice board."
+  },
+  {
+   "s": 316.56,
+   "e": 317.42,
+   "text": "Why you care?"
+  },
+  {
+   "s": 317.72,
+   "e": 320.36,
+   "text": "Pins are how nearly all your traffic starts."
+  },
+  {
+   "s": 320.6,
+   "e": 322.86,
+   "text": "And null ping hands you 10 at a time."
+  },
+  {
+   "s": 323.64,
+   "e": 325.34,
+   "text": "Next, a tracking link."
+  },
+  {
+   "s": 325.68,
+   "e": 327.26,
+   "text": "That's the link inside your pin."
+  },
+  {
+   "s": 327.5,
+   "e": 329.94,
+   "text": "It goes to your money page and it records that"
+  },
+  {
+   "s": 329.94,
+   "e": 330.86,
+   "text": "somebody came through."
+  },
+  {
+   "s": 331.2,
+   "e": 332.82,
+   "text": "A stamped ticket at the door."
+  },
+  {
+   "s": 333.44,
+   "e": 334.22,
+   "text": "Why you care?"
+  },
+  {
+   "s": 334.66,
+   "e": 337.22,
+   "text": "Without it, people could visit all day and you'd"
+  },
+  {
+   "s": 337.22,
+   "e": 337.74,
+   "text": "never know."
+  },
+  {
+   "s": 338.38,
+   "e": 339.78,
+   "text": "Next, results."
+  },
+  {
+   "s": 340.32,
+   "e": 343.2,
+   "text": "That's the page inside the app showing two honest"
+  },
+  {
+   "s": 343.2,
+   "e": 343.58,
+   "text": "numbers."
+  },
+  {
+   "s": 343.84,
+   "e": 346.66,
+   "text": "How many people visited your pages and how many"
+  },
+  {
+   "s": 346.66,
+   "e": 347.98,
+   "text": "clicked through to the product."
+  },
+  {
+   "s": 348.16,
+   "e": 349.5,
+   "text": "Your foot traffic counter."
+  },
+  {
+   "s": 349.78,
+   "e": 350.86,
+   "text": "Why you care?"
+  },
+  {
+   "s": 351.1,
+   "e": 354.02,
+   "text": "It tells you which pins are pulling so you stop"
+  },
+  {
+   "s": 354.02,
+   "e": 354.42,
+   "text": "guessing."
+  },
+  {
+   "s": 355.0,
+   "e": 356.54,
+   "text": "Next, your niche."
+  },
+  {
+   "s": 357.0,
+   "e": 359.34,
+   "text": "That's just the category you decide to work in."
+  },
+  {
+   "s": 359.68,
+   "e": 362.2,
+   "text": "Kitchen gadgets, home fitness, dog stuff."
+  },
+  {
+   "s": 362.58,
+   "e": 365.26,
+   "text": "One aisle of the supermarket you decide to own."
+  },
+  {
+   "s": 365.62,
+   "e": 366.6,
+   "text": "Why you care?"
+  },
+  {
+   "s": 366.96,
+   "e": 369.78,
+   "text": "Pick one and your pages and pins get sharper."
+  },
+  {
+   "s": 370.18,
+   "e": 371.76,
+   "text": "Next, commission."
+  },
+  {
+   "s": 372.08,
+   "e": 374.72,
+   "text": "That's the money the company pays you after somebody"
+  },
+  {
+   "s": 374.72,
+   "e": 375.88,
+   "text": "buys through your link."
+  },
+  {
+   "s": 376.02,
+   "e": 377.28,
+   "text": "The finder's fee."
+  },
+  {
+   "s": 377.64,
+   "e": 378.52,
+   "text": "Why you care?"
+  },
+  {
+   "s": 378.72,
+   "e": 381.66,
+   "text": "That money arrives in the company's system, not"
+  },
+  {
+   "s": 381.66,
+   "e": 382.68,
+   "text": "inside null ping."
+  },
+  {
+   "s": 383.26,
+   "e": 385.3,
+   "text": "Results counts visitors and clicks."
+  },
+  {
+   "s": 385.62,
+   "e": 387.02,
+   "text": "The company counts sales."
+  },
+  {
+   "s": 387.42,
+   "e": 389.86,
+   "text": "And the last one, premium features."
+  },
+  {
+   "s": 390.3,
+   "e": 393.12,
+   "text": "That's the sidebar section with the paid upgrades."
+  },
+  {
+   "s": 393.38,
+   "e": 396.78,
+   "text": "Extra templates, done -for -you kits, ready -made"
+  },
+  {
+   "s": 396.78,
+   "e": 397.32,
+   "text": "posts."
+  },
+  {
+   "s": 397.58,
+   "e": 399.64,
+   "text": "The back room with the power tools."
+  },
+  {
+   "s": 400.18,
+   "e": 401.1,
+   "text": "Why you care."
+  },
+  {
+   "s": 401.64,
+   "e": 402.26,
+   "text": "There for later."
+  },
+  {
+   "s": 402.66,
+   "e": 404.38,
+   "text": "One live page first."
+  },
+  {
+   "s": 404.66,
+   "e": 407.14,
+   "text": "Let's watch every one of those words do its job."
+  },
+  {
+   "s": 407.32,
+   "e": 407.84,
+   "text": "Once."
+  },
+  {
+   "s": 408.4,
+   "e": 410.9,
+   "text": "Start to finish on one real person."
+  },
+  {
+   "s": 411.18,
+   "e": 412.28,
+   "text": "Let's call her Dana."
+  },
+  {
+   "s": 412.72,
+   "e": 415.1,
+   "text": "Dana picks her niche on a Tuesday night."
+  },
+  {
+   "s": 415.3,
+   "e": 416.2,
+   "text": "Kitchen gadgets."
+  },
+  {
+   "s": 416.58,
+   "e": 417.9,
+   "text": "Nothing clever behind it."
+  },
+  {
+   "s": 418.0,
+   "e": 418.8,
+   "text": "She just likes them."
+  },
+  {
+   "s": 419.02,
+   "e": 421.8,
+   "text": "She joins the program for a blender she already"
+  },
+  {
+   "s": 421.8,
+   "e": 424.0,
+   "text": "owns and they hand her an affiliate link."
+  },
+  {
+   "s": 424.18,
+   "e": 426.38,
+   "text": "She opens null ping cash."
+  },
+  {
+   "s": 426.56,
+   "e": 428.3,
+   "text": "She clicks activate asset."
+  },
+  {
+   "s": 428.54,
+   "e": 431.18,
+   "text": "She pastes that link in with the product address."
+  },
+  {
+   "s": 431.52,
+   "e": 434.02,
+   "text": "A few minutes later, she's got a money page."
+  },
+  {
+   "s": 434.18,
+   "e": 435.84,
+   "text": "A full review of that blender."
+  },
+  {
+   "s": 436.22,
+   "e": 438.18,
+   "text": "Button already wired to her link."
+  },
+  {
+   "s": 438.62,
+   "e": 441.14,
+   "text": "She tweaks one line so it sounds more like her"
+  },
+  {
+   "s": 441.14,
+   "e": 441.96,
+   "text": "and hits publish."
+  },
+  {
+   "s": 442.5,
+   "e": 444.96,
+   "text": "Now the page is live at its own web address."
+  },
+  {
+   "s": 445.26,
+   "e": 446.56,
+   "text": "The sign says open."
+  },
+  {
+   "s": 446.8,
+   "e": 449.56,
+   "text": "Then she goes to generate traffic and it hands"
+  },
+  {
+   "s": 449.56,
+   "e": 450.56,
+   "text": "her ten pins."
+  },
+  {
+   "s": 450.8,
+   "e": 451.5,
+   "text": "Ten images."
+  },
+  {
+   "s": 451.88,
+   "e": 452.68,
+   "text": "Ten titles."
+  },
+  {
+   "s": 453.14,
+   "e": 453.9,
+   "text": "Ten descriptions."
+  },
+  {
+   "s": 454.36,
+   "e": 456.9,
+   "text": "Every one of them carrying a tracking link pointed"
+  },
+  {
+   "s": 456.9,
+   "e": 457.92,
+   "text": "back at her page."
+  },
+  {
+   "s": 458.14,
+   "e": 460.82,
+   "text": "She downloads them and posts them on Pinterest"
+  },
+  {
+   "s": 460.82,
+   "e": 461.44,
+   "text": "herself."
+  },
+  {
+   "s": 461.8,
+   "e": 463.04,
+   "text": "Fifteen minutes tops."
+  },
+  {
+   "s": 463.52,
+   "e": 465.48,
+   "text": "And then nothing happens."
+  },
+  {
+   "s": 465.88,
+   "e": 467.6,
+   "text": "For a couple of days, nothing."
+  },
+  {
+   "s": 467.82,
+   "e": 468.5,
+   "text": "Which is normal."
+  },
+  {
+   "s": 468.64,
+   "e": 469.78,
+   "text": "Pinterest takes its time."
+  },
+  {
+   "s": 470.32,
+   "e": 473.36,
+   "text": "Then Saturday morning she opens results and there"
+  },
+  {
+   "s": 473.36,
+   "e": 473.78,
+   "text": "it is."
+  },
+  {
+   "s": 473.92,
+   "e": 474.5,
+   "text": "Visitors."
+  },
+  {
+   "s": 474.82,
+   "e": 476.7,
+   "text": "Real people found her page."
+  },
+  {
+   "s": 477.04,
+   "e": 479.26,
+   "text": "A handful clicked the button through to the blender."
+  },
+  {
+   "s": 479.48,
+   "e": 481.68,
+   "text": "And whoever buys, that's her commission."
+  },
+  {
+   "s": 481.92,
+   "e": 484.54,
+   "text": "Paid by the company over on the company's side."
+  },
+  {
+   "s": 484.84,
+   "e": 486.94,
+   "text": "She doesn't touch premium features yet."
+  },
+  {
+   "s": 487.12,
+   "e": 488.7,
+   "text": "One live page first."
+  },
+  {
+   "s": 489.86,
+   "e": 490.96,
+   "text": "That's one loop."
+  },
+  {
+   "s": 491.12,
+   "e": 493.6,
+   "text": "Page, pins, visitors, clicks."
+  },
+  {
+   "s": 494.0,
+   "e": 496.32,
+   "text": "The training just teaches you to run that loop"
+  },
+  {
+   "s": 496.32,
+   "e": 498.54,
+   "text": "again and a little better each time."
+  },
+  {
+   "s": 498.7,
+   "e": 499.68,
+   "text": "Now three doubts."
+  },
+  {
+   "s": 500.12,
+   "e": 502.04,
+   "text": "You've got all three of them right now."
+  },
+  {
+   "s": 502.3,
+   "e": 502.9,
+   "text": "Everybody does."
+  },
+  {
+   "s": 503.22,
+   "e": 505.08,
+   "text": "First one's about the model itself."
+  },
+  {
+   "s": 505.4,
+   "e": 507.08,
+   "text": "Does this actually work?"
+  },
+  {
+   "s": 507.28,
+   "e": 510.46,
+   "text": "This isn't some idea somebody invented last year."
+  },
+  {
+   "s": 511.02,
+   "e": 514.4,
+   "text": "Companies have paid outsiders to bring them customers"
+  },
+  {
+   "s": 514.4,
+   "e": 516.7,
+   "text": "for as long as shops have existed."
+  },
+  {
+   "s": 517.02,
+   "e": 519.44,
+   "text": "The only new part is the notice board."
+  },
+  {
+   "s": 519.6,
+   "e": 520.72,
+   "text": "It's a website now."
+  },
+  {
+   "s": 521.14,
+   "e": 523.56,
+   "text": "Hundreds of millions of people standing at it."
+  },
+  {
+   "s": 524.1,
+   "e": 525.44,
+   "text": "Second, the loud one."
+  },
+  {
+   "s": 525.94,
+   "e": 527.06,
+   "text": "Can I do it?"
+  },
+  {
+   "s": 527.3,
+   "e": 529.24,
+   "text": "Here's what's been taken off your plate."
+  },
+  {
+   "s": 529.44,
+   "e": 530.62,
+   "text": "You don't have to write."
+  },
+  {
+   "s": 530.84,
+   "e": 532.12,
+   "text": "You don't have to design."
+  },
+  {
+   "s": 532.44,
+   "e": 535.04,
+   "text": "You don't have to build a website, buy a domain,"
+  },
+  {
+   "s": 535.12,
+   "e": 537.4,
+   "text": "or ever find out what hosting means."
+  },
+  {
+   "s": 537.7,
+   "e": 540.56,
+   "text": "The parts that used to need real skill are the"
+  },
+  {
+   "s": 540.56,
+   "e": 542.58,
+   "text": "exact parts the machine does now."
+  },
+  {
+   "s": 542.84,
+   "e": 546.3,
+   "text": "What's left is picking a product and pressing buttons"
+  },
+  {
+   "s": 546.3,
+   "e": 546.88,
+   "text": "in order."
+  },
+  {
+   "s": 547.26,
+   "e": 549.9,
+   "text": "If you can shop online, you can do this."
+  },
+  {
+   "s": 550.5,
+   "e": 553.64,
+   "text": "And third, do my circumstances allow it?"
+  },
+  {
+   "s": 554.04,
+   "e": 555.02,
+   "text": "Honest answer."
+  },
+  {
+   "s": 555.18,
+   "e": 558.38,
+   "text": "Your first page and it's 10 pins is one sitting."
+  },
+  {
+   "s": 558.82,
+   "e": 559.7,
+   "text": "Call it half an hour."
+  },
+  {
+   "s": 560.24,
+   "e": 562.0,
+   "text": "After that, it's a few minutes a day."
+  },
+  {
+   "s": 562.14,
+   "e": 564.48,
+   "text": "And you get five generation runs a day."
+  },
+  {
+   "s": 564.62,
+   "e": 567.1,
+   "text": "So there's a natural stopping point built in."
+  },
+  {
+   "s": 567.28,
+   "e": 570.78,
+   "text": "This is designed to run alongside a job and a life,"
+  },
+  {
+   "s": 571.12,
+   "e": 572.24,
+   "text": "not instead of one."
+  },
+  {
+   "s": 572.38,
+   "e": 573.94,
+   "text": "Let's do honest math."
+  },
+  {
+   "s": 574.12,
+   "e": 577.06,
+   "text": "Small numbers, because small numbers are the only"
+  },
+  {
+   "s": 577.06,
+   "e": 578.16,
+   "text": "ones worth trusting."
+  },
+  {
+   "s": 578.54,
+   "e": 580.56,
+   "text": "One page, 10 pins."
+  },
+  {
+   "s": 581.06,
+   "e": 583.56,
+   "text": "Say a handful of people find those pins in the"
+  },
+  {
+   "s": 583.56,
+   "e": 585.52,
+   "text": "first week and click through to your page."
+  },
+  {
+   "s": 585.74,
+   "e": 587.5,
+   "text": "Some press the button to the product."
+  },
+  {
+   "s": 587.72,
+   "e": 588.68,
+   "text": "Some of those buy."
+  },
+  {
+   "s": 588.96,
+   "e": 591.48,
+   "text": "What the commission is depends on what you're promoting."
+  },
+  {
+   "s": 591.86,
+   "e": 593.46,
+   "text": "Some products pay a few dollars."
+  },
+  {
+   "s": 593.78,
+   "e": 595.26,
+   "text": "Some pay a great deal more."
+  },
+  {
+   "s": 595.42,
+   "e": 597.16,
+   "text": "But here's the part that matters."
+  },
+  {
+   "s": 597.42,
+   "e": 598.88,
+   "text": "That's one page."
+  },
+  {
+   "s": 599.06,
+   "e": 601.48,
+   "text": "And you get five generation runs a day."
+  },
+  {
+   "s": 601.82,
+   "e": 604.38,
+   "text": "So next week, there's a second page and 10 more"
+  },
+  {
+   "s": 604.38,
+   "e": 604.76,
+   "text": "pins."
+  },
+  {
+   "s": 605.06,
+   "e": 606.44,
+   "text": "The week after, a third."
+  },
+  {
+   "s": 606.68,
+   "e": 609.14,
+   "text": "And nothing you build ever switches off."
+  },
+  {
+   "s": 609.4,
+   "e": 611.8,
+   "text": "Old pins keep getting found months later."
+  },
+  {
+   "s": 612.02,
+   "e": 615.06,
+   "text": "Small numbers stacked over and over."
+  },
+  {
+   "s": 615.3,
+   "e": 618.76,
+   "text": "Oh, and while we're on stacking, on your home screen"
+  },
+  {
+   "s": 618.76,
+   "e": 621.62,
+   "text": "in between those start here videos, there's a gold"
+  },
+  {
+   "s": 621.62,
+   "e": 623.6,
+   "text": "card that says free member training."
+  },
+  {
+   "s": 623.88,
+   "e": 626.5,
+   "text": "That's the session where we walk through how people"
+  },
+  {
+   "s": 626.5,
+   "e": 630.98,
+   "text": "scale a system like this to 1 ,000, even $5 ,000"
+  },
+  {
+   "s": 630.98,
+   "e": 631.72,
+   "text": "a day."
+  },
+  {
+   "s": 632.06,
+   "e": 633.1,
+   "text": "Free for members."
+  },
+  {
+   "s": 633.44,
+   "e": 634.5,
+   "text": "Access is limited."
+  },
+  {
+   "s": 634.7,
+   "e": 636.46,
+   "text": "And it comes down when it comes down."
+  },
+  {
+   "s": 636.66,
+   "e": 638.3,
+   "text": "If you haven't grabbed your spot, click."
+  },
+  {
+   "s": 638.54,
+   "e": 640.7,
+   "text": "Click here to learn how and do it now."
+  },
+  {
+   "s": 640.86,
+   "e": 641.74,
+   "text": "30 seconds."
+  },
+  {
+   "s": 642.02,
+   "e": 642.4,
+   "text": "Okay."
+  },
+  {
+   "s": 642.76,
+   "e": 645.44,
+   "text": "How to actually use what's in here."
+  },
+  {
+   "s": 645.64,
+   "e": 648.3,
+   "text": "There's one more video on this dashboard after"
+  },
+  {
+   "s": 648.3,
+   "e": 648.58,
+   "text": "me."
+  },
+  {
+   "s": 648.88,
+   "e": 650.1,
+   "text": "Your five minute tour."
+  },
+  {
+   "s": 650.28,
+   "e": 652.04,
+   "text": "It's exactly what it sounds like."
+  },
+  {
+   "s": 652.26,
+   "e": 653.18,
+   "text": "Watch that next."
+  },
+  {
+   "s": 653.42,
+   "e": 655.34,
+   "text": "Then go to Academy in the sidebar."
+  },
+  {
+   "s": 655.64,
+   "e": 657.68,
+   "text": "Start with activate your first asset."
+  },
+  {
+   "s": 657.8,
+   "e": 659.58,
+   "text": "Then publish your money page."
+  },
+  {
+   "s": 659.74,
+   "e": 661.54,
+   "text": "Then Pinterest traffic and results."
+  },
+  {
+   "s": 661.88,
+   "e": 662.6,
+   "text": "In that order."
+  },
+  {
+   "s": 662.96,
+   "e": 664.7,
+   "text": "Each one hands off to the next."
+  },
+  {
+   "s": 664.9,
+   "e": 667.18,
+   "text": "And here's the rule that decides whether this works"
+  },
+  {
+   "s": 667.18,
+   "e": 667.6,
+   "text": "for you."
+  },
+  {
+   "s": 667.86,
+   "e": 668.62,
+   "text": "One video."
+  },
+  {
+   "s": 668.88,
+   "e": 670.54,
+   "text": "Then go do the thing it just showed you."
+  },
+  {
+   "s": 670.7,
+   "e": 671.64,
+   "text": "Then the next video."
+  },
+  {
+   "s": 671.88,
+   "e": 674.5,
+   "text": "Not four videos in a row and a notepad full of"
+  },
+  {
+   "s": 674.5,
+   "e": 675.14,
+   "text": "good intentions."
+  },
+  {
+   "s": 675.48,
+   "e": 678.18,
+   "text": "The premium tools have their own videos after that."
+  },
+  {
+   "s": 678.42,
+   "e": 680.86,
+   "text": "Those can wait until you've got one page live."
+  },
+  {
+   "s": 681.12,
+   "e": 683.12,
+   "text": "So, your first action."
+  },
+  {
+   "s": 683.46,
+   "e": 685.94,
+   "text": "Same one I gave you last video, but now you know"
+  },
+  {
+   "s": 685.94,
+   "e": 686.88,
+   "text": "what you're looking at."
+  },
+  {
+   "s": 687.14,
+   "e": 688.94,
+   "text": "Open activate asset."
+  },
+  {
+   "s": 689.22,
+   "e": 692.34,
+   "text": "Give it one product, a web address, or just the"
+  },
+  {
+   "s": 692.34,
+   "e": 693.58,
+   "text": "name, whichever you've got."
+  },
+  {
+   "s": 693.96,
+   "e": 695.46,
+   "text": "Press activate asset."
+  },
+  {
+   "s": 695.8,
+   "e": 696.52,
+   "text": "Let it build."
+  },
+  {
+   "s": 696.74,
+   "e": 698.82,
+   "text": "Then click view my asset."
+  },
+  {
+   "s": 699.3,
+   "e": 700.52,
+   "text": "Read what it wrote for you."
+  },
+  {
+   "s": 700.66,
+   "e": 701.7,
+   "text": "Then hit publish."
+  },
+  {
+   "s": 702.12,
+   "e": 702.64,
+   "text": "That's it."
+  },
+  {
+   "s": 702.94,
+   "e": 704.04,
+   "text": "That's tonight's win."
+  },
+  {
+   "s": 704.34,
+   "e": 706.92,
+   "text": "One live page with your name on the door."
+  },
+  {
+   "s": 707.12,
+   "e": 709.58,
+   "text": "You now understand how this business works better"
+  },
+  {
+   "s": 709.58,
+   "e": 711.86,
+   "text": "than most people who've been dabbling in it for"
+  },
+  {
+   "s": 711.86,
+   "e": 712.32,
+   "text": "a year."
+  },
+  {
+   "s": 712.54,
+   "e": 713.64,
+   "text": "You know who pays."
+  },
+  {
+   "s": 713.78,
+   "e": 715.04,
+   "text": "You know why they pay."
+  },
+  {
+   "s": 715.18,
+   "e": 717.72,
+   "text": "And you know what every word on the screen means."
+  },
+  {
+   "s": 718.16,
+   "e": 719.0,
+   "text": "So, go on."
+  },
+  {
+   "s": 719.18,
+   "e": 720.38,
+   "text": "Let's get that door open."
+  },
+  {
+   "s": 720.56,
+   "e": 721.62,
+   "text": "I'll see you in the tour."
+  }
+ ]
+}

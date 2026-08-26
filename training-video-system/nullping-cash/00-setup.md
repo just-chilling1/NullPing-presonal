@@ -1,11 +1,12 @@
 # NullPing Cash — Phase 1 Setup
 
 **Repo:** `c:\Users\Admin\Desktop\nullping`  
-**Branch:** `main` @ `4dc97ea` (ff-only pull: already up to date; working tree clean)  
+**Branch:** `main` @ `d8f5412` (local; remote `just-chilling/main` @ `aa4de51` — branches diverged, `git pull --ff-only` blocked; scripts audited against local HEAD)  
 **Framework:** Next.js (App Router) + Supabase auth  
 **Auth bypass:** `DEV_BYPASS_AUTH=true` in `.env.local` (middleware skips auth + onboarding)  
 **Funnel HTML:** none provided — money claims mined from dashboard bonus ad, EarningsBanner defaults, support refund policy, and `docs/nullping/PRODUCT-BRIEF.md`  
-**Output root:** `training-video-system/nullping-cash/`
+**Output root:** `training-video-system/nullping-cash/`  
+**Live audit:** `2026-08-26` — `node scripts/phase1-ui-audit.mjs` · 36/36 checks pass · screenshots use `load` + **5s settle** (`AUDIT_SETTLE_MS=5000`) before capture
 
 ---
 
@@ -91,6 +92,18 @@ Scripts use ONLY the current user-facing column.
 2. Publish Your Money Page  
 3. Pinterest Traffic & Results  
 
+### Premium pages — key CTAs
+
+| Page | Key labels |
+|---|---|
+| Unlimited | **View** + **Use this template** (unused) · **View offer** + **Regenerate pins** + **Offers Library** (installed) · **Select from Links Library** |
+| Done-For-You Profit | **Apply Link** → **Link applied** · **Generate kit** / **Generate another kit** |
+| Instant Income | **Bulk post generator** · **Generate posts** / **Generate new posts** · **Facebook Posting Best Practices** |
+| Automated Profits | **How This Works (Super Simple!)** · **Live money page** · **View Instructions** · **Mark Complete** |
+| Guaranteed High-Ticket Payouts | **Add to money page** · **Copy (plain text)** / **Copy (HTML)** · *Loading article preview...* |
+| Cyber Protection | **Account healthy** / **Action recommended** · **Resend confirmation** |
+| Reseller & License Rights | `/account#license` · **Send License Rights request** · **Awaiting team activation** |
+
 ### On-screen numbers that scripts must not contradict
 - **5** pin generations per day (midnight UTC reset)
 - **10** pins per Generate Traffic run (and per Unlimited install)
@@ -123,7 +136,7 @@ Scripts use ONLY the current user-facing column.
 | B | EarningsBanner prominent (GenerationTrainingAd) | Badge **Free Training** · title default **Multiply Your Earnings To $1,000 – $5,000 A Day** · CTA **Click Here To Learn How** · **Warning: This Will Be Taken Down Soon** | same perpetualincome URL | Below progress during Unlimited / DFY Profit / Instant Income / High-Ticket GenerationProgress |
 | C | Exclusive Offers → Fast Cash Training | **Fast Cash Training** · Claim Now | Explodely `5SRWJGZ` (sister offer — **not** the same webinar as A/B) | Sidebar Exclusive Offers |
 | D | Exclusive Offers 1–2 | Earn $400/Day Testing New Apps · Get Paid To Copy & Paste | Partner URLs in `offers.config.ts` | Sidebar |
-| E | Contact Support success | free training upsell + **Watch The Free Training >>** | perpetualincome | After support send |
+| E | Contact Support success | free training upsell + **Watch The Free Training >>** | perpetualincome | After support send — warning reads **This may be taken down soon** (lowercase *may*, differs from EarningsBanner) |
 | F | Scale Training page | Feature **off** — do not narrate as live | breakoutai URL | N/A |
 
 **Spoken pitch (match CURRENT banner language):** wake up to / multiply to one thousand — even five thousand dollars a day.  
@@ -210,8 +223,10 @@ Scripts use ONLY the current user-facing column.
 
 ## Live audit checklist
 
-- [ ] Dev server + `DEV_BYPASS_AUTH`
-- [ ] Sidebar dump + Home geometry (right rail, Start Here order, gold ads)
-- [ ] Activate / Publish / Traffic / Results / Links / Academy
-- [ ] Each Premium Features page + wait banners where claimed
-- [ ] Revert nothing (env-only bypass); delete audit scripts
+- [x] Dev server + `DEV_BYPASS_AUTH`
+- [x] Sidebar dump + Home geometry (right rail, Start Here order, gold ads)
+- [x] Activate / Publish / Traffic / Results / Links / Academy
+- [x] Each Premium Features page + wait banners where claimed
+- [x] Revert nothing (env-only bypass); audit script kept at `scripts/phase1-ui-audit.mjs` (5s settle before screenshots)
+
+**Note:** Dashboard + premium training Vimeo IDs are empty in config until IDs are re-added — placeholders show "Training video coming soon"; scripts describe behavior, not embed playback.

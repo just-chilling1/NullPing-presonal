@@ -25,7 +25,7 @@ const routes = [
   for (const [name, route] of routes) {
     try {
       await page.goto(`http://localhost:3000${route}`, { waitUntil: 'networkidle', timeout: 45000 });
-      await page.waitForTimeout(2500); // let animations settle
+      await page.waitForTimeout(5000); // let page fully load + animations settle
       const finalUrl = page.url();
       if (/\/(login|signin|signup|onboarding)/.test(finalUrl)) {
         console.log(`FAIL ${name}: redirected to ${finalUrl} (auth bypass not working)`);

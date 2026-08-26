@@ -33,5 +33,17 @@ do $$ begin
   end if;
 end $$;
 
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'user_training_completions'
+      and policyname = 'Users can delete own training completions'
+  ) then
+    create policy "Users can delete own training completions"
+      on public.user_training_completions for delete
+      using (auth.uid() = user_id);
+  end if;
+end $$;
+
 create index if not exists idx_user_training_completions_user_id
   on public.user_training_completions (user_id);

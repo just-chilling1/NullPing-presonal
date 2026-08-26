@@ -7,34 +7,38 @@
 
 Full Turnkey Reseller & License Rights Edition. Members request activation by sending a support ticket titled **License Rights**. The page lists locked deliverables (reseller license, rebrandable assets, sales pages, support docs) until the team activates the account manually.
 
-There is no database table and no admin UI. A successful submit stores a pending flag in localStorage per user so the page shows "Request received — awaiting team activation" on reload.
+Pending state is stored server-side in `license_rights_requests`. localStorage is only a fallback if the API is unreachable. There is no admin UI — activation is manual (support team updates status).
 
 ## User flow
 
 ```
 /license-rights → request form (email + message)
+  → POST /api/premium/license-rights { email, message }  (persist pending row)
   → POST /api/support { email, message, subject: "License Rights" }
-  → Freshdesk ticket "BlackBox Cash — License Rights" (Resend fallback)
-  → Pending panel (localStorage)
+  → Freshdesk ticket "{product} — License Rights" (Resend fallback)
+  → Pending panel (server pending preferred; localStorage fallback)
 ```
 
 Mailto fallback uses subject `License Rights` if the API cannot send.
 
 ## APIs
 
-Reuses the shared support endpoint — no dedicated premium API.
-
 | Route | Purpose |
 |-------|---------|
-| `POST /api/support` | Optional `subject` (sanitized, max 80 chars). When present, Freshdesk subject is `{product} — {subject}` and the body includes `Request type:`. Existing callers that omit `subject` keep the default dashboard support subject. |
+| `GET /api/premium/license-rights` | Latest pending request for the signed-in member |
+| `POST /api/premium/license-rights` | Insert pending row (`email`, `message`) |
+| `POST /api/support` | Optional `subject` (sanitized, max 80 chars). When present, Freshdesk subject is `{product} — {subject}` and the body includes `Request type:`. |
 
 ## Persistence
 
-| Key | Scope |
-|-----|--------|
-| `{brand.storagePrefix}_license_rights_request_{userId}` | Client localStorage JSON `{ email, submittedAt }` |
+| Store | Scope |
+|-------|--------|
+| `license_rights_requests` | Server table: user_id, email, message, status (`pending` / `activated` / `rejected`) |
+| `{brand.storagePrefix}_license_rights_request_{userId}` | Client localStorage JSON `{ email, submittedAt }` — fallback only |
 
-Activation is manual (support team). Clearing the pending panel with "Send another request" only resets the local flag.
+Migration: `supabase/migrations/20260821120000_license_rights_requests.sql`
+
+Activation is manual (support team). Clearing the pending panel with "Send another request" only resets the local flag; the server row remains until status changes.
 
 ## Module files
 

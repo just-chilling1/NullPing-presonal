@@ -57,7 +57,14 @@ export async function ensureAdminUser(force = false): Promise<void> {
 
     await admin
       .from("users")
-      .upsert({ id: existing.id, onboarding_completed_at: completedAt }, { onConflict: "id" });
+      .upsert(
+        {
+          id: existing.id,
+          onboarding_completed_at: completedAt,
+          updated_at: completedAt,
+        },
+        { onConflict: "id" }
+      );
   } else {
     const { data, error } = await admin.auth.admin.createUser({
       email,
@@ -77,7 +84,14 @@ export async function ensureAdminUser(force = false): Promise<void> {
     if (data.user) {
       await admin
         .from("users")
-        .upsert({ id: data.user.id, onboarding_completed_at: completedAt }, { onConflict: "id" });
+        .upsert(
+          {
+            id: data.user.id,
+            onboarding_completed_at: completedAt,
+            updated_at: completedAt,
+          },
+          { onConflict: "id" }
+        );
     }
   }
 

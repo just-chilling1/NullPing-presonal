@@ -57,11 +57,16 @@ export async function POST(request: Request) {
   const { error: profileError } = await profileClient
     .from("users")
     .upsert(
-      { id: user.id, onboarding_completed_at: completedAt },
+      {
+        id: user.id,
+        onboarding_completed_at: completedAt,
+        updated_at: completedAt,
+      },
       { onConflict: "id", ignoreDuplicates: false }
     );
 
   if (profileError) {
+    // Auth metadata + cookie still gate onboarding; profile row is the durable store.
     console.warn("[onboarding/complete] users profile upsert failed:", profileError.message);
   }
 

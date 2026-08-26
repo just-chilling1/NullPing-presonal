@@ -9,7 +9,7 @@ import {
   trainingWorkflowSteps,
 } from "@/lib/training-content";
 import { TrainingPageLayout } from "../components/TrainingPageLayout";
-import { TrainingVideoCard } from "../components/TrainingVideoCard";
+import { AcademyVideoGrid } from "../components/TrainingVideoCard";
 import { TrainingCtaSection } from "../components/TrainingCtaSection";
 import {
   AcademyOverview,
@@ -69,11 +69,7 @@ export default function TrainingVideosPage() {
           title="Platform Tutorials"
           subtitle="Core NullPing Cash workflow — watch in order after Dashboard intro videos"
         />
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-7 xl:grid-cols-3 xl:gap-8">
-          {platformVideos.map((video, index) => (
-            <TrainingVideoCard key={video.title} video={video} index={index} />
-          ))}
-        </div>
+        <AcademyVideoGrid videos={platformVideos} numbered />
       </section>
 
       <section id="quick-reference" className="scroll-mt-24 glass-card p-5 sm:p-6">
@@ -107,11 +103,10 @@ export default function TrainingVideosPage() {
             title="Premium Feature Tutorials"
             subtitle="Scale after your first live money page — watch in any order"
           />
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-7">
-            {premiumVideos.map((video) => (
-              <TrainingVideoCard key={video.badge} video={video} />
-            ))}
-          </div>
+          <AcademyVideoGrid
+            videos={premiumVideos}
+            columnsClassName="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-7"
+          />
         </section>
       ) : null}
 

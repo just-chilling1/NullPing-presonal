@@ -8,6 +8,9 @@ import { join } from "path";
 
 const BASE = process.env.AUDIT_BASE_URL || "http://localhost:3000";
 const OUT = join(process.cwd(), "training-video-system", "nullping-cash", "_audit");
+/** Wait after load so animations, fonts, and client hydration finish before screenshots. */
+const PAGE_SETTLE_MS = Number(process.env.AUDIT_SETTLE_MS || 5000);
+const GOTO_OPTS = { waitUntil: "load", timeout: 120000 };
 mkdirSync(OUT, { recursive: true });
 
 const routes = [
@@ -45,8 +48,8 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 for (const [path, slug] of routes) {
   const url = `${BASE}${path}`;
   try {
-    await page.goto(url, { waitUntil: "networkidle", timeout: 90000 });
-    await page.waitForTimeout(1200);
+    await page.goto(url, GOTO_OPTS);
+    await page.waitForTimeout(PAGE_SETTLE_MS);
     await page.screenshot({ path: join(OUT, `${slug}.png`), fullPage: true });
     const body = await page.locator("body").innerText();
     writeFileSync(join(OUT, `${slug}.txt`), body, "utf8");
@@ -57,8 +60,8 @@ for (const [path, slug] of routes) {
 }
 
 // Sidebar dump from dashboard
-await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle", timeout: 90000 });
-await page.waitForTimeout(1500);
+await page.goto(`${BASE}/dashboard`, GOTO_OPTS);
+await page.waitForTimeout(PAGE_SETTLE_MS);
 const sidebar =
   (await page.locator("aside, nav, [data-sidebar], .sidebar").first().innerText().catch(() => "")) ||
   (await page.locator("body").innerText());
@@ -122,49 +125,49 @@ for (const label of mustInSidebar) {
 }
 
 // Core pages spot checks
-const activate = await page.goto(`${BASE}/activate`, { waitUntil: "networkidle", timeout: 90000 }).then(async () => {
-  await page.waitForTimeout(800);
+const activate = await page.goto(`${BASE}/activate`, { waitUntil: "load", timeout: 120000 }).then(async () => {
+  await page.waitForTimeout(PAGE_SETTLE_MS);
   return page.locator("body").innerText();
 });
 assert(hasCI(activate, "What do you want to promote"), "Activate H1");
 assert(hasCI(activate, "Activate asset"), "Activate CTA");
 
-const traffic = await page.goto(`${BASE}/traffic`, { waitUntil: "networkidle", timeout: 90000 }).then(async () => {
-  await page.waitForTimeout(800);
+const traffic = await page.goto(`${BASE}/traffic`, { waitUntil: "load", timeout: 120000 }).then(async () => {
+  await page.waitForTimeout(PAGE_SETTLE_MS);
   return page.locator("body").innerText();
 });
 assert(hasCI(traffic, "Generate Traffic"), "Traffic title");
 assert(hasCI(traffic, "5") || hasCI(traffic, "pin"), "Traffic pins/quota language");
 
-const results = await page.goto(`${BASE}/results`, { waitUntil: "networkidle", timeout: 90000 }).then(async () => {
-  await page.waitForTimeout(800);
+const results = await page.goto(`${BASE}/results`, { waitUntil: "load", timeout: 120000 }).then(async () => {
+  await page.waitForTimeout(PAGE_SETTLE_MS);
   return page.locator("body").innerText();
 });
 assert(hasCI(results, "Your results") || hasCI(results, "Results"), "Results title");
 assert(hasCI(results, "Visitors") || hasCI(results, "Affiliate"), "Results stats");
 
-const unlimited = await page.goto(`${BASE}/accelerator`, { waitUntil: "networkidle", timeout: 90000 }).then(async () => {
-  await page.waitForTimeout(1000);
+const unlimited = await page.goto(`${BASE}/accelerator`, { waitUntil: "load", timeout: 120000 }).then(async () => {
+  await page.waitForTimeout(PAGE_SETTLE_MS);
   return page.locator("body").innerText();
 });
 assert(hasCI(unlimited, "Unlimited"), "Unlimited title");
 assert(hasCI(unlimited, "10") || hasCI(unlimited, "pin"), "Unlimited 10 pins language");
 
-const instant = await page.goto(`${BASE}/social-payouts`, { waitUntil: "networkidle", timeout: 90000 }).then(async () => {
-  await page.waitForTimeout(1000);
+const instant = await page.goto(`${BASE}/social-payouts`, { waitUntil: "load", timeout: 120000 }).then(async () => {
+  await page.waitForTimeout(PAGE_SETTLE_MS);
   return page.locator("body").innerText();
 });
 assert(hasCI(instant, "Instant Income"), "Instant Income title");
 assert(hasCI(instant, "25") || hasCI(instant, "50") || hasCI(instant, "Best Practices"), "Instant Income best practices");
 
-const auto = await page.goto(`${BASE}/autopilot`, { waitUntil: "networkidle", timeout: 90000 }).then(async () => {
-  await page.waitForTimeout(1000);
+const auto = await page.goto(`${BASE}/autopilot`, { waitUntil: "load", timeout: 120000 }).then(async () => {
+  await page.waitForTimeout(PAGE_SETTLE_MS);
   return page.locator("body").innerText();
 });
 assert(hasCI(auto, "Automated Profits"), "Automated Profits title");
 
-const cyber = await page.goto(`${BASE}/protector`, { waitUntil: "networkidle", timeout: 90000 }).then(async () => {
-  await page.waitForTimeout(1000);
+const cyber = await page.goto(`${BASE}/protector`, { waitUntil: "load", timeout: 120000 }).then(async () => {
+  await page.waitForTimeout(PAGE_SETTLE_MS);
   return page.locator("body").innerText();
 });
 assert(hasCI(cyber, "Cyber Protection"), "Cyber Protection title");

@@ -9,6 +9,18 @@ export interface ThreadGenerationQuota {
   remaining: number;
 }
 
+/** True when the quota table/migration is not applied yet. */
+function isQuotaTableMissing(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  const code = error.code || "";
+  const message = error.message || "";
+  return (
+    code === "42P01" ||
+    code === "PGRST205" ||
+    /schema cache|does not exist|Could not find the/i.test(message)
+  );
+}
+
 export async function getThreadGenerationQuota(
   supabase: SupabaseClient,
   userId: string
@@ -20,7 +32,8 @@ export async function getThreadGenerationQuota(
     .gte("created_at", startOfUtcDay());
 
   if (error) {
-    if (error.code === "42P01") {
+    // Soft-fail only when the table is absent so older DBs still generate pins.
+    if (isQuotaTableMissing(error)) {
       return {
         limit: THREAD_GENERATION_DAILY_LIMIT,
         usedToday: 0,
@@ -48,7 +61,8 @@ export async function recordThreadGeneration(
     site_id: siteId,
   });
 
-  if (error && error.code !== "42P01") {
+  // Soft-fail only when the table is absent; real insert failures must surface.
+  if (error && !isQuotaTableMissing(error)) {
     throw new Error(error.message);
   }
 }
