@@ -1,24 +1,44 @@
+import type { StaticImageData } from "next/image";
+import dashboard01 from "@/assets/video-thumbnails/dashboard-01-watch-this-first.png";
+import dashboard02 from "@/assets/video-thumbnails/dashboard-02-how-the-money-flows.png";
+import dashboard03 from "@/assets/video-thumbnails/dashboard-03-your-5-minute-tour.png";
+import academy04 from "@/assets/video-thumbnails/academy-04-activate-first-asset.png";
+import academy05 from "@/assets/video-thumbnails/academy-05-publish-money-page.png";
+import academy06 from "@/assets/video-thumbnails/academy-06-pinterest-traffic-results.png";
+import academy07 from "@/assets/video-thumbnails/academy-07-unlimited.png";
+import academy08 from "@/assets/video-thumbnails/academy-08-done-for-you-profit.png";
+import academy09 from "@/assets/video-thumbnails/academy-09-instant-income.png";
+import academy10 from "@/assets/video-thumbnails/academy-10-automated-profits.png";
+import academy11 from "@/assets/video-thumbnails/academy-11-guaranteed-high-ticket-payouts.png";
+import academy12 from "@/assets/video-thumbnails/academy-12-cyber-protection.png";
+import academy13 from "@/assets/video-thumbnails/academy-13-reseller-license-rights.png";
+
 export const VIDEO_THUMBNAILS: Record<string, string> = {};
 
+function bundledSrc(image: StaticImageData): string {
+  return image.src;
+}
+
 export const DASHBOARD_VIDEO_THUMBNAILS = [
-  "/thumbnails/dashboard-01-watch-this-first.png",
-  "/thumbnails/dashboard-02-how-the-money-flows.png",
-  "/thumbnails/dashboard-03-your-5-minute-tour.png",
+  bundledSrc(dashboard01),
+  bundledSrc(dashboard02),
+  bundledSrc(dashboard03),
 ] as const;
+
 export const ACADEMY_PLATFORM_THUMBNAILS = [
-  "/thumbnails/academy-04-activate-first-asset.png",
-  "/thumbnails/academy-05-publish-money-page.png",
-  "/thumbnails/academy-06-pinterest-traffic-results.png",
+  bundledSrc(academy04),
+  bundledSrc(academy05),
+  bundledSrc(academy06),
 ] as const;
 
 export const ACADEMY_PREMIUM_THUMBNAILS = [
-  "/thumbnails/academy-07-unlimited.png",
-  "/thumbnails/academy-08-done-for-you-profit.png",
-  "/thumbnails/academy-09-instant-income.png",
-  "/thumbnails/academy-10-automated-profits.png",
-  "/thumbnails/academy-11-guaranteed-high-ticket-payouts.png",
-  "/thumbnails/academy-12-cyber-protection.png",
-  "/thumbnails/academy-13-reseller-license-rights.png",
+  bundledSrc(academy07),
+  bundledSrc(academy08),
+  bundledSrc(academy09),
+  bundledSrc(academy10),
+  bundledSrc(academy11),
+  bundledSrc(academy12),
+  bundledSrc(academy13),
 ] as const;
 
 /** Premium feature pages — maps feature id to academy thumbnail (07–13). */
@@ -32,6 +52,7 @@ export const PREMIUM_FEATURE_THUMBNAILS: Record<string, string> = {
   "protector": ACADEMY_PREMIUM_THUMBNAILS[5],
   "premium-license-rights": ACADEMY_PREMIUM_THUMBNAILS[6],
 };
+
 const VIMEO_ID_REGEX = /vimeo\.com\/(?:video\/)?(\d+)/;
 
 function normalizeVimeoId(videoId: string): string | null {
