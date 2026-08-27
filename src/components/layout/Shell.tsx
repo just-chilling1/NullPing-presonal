@@ -2,8 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
-import { BrandLogo } from "./BrandLogo";
 import { PageMotion } from "@/components/motion/PageMotion";
 import { SupportCtaBanner } from "@/components/support/SupportCtaBanner";
 import { hasEnabledPromoOrchestrator } from "@/config/promos.config";
@@ -58,18 +56,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-bg flex min-h-dvh min-w-0 overflow-x-clip">
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header
-          className="mobile-header-glass fixed inset-x-0 top-0 z-40 shrink-0 lg:hidden"
-          style={{ paddingTop: "env(safe-area-inset-top)" }}
-        >
-          <div className="flex items-center justify-center px-4 pb-3 pt-2">
-            <Link href="/dashboard" className="min-w-0">
-              <BrandLogo size="sm" showTagline={false} />
-            </Link>
-          </div>
-        </header>
-
-        <main className="app-main-canvas relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto scroll-smooth px-4 pb-[env(safe-area-inset-bottom,0px)] pt-[calc(var(--mobile-header-h)+env(safe-area-inset-top,0px)+0.5rem)] transition-[padding] duration-300 sm:px-6 lg:px-10 lg:pb-10 lg:pt-10">
+        <main className="app-main-canvas relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-clip overflow-y-auto scroll-smooth px-4 pb-[env(safe-area-inset-bottom,0px)] pt-[calc(env(safe-area-inset-top,0px)+1rem)] transition-[padding] duration-300 sm:px-6 lg:px-10 lg:pb-10 lg:pt-10">
           <div className="app-content-layer flex min-h-full w-full min-w-0 flex-col gap-6">
             <PageMotion>{children}</PageMotion>
             {!hideSupportBanner ? <SupportCtaBanner className="mt-2" /> : null}
