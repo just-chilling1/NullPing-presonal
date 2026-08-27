@@ -301,29 +301,5 @@ function applySidebarLayout(collapsed: boolean) {
 }
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    const stored = readSidebarCollapsed();
-    setCollapsed(stored);
-    applySidebarLayout(stored);
-  }, []);
-
-  const toggleCollapse = () => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem(storageKeys.sidebarCollapsed, next ? "1" : "0");
-      applySidebarLayout(next);
-      return next;
-    });
-  };
-
-  return (
-    <aside
-      className="sidebar-shell fixed left-0 top-0 z-50 hidden h-dvh transition-[width] duration-300 lg:flex"
-      style={{ width: "var(--sidebar-w)" }}
-    >
-      <SidebarContent collapsed={collapsed} onToggle={toggleCollapse} />
-    </aside>
-  );
+  return null;
 }
