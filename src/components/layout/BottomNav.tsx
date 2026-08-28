@@ -66,7 +66,7 @@ export function BottomNav() {
   return (
     <>
       <nav
-        className="app-bottom-nav fixed bottom-0 left-0 right-0 z-50"
+        className="app-bottom-nav fixed bottom-0 left-0 right-0 z-50 lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex h-16">
