@@ -51,7 +51,7 @@ export function VideoThumbnail({
             decoding="async"
             fetchPriority={eager ? "high" : "auto"}
             onError={() => setPosterFailed(true)}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            className="absolute inset-0 h-full w-full object-contain"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-ink via-ink-2 to-ink" />

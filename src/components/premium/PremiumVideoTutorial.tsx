@@ -54,7 +54,7 @@ export function PremiumVideoTutorial({
                     loading="lazy"
                     decoding="async"
                     onError={() => setPosterFailed(true)}
-                    className="absolute inset-0 h-full w-full object-cover"
+                    className="absolute inset-0 h-full w-full object-contain"
                   />
                 ) : (
                   <div className="absolute inset-0 bg-gradient-to-br from-ink via-ink-2 to-ink" />
