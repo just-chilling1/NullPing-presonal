@@ -122,7 +122,7 @@ export const VaultTemplateCard = memo(function VaultTemplateCard({
             </button>
           ) : null}
           <Link
-            href="/offers"
+            href="/results"
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--np-line)] bg-[var(--np-surface)] px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-[var(--np-line-strong)]"
           >
             <FolderOpen size={14} />

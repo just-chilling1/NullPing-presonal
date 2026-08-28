@@ -29,19 +29,23 @@ if errorlevel 1 (
   echo Nothing new to commit, pushing existing commits...
 )
 
-git push https://github.com/just-chilling1/BlackBox.git HEAD:main
+echo Pushing to https://github.com/just-chilling1/NullPing-presonal.git ...
+git push https://github.com/just-chilling1/NullPing-presonal.git HEAD:main
 if errorlevel 1 (
-  git push origin HEAD
+  git push https://github.com/just-chilling1/BlackBox.git HEAD:main
   if errorlevel 1 (
-    echo.
-    echo PUSH FAILED - check git credentials and try again.
-    pause
-    exit /b 1
+    git push origin HEAD
+    if errorlevel 1 (
+      echo.
+      echo PUSH FAILED - check git credentials and try again.
+      pause
+      exit /b 1
+    )
   )
 )
 
 echo.
-echo Done. Vercel will rebuild in ~1-2 minutes.
-echo Check: https://vercel.com/essams-projects-52baa131/black-box
-echo Site:  https://black-box-sigma-two.vercel.app
+echo Done. DigitalOcean App Platform will rebuild in ~3-5 minutes.
+echo Production repo: https://github.com/just-chilling1/NullPing-presonal
+echo Site:  https://nullpingmembersarea.com
 pause
