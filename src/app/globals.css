@@ -162,9 +162,9 @@
   --text-heading: var(--np-ink-strong);
   --text-muted: var(--np-ink-4);
 
-  --sidebar-w: 0px;
-  --sidebar-gap: 0px;
-  --mobile-header-h: 0px;
+  --sidebar-w: 280px;
+  --sidebar-gap: 2.5rem;
+  --mobile-header-h: 3.5rem;
   --layout-content-max: none;
   --sidebar-bg: color-mix(in srgb, var(--np-surface-sub) 92%, #000 8%);
   --sidebar-shell-bg: var(--sidebar-bg);
@@ -183,14 +183,7 @@
 }
 
 html[data-sidebar="collapsed"] {
-  --sidebar-w: 0px;
-}
-
-/* App shell: sidebar and nav hidden */
-.sidebar-shell,
-.mobile-header-glass,
-.app-bottom-nav {
-  display: none !important;
+  --sidebar-w: 76px;
 }
 
 @layer base {

@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { brand } from "@/config/brand.config";
 import { getBrandCssVars } from "@/lib/brand-vars";
+import { storageKeys } from "@/lib/storage-keys";
 import { AppProviders } from "@/components/layout/AppProviders";
 
 const brandStyle = getBrandCssVars();
@@ -60,6 +62,15 @@ export default function RootLayout({
       className={`${plusJakarta.variable} ${spaceGrotesk.variable}`}
       style={{ ...brandStyle, colorScheme: "dark" }}
     >
+      <head>
+        <Script
+          id="sidebar-collapse-restore"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k=${JSON.stringify(storageKeys.sidebarCollapsed)};if(localStorage.getItem(k)==='1'){document.documentElement.dataset.sidebar='collapsed';document.documentElement.style.setProperty('--sidebar-w','76px');}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body
         className="text-text-primary selection:bg-pulse-200 antialiased"
         style={{ backgroundColor: brand.colors.page }}
